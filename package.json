@@ -1,0 +1,94 @@
+{
+  "name": "smartl3arn",
+  "version": "1.0.0",
+  "description": "smartL3arn flashcard app with evidence-based learning techniques",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac dmg",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac dmg --win",
+    "cap:copy": "node scripts/copy-web.mjs && cap copy ios",
+    "cap:sync": "npm run cap:copy && cap sync ios",
+    "ios": "npm run cap:sync && cap open ios",
+    "cap:copy:android": "node scripts/copy-web.mjs && cap copy android",
+    "cap:sync:android": "npm run cap:copy:android && cap sync android",
+    "android": "npm run cap:sync:android && cap open android"
+  },
+  "build": {
+    "appId": "com.smartl3arn.app",
+    "productName": "smartL3arn",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "app.js",
+      "i18n.js",
+      "build/icon.png"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "smartL3arn",
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.3.4",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
+  }
+}
