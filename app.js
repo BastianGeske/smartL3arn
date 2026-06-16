@@ -193,7 +193,7 @@ const SMART_REQUEUE_LIMITS = {
   easy: 0
 };
 
-const SMART_COOLDOWN_SESSIONS = {
+const SMART_SKIP_NEXT_SESSIONS = {
   again: 0,
   hard: 0,
   good: 1,
@@ -1402,7 +1402,7 @@ function startSmartStudy() {
     queue = buckets.flatMap(b => b.cards.map(c => ({ deckId: b.deckId, cardId: c.id })));
   }
 
-  if (!queue.length) { alert('No eligible cards in the selected decks. Good/Easy-rated cards may be resting for upcoming Smart Study sessions.'); return; }
+  if (!queue.length) { alert('No eligible cards in the selected decks. Good/Easy-rated cards may be skipped for upcoming Smart Study sessions.'); return; }
 
   state.smart = {
     queue,
@@ -1509,8 +1509,8 @@ function fmtSmartTimer(startTime, durationMs) {
 }
 
 function isSmartCardBlocked(deck, cardId) {
-  const blockedUntil = deck.cardStats?.[cardId]?.smartBlockedUntil || 0;
-  return blockedUntil >= (deck.smartSessionSeq || 0);
+  const skipUntilSession = deck.cardStats?.[cardId]?.smartSkipUntilSession || 0;
+  return skipUntilSession >= (deck.smartSessionSeq || 0);
 }
 
 function markSmartCardExited(deck, cardId, gradeKey) {
@@ -1518,10 +1518,12 @@ function markSmartCardExited(deck, cardId, gradeKey) {
   const cs = deck.cardStats[cardId] || { reviews: 0, again: 0, hard: 0 };
   if (SMART_ALWAYS_ELIGIBLE_GRADES.has(gradeKey)) {
     delete cs.smartBlockedUntil;
+    delete cs.smartSkipUntilSession;
   } else {
-    const cooldown = SMART_COOLDOWN_SESSIONS[gradeKey] || 0;
-    if (cooldown > 0) cs.smartBlockedUntil = (deck.smartSessionSeq || 0) + cooldown;
-    else delete cs.smartBlockedUntil;
+    const skippedSessions = SMART_SKIP_NEXT_SESSIONS[gradeKey] || 0;
+    if (skippedSessions > 0) cs.smartSkipUntilSession = (deck.smartSessionSeq || 0) + skippedSessions;
+    else delete cs.smartSkipUntilSession;
+    delete cs.smartBlockedUntil;
   }
   deck.cardStats[cardId] = cs;
   return cs;
@@ -1646,11 +1648,9 @@ function renderSmartStudy() {
     const suggested = s.similarity !== null ? similarityBand(s.similarity).suggested : null;
     const labels = ['Again', 'Hard', 'Good', 'Easy'];
     const classes = ['btn-again', 'btn-hard', 'btn-good', 'btn-easy'];
-    const intervals = fsrsPreviewIntervals(card);
     const rateBtns = [0, 1, 2, 3].map(g => `
       <div class="rating-btn-wrap">
         <button class="btn ${classes[g]} btn-lg ${suggested === g ? 'is-suggested' : ''}" data-action="smart-rate" data-grade="${g}">${labels[g]}${suggested === g ? ' &#9678;' : ''}</button>
-        <span class="rating-label">${intervals[g]}</span>
       </div>`).join('');
 
     body = `
