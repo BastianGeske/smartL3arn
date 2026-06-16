@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>smartL3arn</title>
+  <link rel="icon" type="image/png" href="build/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Edit Card</h2>
+        <button class="btn-icon" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Front</label>
+        <textarea id="modal-front" class="textarea" rows="5" placeholder="Front side of card"></textarea>
+        <label class="field-label">Back</label>
+        <textarea id="modal-back" class="textarea" rows="5" placeholder="Back side of card"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save">Save Card</button>
+      </div>
+    </div>
+  </div>
+  <div id="deck-modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>New Deck</h2>
+        <button class="btn-icon" id="deck-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Deck Name</label>
+        <input id="deck-modal-name" class="search-input" type="text" placeholder="e.g. Spanish Vocabulary" style="width:100%;font-size:15px;padding:10px 12px">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="deck-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="deck-modal-save">Create Deck</button>
+      </div>
+    </div>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
