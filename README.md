@@ -75,8 +75,9 @@ Typical use cases:
 - Suggested rating button highlighted based on similarity
 - Confidence-vs-result calibration feedback
 - Why-prompt elaborations stored per card (latest three kept)
-- Four-button Smart Study queue control: Good leaves the session and is skipped for one later Smart Study session, Easy leaves the session and is skipped for two later Smart Study sessions, Hard is re-queued once, Again is re-queued up to two retries
-- Again/Hard cards stay eligible for every Smart Study session
+- Four-button Smart Study queue control: Good/Easy leave the session and rely on FSRS spacing; Hard is re-queued once, Again is re-queued up to two retries
+- Again/Hard cards are marked for extra practice and stay eligible across Smart Study sessions until later rated Good/Easy
+- Queue priority within each deck: overdue cards first, then extra-practice Again/Hard cards, then today's due/new cards; if nothing is due or flagged, Smart Study offers a voluntary practice round across the selected decks
 - Session stats logged per deck (streak compatible)
 
 **Import and export**
