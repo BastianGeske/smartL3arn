@@ -19,8 +19,31 @@ function genId() {
   return Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
 }
 
+function localDateStr(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr();
+}
+
+function isoDateToDayNumber(isoDate) {
+  const [y, m, d] = String(isoDate).split('-').map(Number);
+  return Date.UTC(y, m - 1, d) / 86400000;
+}
+
+function addDaysToIsoDate(isoDate, days) {
+  const [y, m, d] = String(isoDate).split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  return localDateStr(date);
+}
+
+function daysBetweenIsoDates(startIsoDate, endIsoDate) {
+  return isoDateToDayNumber(endIsoDate) - isoDateToDayNumber(startIsoDate);
 }
 
 function isDue(card) {
@@ -73,7 +96,7 @@ function fsrs(card, grade) {
   const { stability, difficulty, lastReview } = card;
 
   const daysSince = lastReview
-    ? Math.max(0, (Date.parse(today) - Date.parse(lastReview)) / 86400000)
+    ? Math.max(0, daysBetweenIsoDates(lastReview, today))
     : 0;
   const r = stability ? fsrsRetrievability(daysSince, stability) : 1;
 
@@ -90,15 +113,13 @@ function fsrs(card, grade) {
   newS = Math.max(0.1, newS);
 
   const interval = g === 1 ? 1 : fsrsInterval(newS);
-  const due = new Date(today);
-  due.setDate(due.getDate() + interval);
 
   return {
     ...card,
     stability: +newS.toFixed(4),
     difficulty: +newD.toFixed(4),
     interval,
-    dueDate: due.toISOString().split('T')[0],
+    dueDate: addDaysToIsoDate(today, interval),
     lastReview: today,
     repetitions: g === 1 ? 0 : (card.repetitions || 0) + 1,
     easeFactor: card.easeFactor || 2.5
@@ -109,7 +130,7 @@ function fsrsPreviewIntervals(card) {
   const { stability, difficulty, lastReview } = card;
   const today = todayStr();
   const daysSince = lastReview
-    ? Math.max(0, (Date.parse(today) - Date.parse(lastReview)) / 86400000)
+    ? Math.max(0, daysBetweenIsoDates(lastReview, today))
     : 0;
   const r = stability ? fsrsRetrievability(daysSince, stability) : 1;
 
@@ -193,14 +214,7 @@ const SMART_REQUEUE_LIMITS = {
   easy: 0
 };
 
-const SMART_SKIP_NEXT_SESSIONS = {
-  again: 0,
-  hard: 0,
-  good: 1,
-  easy: 2
-};
-
-const SMART_ALWAYS_ELIGIBLE_GRADES = new Set(['again', 'hard']);
+const SMART_NEEDS_PRACTICE_GRADES = new Set(['again', 'hard']);
 const SMART_POMODORO_DURATION_MINUTES = 25;
 const SMART_POMODORO_BREAK_MINUTES = 7;
 const SMART_POMODORO_BREAK_UNTIL_KEY = 'ankiweb_smart_pomodoro_break_until';
@@ -1053,31 +1067,24 @@ function startStudy(deckId) {
 
   const today = todayStr();
 
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
   // Build two priority groups: overdue cards come before today's due cards.
   // Within each group sort by difficulty (hardest first) then shuffle to avoid memorizing order.
   const overdueIds = deck.cards
     .filter(c => isDue(c) && c.dueDate && c.dueDate < today)
     .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5))
     .map(c => c.id);
-  shuffle(overdueIds);
+  shuffleInPlace(overdueIds);
 
   const todayIds = deck.cards
     .filter(c => isDue(c) && (!c.dueDate || c.dueDate === today))
     .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5))
     .map(c => c.id);
-  shuffle(todayIds);
+  shuffleInPlace(todayIds);
 
   let mainQueue = [...overdueIds, ...todayIds];
   if (mainQueue.length === 0) {
     mainQueue = deck.cards.map(c => c.id);
-    shuffle(mainQueue);
+    shuffleInPlace(mainQueue);
   }
   state.studyQueue = mainQueue;
   state.learningQueue = [];
@@ -1250,6 +1257,115 @@ function calibrationMatch(level, score) {
   return null;
 }
 
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function isSmartNeedsPracticeCard(deck, cardId) {
+  return deck.cardStats?.[cardId]?.smartNeedsPractice === true;
+}
+
+function smartWeaknessScore(deck, card) {
+  const cs = deck.cardStats?.[card.id] || {};
+  const reviews = cs.reviews || 0;
+  const againRate = reviews ? (cs.again || 0) / reviews : 0;
+  const hardRate = reviews ? (cs.hard || 0) / reviews : 0;
+  const difficulty = (card.difficulty || 5) / 10;
+  const focusBonus = isSmartNeedsPracticeCard(deck, card.id) ? 2 : 0;
+  return focusBonus + againRate + hardRate * 0.5 + difficulty * 0.25;
+}
+
+function sortSmartCards(deck, cards) {
+  return cards
+    .map(card => ({ card, score: smartWeaknessScore(deck, card), tie: Math.random() }))
+    .sort((a, b) => (b.score - a.score) || (a.tie - b.tie))
+    .map(item => item.card);
+}
+
+function smartCoreCardsForDeck(deck) {
+  const today = todayStr();
+  const overdue = [];
+  const focus = [];
+  const todayDue = [];
+
+  deck.cards.forEach(card => {
+    const due = !card.dueDate || card.dueDate <= today;
+    if (due && card.dueDate && card.dueDate < today) overdue.push(card);
+    else if (due) todayDue.push(card);
+    else if (isSmartNeedsPracticeCard(deck, card.id)) focus.push(card);
+  });
+
+  return [
+    ...sortSmartCards(deck, overdue),
+    ...sortSmartCards(deck, focus),
+    ...sortSmartCards(deck, todayDue)
+  ];
+}
+
+function smartPracticeCardsForDeck(deck) {
+  return sortSmartCards(deck, deck.cards.slice());
+}
+
+function buildSmartBuckets(selectedDecks) {
+  const coreBuckets = selectedDecks
+    .map(deck => ({ deckId: deck.id, cards: smartCoreCardsForDeck(deck) }))
+    .filter(bucket => bucket.cards.length > 0);
+
+  if (coreBuckets.length > 0) {
+    return { buckets: coreBuckets, mode: 'core', hasCore: true };
+  }
+
+  return {
+    buckets: selectedDecks
+      .map(deck => ({ deckId: deck.id, cards: smartPracticeCardsForDeck(deck) }))
+      .filter(bucket => bucket.cards.length > 0),
+    mode: 'practice',
+    hasCore: false
+  };
+}
+
+function buildSmartQueueFromBuckets(buckets, interleaving) {
+  if (!interleaving) {
+    return buckets.flatMap(bucket => bucket.cards.map(card => ({ deckId: bucket.deckId, cardId: card.id })));
+  }
+
+  const queue = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (const bucket of buckets) {
+      if (bucket.cards.length) {
+        const card = bucket.cards.shift();
+        queue.push({ deckId: bucket.deckId, cardId: card.id });
+        added = true;
+      }
+    }
+  }
+  return queue;
+}
+
+function buildSmartStudyQueue(selectedDecks, cfg) {
+  const result = buildSmartBuckets(selectedDecks);
+  const queueBuckets = result.buckets.map(bucket => ({ ...bucket, cards: bucket.cards.slice() }));
+  return {
+    ...result,
+    queue: buildSmartQueueFromBuckets(queueBuckets, cfg.techniques.interleaving)
+  };
+}
+
+function clearLegacySmartBlocks(deck) {
+  let changed = false;
+  Object.values(deck.cardStats || {}).forEach(cs => {
+    if ('smartBlockedUntil' in cs) { delete cs.smartBlockedUntil; changed = true; }
+    if ('smartSkipUntilSession' in cs) { delete cs.smartSkipUntilSession; changed = true; }
+  });
+  return changed;
+}
+
 // ===== SMART STUDY: SETUP VIEW =====
 function renderSmartSetup() {
   const data = loadData();
@@ -1262,6 +1378,12 @@ function renderSmartSetup() {
     ? `<div class="smart-empty">No decks yet. Go back and create one first.</div>`
     : data.decks.map(d => {
         const due = d.cards.filter(isDue).length;
+        const practice = d.cards.filter(c => !isDue(c) && isSmartNeedsPracticeCard(d, c.id)).length;
+        const meta = [
+          due > 0 ? `<span class="due-badge">${due}</span> due` : '',
+          practice > 0 ? `<span class="due-badge">${practice}</span> practice` : '',
+          `${d.cards.length} total`
+        ].filter(Boolean).join(' &middot; ');
         const checked = cfg.deckIds.includes(d.id);
         const disabled = d.cards.length === 0;
         return `
@@ -1269,7 +1391,7 @@ function renderSmartSetup() {
             <input type="checkbox" data-action="smart-toggle-deck" data-deck="${d.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
             <div class="smart-row-body">
               <div class="smart-row-title">${esc(d.name)}</div>
-              <div class="smart-row-meta">${due > 0 ? `<span class="due-badge">${due}</span> due &middot; ` : ''}${d.cards.length} total</div>
+              <div class="smart-row-meta">${meta}</div>
             </div>
           </label>`;
       }).join('');
@@ -1331,7 +1453,7 @@ function renderSmartSetup() {
 
       <div class="smart-start-wrap">
         <button class="btn btn-smart btn-lg" data-action="smart-start" ${canStart ? '' : 'disabled'}>Start Smart Study</button>
-        ${!canStart ? `<div class="smart-hint">Pick at least one deck with due cards.</div>` : ''}
+        ${!canStart ? `<div class="smart-hint">Pick at least one deck with cards.</div>` : ''}
       </div>
     </div>`;
 }
@@ -1367,45 +1489,22 @@ function startSmartStudy() {
     .map(id => data.decks.find(d => d.id === id))
     .filter(Boolean);
 
+  let legacyBlocksCleared = false;
+  selectedDecks.forEach(d => { legacyBlocksCleared = clearLegacySmartBlocks(d) || legacyBlocksCleared; });
+  const { queue, mode } = buildSmartStudyQueue(selectedDecks, cfg);
+
+  if (!queue.length) {
+    if (legacyBlocksCleared) saveData(data);
+    alert('No cards in the selected decks.');
+    return;
+  }
+
   selectedDecks.forEach(d => { d.smartSessionSeq = (d.smartSessionSeq || 0) + 1; });
   saveData(data);
 
-  const buckets = selectedDecks
-    .map(d => {
-      const today = todayStr();
-      const eligibleCards = d.cards.filter(c => !isSmartCardBlocked(d, c.id));
-      const overdue = eligibleCards.filter(c => isDue(c) && c.dueDate && c.dueDate < today)
-        .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5));
-      const todayDue = eligibleCards.filter(c => isDue(c) && (!c.dueDate || c.dueDate === today))
-        .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5));
-      const shuf = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-      let cards = [...shuf(overdue), ...shuf(todayDue)];
-      if (cards.length === 0) cards = shuf(eligibleCards.slice());
-      return { deckId: d.id, cards };
-    });
-
-  let queue;
-  if (cfg.techniques.interleaving) {
-    queue = [];
-    let added = true;
-    while (added) {
-      added = false;
-      for (const b of buckets) {
-        if (b.cards.length) {
-          const c = b.cards.shift();
-          queue.push({ deckId: b.deckId, cardId: c.id });
-          added = true;
-        }
-      }
-    }
-  } else {
-    queue = buckets.flatMap(b => b.cards.map(c => ({ deckId: b.deckId, cardId: c.id })));
-  }
-
-  if (!queue.length) { alert('No eligible cards in the selected decks. Good/Easy-rated cards may be skipped for upcoming Smart Study sessions.'); return; }
-
   state.smart = {
     queue,
+    mode,
     index: 0,
     phase: 'asking', // 'asking' | 'reviewing'
     typedAnswer: '',
@@ -1508,23 +1607,18 @@ function fmtSmartTimer(startTime, durationMs) {
   return fmtMs(remaining);
 }
 
-function isSmartCardBlocked(deck, cardId) {
-  const skipUntilSession = deck.cardStats?.[cardId]?.smartSkipUntilSession || 0;
-  return skipUntilSession >= (deck.smartSessionSeq || 0);
-}
-
-function markSmartCardExited(deck, cardId, gradeKey) {
+function updateSmartPracticeState(deck, cardId, gradeKey) {
   if (!deck.cardStats) deck.cardStats = {};
   const cs = deck.cardStats[cardId] || { reviews: 0, again: 0, hard: 0 };
-  if (SMART_ALWAYS_ELIGIBLE_GRADES.has(gradeKey)) {
-    delete cs.smartBlockedUntil;
-    delete cs.smartSkipUntilSession;
-  } else {
-    const skippedSessions = SMART_SKIP_NEXT_SESSIONS[gradeKey] || 0;
-    if (skippedSessions > 0) cs.smartSkipUntilSession = (deck.smartSessionSeq || 0) + skippedSessions;
-    else delete cs.smartSkipUntilSession;
-    delete cs.smartBlockedUntil;
-  }
+
+  delete cs.smartBlockedUntil;
+  delete cs.smartSkipUntilSession;
+  cs.smartLastGrade = gradeKey;
+  cs.smartLastReviewedSession = deck.smartSessionSeq || 0;
+
+  if (SMART_NEEDS_PRACTICE_GRADES.has(gradeKey)) cs.smartNeedsPractice = true;
+  else delete cs.smartNeedsPractice;
+
   deck.cardStats[cardId] = cs;
   return cs;
 }
@@ -1753,12 +1847,13 @@ function renderSmartDone() {
       ${ss.easy > 0  ? `<span class="sstat sstat-easy">${ss.easy} Easy</span>` : ''}
     </div>` : '';
 
-  // Show "New Smart Session" only if at least one selected deck still has due cards
   const data = loadData();
-  const hasMoreDue = state.smartConfig.deckIds.some(id => {
-    const d = data.decks.find(dd => dd.id === id);
-    return d && d.cards.length > 0;
-  });
+  const selectedDecks = state.smartConfig.deckIds
+    .map(id => data.decks.find(d => d.id === id))
+    .filter(Boolean);
+  const nextAvailability = buildSmartStudyQueue(selectedDecks, state.smartConfig);
+  const canStartNext = nextAvailability.queue.length > 0;
+  const nextLabel = nextAvailability.hasCore ? 'New Smart Session' : 'Practice Anyway';
 
   return `
     <div class="study-page">
@@ -1773,7 +1868,7 @@ function renderSmartDone() {
         <p>${reason}</p>
         ${statBar}
         <div class="smart-done-actions">
-          ${hasMoreDue ? `<button class="btn btn-smart" data-action="smart-restart">New Smart Session</button>` : ''}
+          ${canStartNext ? `<button class="btn btn-smart" data-action="smart-restart">${nextLabel}</button>` : ''}
           <button class="btn btn-secondary" data-action="smart-tweak">Adjust Setup</button>
           <button class="btn btn-secondary" data-action="go-home">Back to Home</button>
         </div>
@@ -1873,7 +1968,7 @@ function smartRateCard(grade) {
       if (cs.elaborations.length > 3) cs.elaborations = cs.elaborations.slice(-3);
     }
     deck.cardStats[item.cardId] = cs;
-    if (!willRequeue) markSmartCardExited(deck, item.cardId, gradeKey);
+    updateSmartPracticeState(deck, item.cardId, gradeKey);
     saveData(data);
   }
 
