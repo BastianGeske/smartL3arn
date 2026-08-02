@@ -201,6 +201,8 @@ const state = {
   sortCol: 'dueDate',
   sortDir: 'asc',
   editCardId: null,
+  editDeckId: null,
+  lastFocus: null,
   sessionStats: { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 },
   smartConfig: loadSmartConfig(),
   smart: null,
@@ -228,18 +230,94 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
+function icon(name, size = 18) {
+  return `<i class="icon" data-lucide="${esc(name)}" style="--icon-size:${size}px" aria-hidden="true"></i>`;
+}
+
+function hydrateIcons() {
+  if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
+  window.lucide.createIcons({
+    attrs: {
+      'stroke-width': 1.8
+    }
+  });
+}
+
+function renderAppBar(active = 'library') {
+  return `
+    <header class="app-bar">
+      <div class="app-bar-inner">
+        <button class="brand-button" type="button" data-action="go-home" aria-label="Open library">
+          <img src="build/icon.png" alt="" class="brand-mark">
+          <span class="brand-name">smart<span>L3arn</span></span>
+        </button>
+        <nav class="app-nav" aria-label="Primary navigation">
+          <button class="app-nav-item ${active === 'library' ? 'is-active' : ''}" type="button" data-action="go-home" ${active === 'library' ? 'aria-current="page"' : ''}>
+            ${icon('library', 17)}<span>Library</span>
+          </button>
+          <button class="app-nav-item ${active === 'smart' ? 'is-active' : ''}" type="button" data-action="smart-open-setup" ${active === 'smart' ? 'aria-current="page"' : ''}>
+            ${icon('sparkles', 17)}<span>Smart Study</span>
+          </button>
+        </nav>
+        <div class="app-bar-actions">${themeBtn(true)}</div>
+      </div>
+    </header>`;
+}
+
+function formatDateLabel(isoDate, options = { month: 'short', day: 'numeric' }) {
+  if (!isoDate) return '';
+  const date = new Date(`${isoDate}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  return new Intl.DateTimeFormat(document.documentElement.lang || 'en', options).format(date);
+}
+
+function nextDueDate(deck) {
+  return deck.cards
+    .map(card => card.dueDate)
+    .filter(date => date && date > todayStr())
+    .sort()[0] || null;
+}
+
+function showToast(message) {
+  const region = document.getElementById('toast-region');
+  if (!region) return;
+  region.textContent = message;
+  region.classList.add('is-visible');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => {
+    region.classList.remove('is-visible');
+    region.textContent = '';
+  }, 2600);
+}
+
+function announceStatus(message) {
+  const region = document.getElementById('status-region');
+  if (!region) return;
+  clearTimeout(announceStatus.timer);
+  region.textContent = '';
+  announceStatus.timer = setTimeout(() => {
+    region.textContent = message;
+  }, 0);
+}
+
 // ===== ROUTING =====
-function nav(view, deckId) {
+function nav(view, deckId, focusSelector = '', announcement = '') {
   if (state.view === 'smart-study' && view !== 'smart-study') stopSmartTimer();
   state.view = view;
   if (deckId !== undefined) state.deckId = deckId;
   state.filter = '';
   state.flipped = false;
-  render();
+  const routeFocus = focusSelector || {
+    home: '.page-heading h1',
+    browse: '.page-heading h1',
+    'smart-setup': '.page-heading h1'
+  }[view] || '';
+  render(routeFocus);
+  if (announcement) announceStatus(announcement);
 }
 
 // ===== RENDER DISPATCHER =====
-function render() {
+function render(focusSelector = '', fallbackSelector = '.brand-button') {
   const app = document.getElementById('app');
   if (state.view === 'home') app.innerHTML = renderHome();
   else if (state.view === 'browse') app.innerHTML = renderBrowse();
@@ -247,8 +325,28 @@ function render() {
   else if (state.view === 'smart-setup') app.innerHTML = renderSmartSetup();
   else if (state.view === 'smart-study') app.innerHTML = renderSmartStudy();
   bindEvents();
-  if (state.view === 'study') adjustFlashcardHeight();
+  hydrateIcons();
+  if (state.view === 'study') {
+    adjustFlashcardHeight();
+    if (document.fonts?.status !== 'loaded') {
+      document.fonts.ready.then(() => {
+        if (state.view === 'study') adjustFlashcardHeight();
+      });
+    }
+  }
   if (state.view === 'smart-study') focusSmartInputs();
+  if (focusSelector) {
+    const target = document.querySelector(focusSelector) || document.querySelector(fallbackSelector);
+    if (!target) return;
+    if (!target.matches('a[href], button, input, select, textarea, summary, [tabindex]')) {
+      target.setAttribute('tabindex', '-1');
+    }
+    target.classList.add('has-programmatic-focus');
+    target.addEventListener('blur', () => {
+      target.classList.remove('has-programmatic-focus');
+    }, { once: true });
+    target.focus();
+  }
 }
 
 function focusSmartInputs() {
@@ -264,97 +362,194 @@ function adjustFlashcardHeight() {
   const card = document.querySelector('.flashcard');
   if (!card) return;
   const cardWidth = card.offsetWidth;
-  let maxH = 0;
+  let contentHeight = 0;
   card.querySelectorAll('.flashcard-face').forEach(face => {
     const clone = face.cloneNode(true);
-    clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;right:auto;bottom:auto;width:${cardWidth}px;transform:none;visibility:hidden;backface-visibility:visible;-webkit-backface-visibility:visible;`;
+    clone.style.cssText = `position:fixed;inset:auto auto auto -9999px;width:${cardWidth}px;height:auto;min-height:0;overflow:visible;opacity:1;transform:none;visibility:hidden;backface-visibility:visible;-webkit-backface-visibility:visible;`;
+    const cloneContent = clone.querySelector('.card-content');
+    if (cloneContent) {
+      cloneContent.style.flex = '0 0 auto';
+      cloneContent.style.minHeight = '0';
+      cloneContent.style.display = 'block';
+    }
     document.body.appendChild(clone);
-    maxH = Math.max(maxH, clone.offsetHeight);
+    contentHeight = Math.max(contentHeight, clone.scrollHeight + 18);
     document.body.removeChild(clone);
   });
-  if (maxH > 0) card.style.minHeight = maxH + 'px';
+  if (!contentHeight) return;
+
+  const mobile = window.matchMedia('(max-width: 719px)').matches;
+  const minimum = mobile ? 290 : 310;
+  const viewportLimit = Math.max(minimum, Math.round(window.innerHeight * (mobile ? 0.5 : 0.62)));
+  const height = Math.min(Math.max(contentHeight, minimum), viewportLimit);
+  card.style.height = `${height}px`;
+  card.style.minHeight = `${height}px`;
+  card.classList.toggle('is-scrollable', contentHeight > viewportLimit);
 }
 
 // ===== HOME VIEW =====
 function renderHome() {
   const data = loadData();
+  const totalCards = data.decks.reduce((sum, deck) => sum + deck.cards.length, 0);
+  const totalDue = data.decks.reduce((sum, deck) => sum + deck.cards.filter(isDue).length, 0);
+  const activeDecks = data.decks.filter(deck => deck.cards.length > 0).length;
+  const bestStreak = Math.max(0, ...data.decks.map(deck => calcBestStreak(deck.sessions || [])));
+  const futureDates = data.decks.flatMap(deck => deck.cards.map(card => card.dueDate))
+    .filter(date => date && date > todayStr())
+    .sort();
+  const nextReview = futureDates[0] || null;
+  const todayLabel = new Intl.DateTimeFormat(document.documentElement.lang || 'en', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date());
 
-  const deckItems = data.decks.map((deck, i) => {
+  const sortedDecks = data.decks.slice().sort((a, b) => {
+    const dueDiff = b.cards.filter(isDue).length - a.cards.filter(isDue).length;
+    return dueDiff || a.name.localeCompare(b.name);
+  });
+
+  const deckItems = sortedDecks.map(deck => {
     const due = deck.cards.filter(c => isDue(c)).length;
     const total = deck.cards.length;
     const sessions = deck.sessions || [];
     const lastSession = sessions[sessions.length - 1];
     const streakDays = calcStreak(sessions);
-    const streakHtml = streakDays > 1
-      ? `<span style="color:var(--good);font-weight:600">${streakDays}d streak</span> &middot; `
-      : '';
+    const nextDate = nextDueDate(deck);
     const lastHtml = lastSession
-      ? `${streakHtml}Last: ${lastSession.date} &middot; ${lastSession.reviewed} reviewed`
+      ? `<span>${icon('history', 14)} Last reviewed ${formatDateLabel(lastSession.date)}</span>`
+      : '<span>Not studied yet</span>';
+    const streakHtml = streakDays > 0
+      ? `<span>${icon('flame', 14)} ${streakDays} day streak</span>`
       : '';
-    const badge = due > 0
-      ? `<span class="due-badge" title="${due} due">${due}</span>`
-      : `<span class="due-badge due-badge-zero" title="All caught up">&#10003;</span>`;
+    const status = due > 0
+      ? `<span class="deck-due is-due">${due} due</span><span class="deck-status-label">Ready now</span>`
+      : `<span class="deck-due is-clear">${icon('check', 14)} Caught up</span><span class="deck-status-label">${nextDate ? `Next ${formatDateLabel(nextDate)}` : 'No reviews scheduled'}</span>`;
+    const primaryLabel = total === 0 ? 'Add cards' : (due > 0 ? `Study ${due}` : 'Practice');
+    const primaryAction = total === 0 ? 'browse' : 'study';
+    const primaryClass = due > 0 ? 'btn-primary' : (total === 0 ? 'btn-secondary' : 'btn-quiet');
     return `
-      <article class="deck-card" style="--i:${i}">
-        <div class="deck-card-head">
-          <h2 class="deck-name">${esc(deck.name)}</h2>
-          ${badge}
+      <article class="deck-row">
+        <div class="deck-row-icon">${icon('book-open', 20)}</div>
+        <div class="deck-row-main">
+          <h3 class="deck-name" title="${esc(deck.name)}">${esc(deck.name)}</h3>
+          <div class="deck-meta">
+            <span>${total} card${total !== 1 ? 's' : ''}</span>
+            ${lastHtml}
+            ${streakHtml}
+          </div>
         </div>
-        <div class="deck-stats">${total} card${total !== 1 ? 's' : ''}${lastHtml ? ' &middot; ' + lastHtml : ''}</div>
-        <div class="deck-actions">
-          <button class="btn btn-primary btn-sm" data-action="study" data-deck="${deck.id}" ${total === 0 ? 'disabled' : ''}>${due > 0 ? `Study (${due})` : 'Review All'}</button>
-          <button class="btn btn-secondary btn-sm" data-action="browse" data-deck="${deck.id}">Browse</button>
-          <button class="btn btn-danger btn-sm" data-action="delete-deck" data-deck="${deck.id}">Delete</button>
+        <div class="deck-row-status">${status}</div>
+        <div class="deck-row-actions">
+          <button class="btn ${primaryClass} btn-sm" type="button" data-action="${primaryAction}" data-deck="${deck.id}">
+            ${due > 0 ? icon('play', 15) : icon('book-open', 15)}<span>${primaryLabel}</span>
+          </button>
+          <button class="btn btn-quiet btn-sm" type="button" data-action="browse" data-deck="${deck.id}">
+            ${icon('rows-3', 15)}<span>Browse</span>
+          </button>
+          <details class="menu deck-menu">
+            <summary class="btn-icon" data-deck="${deck.id}" aria-label="More actions for ${esc(deck.name)}" title="More actions">${icon('more-horizontal', 18)}</summary>
+            <div class="menu-popover menu-popover-right">
+              <button class="menu-item" type="button" data-action="rename-deck" data-deck="${deck.id}">${icon('pencil', 16)}<span>Rename</span></button>
+              <button class="menu-item is-danger" type="button" data-action="delete-deck" data-deck="${deck.id}">${icon('trash-2', 16)}<span>Delete deck</span></button>
+            </div>
+          </details>
         </div>
       </article>`;
   }).join('');
 
   const body = data.decks.length === 0
-    ? `<div class="empty-state"><p>No decks yet &mdash; plant your first one.</p><button class="btn btn-primary" data-action="new-deck">Create Deck</button></div>`
-    : `<div class="deck-grid">${deckItems}</div>`;
+    ? `<div class="empty-state">
+        <img src="build/icon.png" alt="" class="empty-state-mark">
+        <h2>Build your first deck</h2>
+        <p>Add cards one by one or import an existing collection.</p>
+        <button class="btn btn-primary" type="button" data-action="new-deck">${icon('plus', 17)}<span>Create deck</span></button>
+      </div>`
+    : `<div class="deck-list">${deckItems}</div>`;
 
   return `
-    <div class="page">
-      <div class="home-hero">
-        <div class="hero-text">
-          <p class="hero-eyebrow">Evidence-based learning</p>
-          <h1 class="hero-title">smart<em>L3arn</em></h1>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-smart" data-action="smart-open-setup" title="Evidence-based learning techniques">Smart Study</button>
-          <button class="btn btn-primary" data-action="new-deck">New Deck</button>
-          <label class="btn btn-secondary" style="cursor:pointer">
-            Import JSON
-            <input type="file" accept=".json" data-action="import-deck" style="display:none">
-          </label>
-          <label class="btn btn-secondary" style="cursor:pointer">
-            Import TXT / CSV
-            <input type="file" accept=".txt,.csv,.tsv" data-action="import-txt" style="display:none">
-          </label>
-          ${data.decks.length ? '<button class="btn btn-secondary" data-action="export-all">Export All</button>' : ''}
-          ${themeBtn()}
-        </div>
-      </div>
-      ${body}
+    <div class="app-shell">
+      ${renderAppBar('library')}
+      <main class="workspace">
+        <header class="page-heading">
+          <div>
+            <p class="page-kicker">${esc(todayLabel)}</p>
+            <h1>Library</h1>
+            <p class="page-subtitle">${totalDue > 0 ? `${totalDue} card${totalDue !== 1 ? 's' : ''} ready for review.` : 'Your scheduled reviews are complete.'}</p>
+          </div>
+          <div class="page-heading-actions">
+            <button class="btn btn-primary" type="button" data-action="new-deck">${icon('plus', 17)}<span>New deck</span></button>
+          </div>
+        </header>
+
+        <section class="summary-strip" aria-label="Collection summary">
+          <div class="summary-item">
+            <span class="summary-icon">${icon('calendar-days', 18)}</span>
+            <div><strong>${totalDue}</strong><span>Due now</span></div>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">${icon('layers-3', 18)}</span>
+            <div><strong>${totalCards}</strong><span>Total cards</span></div>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">${icon('book-open', 18)}</span>
+            <div><strong>${activeDecks}</strong><span>Active decks</span></div>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">${icon(bestStreak > 0 ? 'flame' : 'clock-3', 18)}</span>
+            <div><strong>${bestStreak > 0 ? `${bestStreak}d` : (nextReview ? formatDateLabel(nextReview) : 'Clear')}</strong><span>${bestStreak > 0 ? 'Best streak' : 'Next review'}</span></div>
+          </div>
+        </section>
+
+        <section class="library-section" aria-labelledby="deck-list-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="deck-list-title">Your decks</h2>
+              <span class="section-count">${data.decks.length}</span>
+            </div>
+            <details class="menu">
+              <summary class="btn btn-secondary btn-sm">${icon('folder-open', 15)}<span>Import / export</span>${icon('chevron-down', 14)}</summary>
+              <div class="menu-popover menu-popover-right menu-popover-wide">
+                <button class="menu-item" type="button" data-action="trigger-file" data-target="home-import-json">${icon('file-json', 16)}<span>Import JSON</span></button>
+                <button class="menu-item" type="button" data-action="trigger-file" data-target="home-import-text">${icon('file-text', 16)}<span>Import TXT / CSV</span></button>
+                ${data.decks.length ? `<div class="menu-divider"></div><button class="menu-item" type="button" data-action="export-all">${icon('archive', 16)}<span>Export full backup</span></button>` : ''}
+              </div>
+            </details>
+            <input id="home-import-json" class="file-input" type="file" accept=".json" data-action="import-deck">
+            <input id="home-import-text" class="file-input" type="file" accept=".txt,.csv,.tsv" data-action="import-txt">
+          </div>
+          ${body}
+        </section>
+      </main>
     </div>`;
 }
 
 function calcStreak(sessions) {
   if (!sessions || sessions.length === 0) return 0;
-  const today = todayStr();
+  const sessionDates = new Set(sessions.map(session => session.date).filter(Boolean));
   let streak = 0;
-  let expected = today;
-  for (let i = sessions.length - 1; i >= 0; i--) {
-    if (sessions[i].date === expected) {
-      streak++;
-      const d = new Date(expected);
-      d.setDate(d.getDate() - 1);
-      expected = d.toISOString().split('T')[0];
-    } else {
-      break;
-    }
+  let expected = todayStr();
+  while (sessionDates.has(expected)) {
+    streak++;
+    expected = addDaysToIsoDate(expected, -1);
   }
   return streak;
+}
+
+function calcBestStreak(sessions) {
+  const dates = [...new Set((sessions || []).map(session => session.date).filter(Boolean))].sort();
+  if (!dates.length) return 0;
+  let best = 1;
+  let current = 1;
+  for (let index = 1; index < dates.length; index++) {
+    if (daysBetweenIsoDates(dates[index - 1], dates[index]) === 1) {
+      current++;
+      best = Math.max(best, current);
+    } else {
+      current = 1;
+    }
+  }
+  return best;
 }
 
 // ===== BROWSE VIEW =====
@@ -382,8 +577,9 @@ function renderBrowse() {
 
   function thSort(label, col) {
     const active = state.sortCol === col;
-    const arrow = active ? (state.sortDir === 'asc' ? '&#9650;' : '&#9660;') : '&#9651;';
-    return `<th data-sort="${col}" class="${active ? 'sorted' : ''}">${label} <span class="sort-arrow">${arrow}</span></th>`;
+    const ariaSort = active ? (state.sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+    const arrow = active ? icon(state.sortDir === 'asc' ? 'chevron-up' : 'chevron-down', 13) : '';
+    return `<th data-sort="${col}" class="${active ? 'sorted' : ''}" tabindex="0" aria-sort="${ariaSort}" aria-label="Sort by ${label}">${label}<span class="sort-arrow">${arrow}</span></th>`;
   }
 
   const cardStats = deck.cardStats || {};
@@ -391,65 +587,110 @@ function renderBrowse() {
   const rows = cards.map(c => {
     const due = c.dueDate || 'New';
     const overdue = c.dueDate && c.dueDate < today;
-    const isNew = !c.dueDate || c.repetitions === 0;
+    const isNew = !c.lastReview && !c.stability && !c.repetitions;
     const dueLabel = isNew
       ? `<span class="tag-new">New</span>`
       : `<span class="${overdue ? 'overdue' : ''}">${c.dueDate}</span>`;
     const cs = cardStats[c.id];
     const diffLabel = c.difficulty
       ? `<span class="diff-pill diff-${diffLevel(c.difficulty)}" title="FSRS difficulty ${c.difficulty.toFixed(1)}">${c.difficulty.toFixed(1)}</span>`
-      : '<span style="color:var(--text-muted)">-</span>';
+      : '<span class="muted">-</span>';
     const hardRate = cs && cs.reviews > 0
       ? Math.round((cs.again / cs.reviews) * 100) + '%'
       : '-';
     return `
       <tr>
-        <td class="td-front">
-          <span class="cell-edit" contenteditable="true" data-field="front" data-card="${c.id}" title="${esc(c.front)}">${esc(c.front)}</span>
+        <td class="td-front" data-label="Front">
+          <span class="cell-edit" contenteditable="true" role="textbox" aria-label="Edit front of card" data-field="front" data-card="${c.id}" title="${esc(c.front)}">${esc(c.front)}</span>
         </td>
-        <td class="td-back">
-          <span class="cell-edit" contenteditable="true" data-field="back" data-card="${c.id}" title="${esc(c.back)}">${esc(c.back)}</span>
+        <td class="td-back" data-label="Back">
+          <span class="cell-edit" contenteditable="true" role="textbox" aria-label="Edit back of card" data-field="back" data-card="${c.id}" title="${esc(c.back)}">${esc(c.back)}</span>
         </td>
-        <td class="td-meta">${dueLabel}</td>
-        <td class="td-meta">${c.interval > 0 ? c.interval + 'd' : '-'}</td>
-        <td class="td-meta">${diffLabel}</td>
-        <td class="td-meta">${hardRate}</td>
-        <td class="td-actions">
-          <button class="btn btn-secondary btn-sm" data-action="edit-card" data-card="${c.id}">Edit</button>
-          <button class="btn btn-danger btn-sm" data-action="delete-card" data-card="${c.id}">Del</button>
+        <td class="td-meta" data-label="Due">${dueLabel}</td>
+        <td class="td-meta" data-label="Interval">${c.interval > 0 ? c.interval + 'd' : '-'}</td>
+        <td class="td-meta" data-label="Difficulty">${diffLabel}</td>
+        <td class="td-meta" data-label="Fail rate">${hardRate}</td>
+        <td class="td-actions" data-label="Actions">
+          <details class="menu card-actions-menu">
+            <summary class="btn-icon" data-card="${c.id}" aria-label="Actions for ${esc(c.front)}" title="Card actions">${icon('more-horizontal', 17)}</summary>
+            <div class="menu-popover menu-popover-right card-actions-popover">
+              <button class="menu-item" type="button" data-action="edit-card" data-card="${c.id}" aria-label="Edit ${esc(c.front)}">${icon('pencil', 16)}<span>Edit card</span></button>
+              <button class="menu-item is-danger" type="button" data-action="delete-card" data-card="${c.id}" aria-label="Delete ${esc(c.front)}">${icon('trash-2', 16)}<span>Delete card</span></button>
+            </div>
+          </details>
         </td>
       </tr>`;
   }).join('');
 
   const emptyRow = cards.length === 0
-    ? `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">${filter ? 'No cards match your search.' : 'No cards yet. Add your first card!'}</td></tr>`
+    ? `<tr class="table-empty-row"><td colspan="7">${filter ? 'No cards match your search.' : 'No cards yet. Add your first card.'}</td></tr>`
     : '';
 
+  const dueCount = deck.cards.filter(isDue).length;
+  const newCount = deck.cards.filter(card => !card.lastReview && !card.stability && !card.repetitions).length;
+  const sortFields = [
+    ['dueDate', 'Due date'],
+    ['front', 'Front'],
+    ['back', 'Back'],
+    ['interval', 'Interval'],
+    ['difficulty', 'Difficulty']
+  ];
+  const sortOptions = sortFields.flatMap(([value, label]) => [
+    `<option value="${value}|asc" ${state.sortCol === value && state.sortDir === 'asc' ? 'selected' : ''}>${label}: ascending</option>`,
+    `<option value="${value}|desc" ${state.sortCol === value && state.sortDir === 'desc' ? 'selected' : ''}>${label}: descending</option>`
+  ]).join('');
+
   return `
-    <div class="page">
-      <div class="header">
-        <div class="header-back">
-          <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-          <h1 title="${esc(deck.name)}">${esc(deck.name)}</h1>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-primary btn-sm" data-action="add-card">+ Add Card</button>
-          <button class="btn btn-secondary btn-sm" data-action="export-json">Export JSON</button>
-          <button class="btn btn-secondary btn-sm" data-action="export-csv">Export CSV</button>
-          <button class="btn btn-secondary btn-sm" data-action="export-txt">Export TXT</button>
-          <label class="btn btn-secondary btn-sm" style="cursor:pointer">
-            Import TXT / CSV
-            <input type="file" accept=".txt,.csv,.tsv" data-action="import-csv" style="display:none">
-          </label>
-          ${themeBtn()}
-        </div>
-      </div>
+    <div class="app-shell">
+      ${renderAppBar('library')}
+      <main class="workspace">
+        <button class="back-link" type="button" data-action="go-home">${icon('arrow-left', 16)}<span>Library</span></button>
+        <header class="page-heading browse-heading">
+          <div>
+            <p class="page-kicker">Deck</p>
+            <h1 title="${esc(deck.name)}">${esc(deck.name)}</h1>
+            <p class="page-subtitle">${deck.cards.length} card${deck.cards.length !== 1 ? 's' : ''} in this deck.</p>
+          </div>
+          <div class="page-heading-actions">
+            ${deck.cards.length ? `<button class="btn btn-secondary" type="button" data-action="study" data-deck="${deck.id}">${icon('play', 17)}<span>${dueCount > 0 ? `Study ${dueCount}` : 'Practice'}</span></button>` : ''}
+            <button class="btn btn-primary" type="button" data-action="add-card">${icon('plus', 17)}<span>Add card</span></button>
+          </div>
+        </header>
+
+        <section class="deck-summary" aria-label="Deck summary">
+          <div><strong>${deck.cards.length}</strong><span>Total</span></div>
+          <div><strong>${dueCount}</strong><span>Due now</span></div>
+          <div><strong>${newCount}</strong><span>New</span></div>
+          <div><strong>${calcStreak(deck.sessions || [])}d</strong><span>Streak</span></div>
+        </section>
+
       <div class="browse-toolbar">
-        <input class="search-input" type="text" placeholder="Search cards..." value="${esc(state.filter)}" data-action="filter-cards">
-        <span style="font-size:12px;color:var(--text-muted)">${cards.length} of ${deck.cards.length} cards</span>
+        <label class="search-field">
+          ${icon('search', 17)}
+          <span class="visually-hidden">Search cards</span>
+          <input class="search-input" type="search" placeholder="Search cards" value="${esc(state.filter)}" data-action="filter-cards" autocomplete="off">
+        </label>
+        <span class="browse-count" aria-live="polite">${cards.length} of ${deck.cards.length}</span>
+        <div class="mobile-sort">
+          <label class="visually-hidden" for="mobile-sort-select">Sort cards</label>
+          <select id="mobile-sort-select" class="select-input" data-action="sort-cards">${sortOptions}</select>
+        </div>
+        <details class="menu">
+          <summary class="btn btn-secondary btn-sm" aria-label="Deck actions" title="Deck actions">${icon('more-horizontal', 16)}<span class="deck-actions-label">Deck actions</span>${icon('chevron-down', 14)}</summary>
+          <div class="menu-popover menu-popover-right menu-popover-wide">
+            <button class="menu-item" type="button" data-action="trigger-file" data-target="deck-import-text">${icon('upload', 16)}<span>Import TXT / CSV</span></button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" type="button" data-action="export-json">${icon('file-json', 16)}<span>Export JSON</span></button>
+            <button class="menu-item" type="button" data-action="export-csv">${icon('sheet', 16)}<span>Export CSV</span></button>
+            <button class="menu-item" type="button" data-action="export-txt">${icon('file-text', 16)}<span>Export TXT</span></button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" type="button" data-action="rename-deck" data-deck="${deck.id}">${icon('pencil', 16)}<span>Rename deck</span></button>
+          </div>
+        </details>
+        <input id="deck-import-text" class="file-input" type="file" accept=".txt,.csv,.tsv" data-action="import-csv">
       </div>
       <div class="table-wrapper">
-        <table>
+        <table aria-label="Cards in ${esc(deck.name)}">
           <thead>
             <tr>
               ${thSort('Front', 'front')}
@@ -464,6 +705,7 @@ function renderBrowse() {
           <tbody>${rows}${emptyRow}</tbody>
         </table>
       </div>
+      </main>
     </div>`;
 }
 
@@ -474,6 +716,44 @@ function diffLevel(d) {
 }
 
 // ===== STUDY VIEW =====
+function renderSessionStats(stats, extraClass = '') {
+  const items = [
+    ['again', 'Again'],
+    ['hard', 'Hard'],
+    ['good', 'Good'],
+    ['easy', 'Easy']
+  ];
+  return `
+    <div class="session-stats ${extraClass}" aria-label="Session ratings">
+      <span class="session-stats-label">Session ratings</span>
+      ${items.map(([key, label]) => `
+        <div class="sstat sstat-${key}">
+          <strong>${stats[key] || 0}</strong>
+          <span>${label}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderStudyHeader(deckName, progress, label, timerHtml = '') {
+  return `
+    <header class="study-header">
+      <div class="study-header-top">
+        <button class="btn btn-quiet btn-sm" type="button" data-action="go-home">${icon('x', 16)}<span>Exit</span></button>
+        <div class="study-context">
+          <span class="study-context-label">Study session</span>
+          <strong title="${esc(deckName)}">${esc(deckName)}</strong>
+        </div>
+        ${themeBtn(true)}
+      </div>
+      <div class="study-progress-row">
+        <div class="progress-bar-wrap" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress)}">
+          <div class="progress-bar-fill" style="width:${Math.max(0, Math.min(100, progress))}%"></div>
+        </div>
+        <span class="progress-label">${label}${timerHtml}</span>
+      </div>
+    </header>`;
+}
+
 function renderStudy() {
   const data = loadData();
   const deck = data.decks.find(d => d.id === state.deckId);
@@ -490,40 +770,28 @@ function renderStudy() {
 
   if (mainDone || learningDone) {
     const total = ss.reviewed;
-    const statBar = total > 0 ? `
-      <div class="session-stats-done">
-        ${ss.again > 0 ? `<span class="sstat sstat-again">${ss.again} Again</span>` : ''}
-        ${ss.hard > 0  ? `<span class="sstat sstat-hard">${ss.hard} Hard</span>` : ''}
-        ${ss.good > 0  ? `<span class="sstat sstat-good">${ss.good} Good</span>` : ''}
-        ${ss.easy > 0  ? `<span class="sstat sstat-easy">${ss.easy} Easy</span>` : ''}
-      </div>` : '';
-
     const hasDue = deck.cards.some(isDue);
-    const nextDueDate = !hasDue
+    const upcomingDate = !hasDue
       ? deck.cards.filter(c => c.dueDate).sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]?.dueDate
       : null;
     const restartBtn = deck.cards.length > 0
-      ? `<button class="btn btn-primary" data-action="restart-study">${hasDue ? 'Study Again' : 'Review All'}</button>`
-      + (nextDueDate ? ` <span style="font-size:13px;color:var(--text-muted)">Next due: ${nextDueDate}</span>` : '')
+      ? `<button class="btn btn-primary" type="button" data-action="restart-study">${icon('rotate-ccw', 17)}<span>${hasDue ? 'Study again' : 'Practice again'}</span></button>`
       : '';
 
     return `
-      <div class="study-page">
-        <div class="study-header">
-          <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%"></div></div>
-          <span class="progress-label">${total} reviewed</span>
-          ${themeBtn()}
-        </div>
-        <div class="study-done">
-          <h2>Session complete!</h2>
-          <p>You reviewed ${total} card${total !== 1 ? 's' : ''}.</p>
-          ${statBar}
-          <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center">
+      <div class="study-shell">
+        ${renderStudyHeader(deck.name, 100, `${total} reviewed`)}
+        <main class="study-done" tabindex="-1">
+          <div class="completion-mark">${icon('check', 24)}</div>
+          <p class="completion-kicker">Session complete</p>
+          <h1 class="completion-title" tabindex="-1">${total} card${total !== 1 ? 's' : ''} reviewed</h1>
+          ${upcomingDate ? `<p class="completion-note">${icon('calendar-days', 16)} Next review ${formatDateLabel(upcomingDate, { weekday: 'short', month: 'short', day: 'numeric' })}</p>` : ''}
+          ${renderSessionStats(ss, 'session-stats-done')}
+          <div class="study-done-actions">
             ${restartBtn}
-            <button class="btn btn-secondary" data-action="go-home">Back to Home</button>
+            <button class="btn btn-secondary" type="button" data-action="go-home">${icon('library', 17)}<span>Back to library</span></button>
           </div>
-        </div>
+        </main>
       </div>`;
   }
 
@@ -541,67 +809,44 @@ function renderStudy() {
     ? `${idx} / ${totalMain}${learningCount > 0 ? ` <span class="learning-badge">+${learningCount}</span>` : ''}`
     : `<span class="learning-badge">Re-learning ${idx + 1} / ${state.learningQueue.length}</span>`;
 
-  // Session stats bar (only after at least 1 card)
-  const statsBar = ss.reviewed > 0 ? `
-    <div class="session-stats">
-      ${ss.again > 0 ? `<span class="sstat sstat-again">&#8635; ${ss.again}</span>` : ''}
-      ${ss.hard > 0  ? `<span class="sstat sstat-hard">&#9650; ${ss.hard}</span>` : ''}
-      ${ss.good > 0  ? `<span class="sstat sstat-good">&#10003; ${ss.good}</span>` : ''}
-      ${ss.easy > 0  ? `<span class="sstat sstat-easy">&#9733; ${ss.easy}</span>` : ''}
-    </div>` : '<div class="session-stats"></div>';
-
   // Predicted intervals for rating buttons
   const intervals = fsrsPreviewIntervals(card);
 
   const ratingSection = state.flipped ? `
-    <div class="rating-buttons">
-      <div class="rating-btn-wrap">
-        <button class="btn btn-again btn-lg" data-action="rate" data-grade="0">Again</button>
-        <span class="rating-label">${intervals[0]}</span>
-      </div>
-      <div class="rating-btn-wrap">
-        <button class="btn btn-hard btn-lg" data-action="rate" data-grade="1">Hard</button>
-        <span class="rating-label">${intervals[1]}</span>
-      </div>
-      <div class="rating-btn-wrap">
-        <button class="btn btn-good btn-lg" data-action="rate" data-grade="2">Good</button>
-        <span class="rating-label">${intervals[2]}</span>
-      </div>
-      <div class="rating-btn-wrap">
-        <button class="btn btn-easy btn-lg" data-action="rate" data-grade="3">Easy</button>
-        <span class="rating-label">${intervals[3]}</span>
-      </div>
+    <div class="rating-buttons" role="group" aria-label="Rate this answer">
+      ${['Again', 'Hard', 'Good', 'Easy'].map((label, grade) => `
+        <button class="rating-button rating-${label.toLowerCase()}" type="button" data-action="rate" data-grade="${grade}">
+          <span>${label}</span>
+          <strong>${intervals[grade]}</strong>
+        </button>`).join('')}
     </div>` : `
     <div class="show-answer-wrap">
-      <button class="btn btn-primary btn-lg" data-action="flip">Show Answer</button>
+      <button class="btn btn-primary btn-lg" type="button" data-action="flip">${icon('eye', 18)}<span>Reveal answer</span></button>
     </div>`;
 
   return `
-    <div class="study-page">
-      <div class="study-header">
-        <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width:${pct}%"></div>
-        </div>
-        <span class="progress-label">${progressLabel}</span>
-        ${themeBtn()}
-      </div>
-      <div class="flashcard-area">
+    <div class="study-shell">
+      ${renderStudyHeader(deck.name, pct, progressLabel)}
+      <main class="study-main">
+        <div class="flashcard-area">
         <div class="flashcard-scene">
-          <div class="flashcard${state.flipped ? ' flipped' : ''}" data-action="flip">
-            <div class="flashcard-face flashcard-front">
-              <div class="card-side-label">Front</div>
-              <div class="card-content">${esc(card.front)}</div>
-            </div>
-            <div class="flashcard-face flashcard-back">
-              <div class="card-side-label">Back</div>
-              <div class="card-content">${esc(card.back)}</div>
-            </div>
+          <div class="flashcard${state.flipped ? ' flipped' : ''}">
+            <section class="flashcard-face flashcard-front" tabindex="${state.flipped ? '-1' : '0'}" aria-hidden="${state.flipped}" aria-labelledby="study-front-label" aria-describedby="study-front-content" ${state.flipped ? 'inert' : ''}>
+              <span class="card-side-label" id="study-front-label">Question</span>
+              <span class="card-content" id="study-front-content">${esc(card.front)}</span>
+            </section>
+            <section class="flashcard-face flashcard-back" tabindex="${state.flipped ? '0' : '-1'}" aria-hidden="${!state.flipped}" aria-labelledby="study-back-label" aria-describedby="study-back-content" ${state.flipped ? '' : 'inert'}>
+              <span class="card-side-row">
+                <span class="card-side-label" id="study-back-label">Answer</span>
+                <button class="btn-icon card-return-button" type="button" data-action="flip" aria-label="Show question" title="Show question">${icon('rotate-ccw', 16)}</button>
+              </span>
+              <span class="card-content" id="study-back-content">${esc(card.back)}</span>
+            </section>
           </div>
-          ${!state.flipped ? `<p class="flip-hint">Click card or press Space to reveal</p>` : ''}
         </div>
       </div>
-      ${statsBar}
+      ${renderSessionStats(ss)}
+      </main>
       <div class="study-actions">${ratingSection}</div>
     </div>`;
 }
@@ -612,28 +857,70 @@ function openModal(cardId, deckId) {
   const deck = data.decks.find(d => d.id === deckId);
   const card = cardId ? deck?.cards.find(c => c.id === cardId) : null;
 
+  state.lastFocus = document.activeElement;
+  state.editCardId = cardId || null;
   document.getElementById('modal-title').textContent = card ? 'Edit Card' : 'Add Card';
+  document.getElementById('modal-save').textContent = card ? 'Save changes' : 'Add card';
   document.getElementById('modal-front').value = card ? card.front : '';
   document.getElementById('modal-back').value = card ? card.back : '';
-  document.getElementById('modal-overlay').classList.remove('hidden');
-  document.getElementById('modal-front').focus();
-  state.editCardId = cardId || null;
+  const error = document.getElementById('modal-error');
+  error.hidden = true;
+  const frontInput = document.getElementById('modal-front');
+  const backInput = document.getElementById('modal-back');
+  [frontInput, backInput].forEach(input => {
+    input.removeAttribute('aria-invalid');
+    input.removeAttribute('aria-describedby');
+  });
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  setTimeout(() => document.getElementById('modal-front').focus(), 20);
 }
 
 function closeModal() {
-  document.getElementById('modal-overlay').classList.add('hidden');
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
   state.editCardId = null;
+  if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus();
+  state.lastFocus = null;
 }
 
 function saveModal() {
   const front = document.getElementById('modal-front').value.trim();
   const back = document.getElementById('modal-back').value.trim();
-  if (!front || !back) { alert('Both front and back are required.'); return; }
+  if (!front || !back) {
+    const error = document.getElementById('modal-error');
+    error.textContent = 'Add text to both sides of the card.';
+    error.hidden = false;
+    const frontInput = document.getElementById('modal-front');
+    const backInput = document.getElementById('modal-back');
+    if (!front) {
+      frontInput.setAttribute('aria-invalid', 'true');
+      frontInput.setAttribute('aria-describedby', 'modal-error');
+    } else {
+      frontInput.removeAttribute('aria-invalid');
+      frontInput.removeAttribute('aria-describedby');
+    }
+    if (!back) {
+      backInput.setAttribute('aria-invalid', 'true');
+      backInput.setAttribute('aria-describedby', 'modal-error');
+    } else {
+      backInput.removeAttribute('aria-invalid');
+      backInput.removeAttribute('aria-describedby');
+    }
+    (!front ? document.getElementById('modal-front') : document.getElementById('modal-back')).focus();
+    return;
+  }
 
   const data = loadData();
   const deck = data.decks.find(d => d.id === state.deckId);
   if (!deck) return;
 
+  const editedCardId = state.editCardId;
+  const wasEditing = Boolean(editedCardId);
   if (state.editCardId) {
     const card = deck.cards.find(c => c.id === state.editCardId);
     if (card) { card.front = front; card.back = back; }
@@ -651,7 +938,11 @@ function saveModal() {
 
   saveData(data);
   closeModal();
-  render();
+  render(wasEditing
+    ? `.card-actions-menu summary[data-card="${editedCardId}"]`
+    : '[data-action="add-card"]',
+  '[data-action="filter-cards"]');
+  showToast(wasEditing ? 'Card updated.' : 'Card added.');
 }
 
 // ===== IMPORT / EXPORT =====
@@ -739,8 +1030,8 @@ function importDeckJson(file) {
         if (!restored.length) throw new Error('Backup contains no decks.');
         restored.forEach(d => data.decks.push({ ...d, id: genId(), name: d.name || 'Imported Deck' }));
         saveData(data);
-        alert(`Imported ${restored.length} deck${restored.length !== 1 ? 's' : ''} from backup.`);
         render();
+        showToast(`Imported ${restored.length} deck${restored.length !== 1 ? 's' : ''} from backup.`);
         return;
       }
 
@@ -772,8 +1063,8 @@ function importDeckJson(file) {
 
       data.decks.push({ id: genId(), name: deckName, cards });
       saveData(data);
-      alert(`Created deck "${deckName}" with ${cards.length} card${cards.length !== 1 ? 's' : ''}.`);
       render();
+      showToast(`Created "${deckName}" with ${cards.length} card${cards.length !== 1 ? 's' : ''}.`);
     } catch (err) {
       alert('Failed to import: ' + err.message);
     }
@@ -826,8 +1117,8 @@ function importCsv(file, deckId) {
         deck.cards.push({ id: genId(), front: c.front, back: c.back, interval: 0, repetitions: 0, easeFactor: 2.5, dueDate: todayStr() });
       }
       saveData(data);
-      alert(`Imported ${parsed.length} card${parsed.length !== 1 ? 's' : ''}.`);
       render();
+      showToast(`Imported ${parsed.length} card${parsed.length !== 1 ? 's' : ''}.`);
     } catch (err) {
       alert('Failed to import: ' + err.message);
     }
@@ -849,8 +1140,8 @@ function importTxtAsDeck(file) {
         cards: parsed.map(c => ({ id: genId(), front: c.front, back: c.back, interval: 0, repetitions: 0, easeFactor: 2.5, dueDate: todayStr() }))
       });
       saveData(data);
-      alert(`Created deck "${deckName}" with ${parsed.length} card${parsed.length !== 1 ? 's' : ''}.`);
       render();
+      showToast(`Created "${deckName}" with ${parsed.length} card${parsed.length !== 1 ? 's' : ''}.`);
     } catch (err) {
       alert('Failed to import: ' + err.message);
     }
@@ -889,16 +1180,35 @@ function bindEvents() {
   });
 
   app.querySelectorAll('th[data-sort]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.sort;
-      if (state.sortCol === col) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-      else { state.sortCol = col; state.sortDir = 'asc'; }
-      render();
+    const activate = () => setSortColumn(th.dataset.sort);
+    th.addEventListener('click', activate);
+    th.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activate();
+      }
     });
   });
 
+  app.querySelectorAll('.flashcard-face').forEach(face => {
+    face.addEventListener('keydown', scrollFlashcardWithKeyboard);
+  });
+
+  app.querySelectorAll('.card-actions-menu').forEach(menu => {
+    menu.addEventListener('toggle', () => {
+      if (!menu.open) {
+        resetCardActionMenu(menu);
+        return;
+      }
+      closeCardActionMenus(menu);
+      positionCardActionMenu(menu);
+    });
+  });
+
+  document.removeEventListener('keydown', studyKeydown);
+  document.removeEventListener('keydown', smartKeydown);
   if (state.view === 'study') {
-    document.addEventListener('keydown', studyKeydown, { once: true });
+    document.addEventListener('keydown', studyKeydown);
   }
 
   if (state.view === 'smart-study') {
@@ -911,22 +1221,68 @@ function bindEvents() {
         }
       });
     }
-    document.addEventListener('keydown', smartKeydown, { once: true });
+    document.addEventListener('keydown', smartKeydown);
   }
+}
+
+function resetCardActionMenu(menu) {
+  const popover = menu.querySelector('.card-actions-popover');
+  if (!popover) return;
+  popover.classList.remove('is-viewport-positioned');
+  popover.style.removeProperty('top');
+  popover.style.removeProperty('left');
+  popover.style.removeProperty('visibility');
+}
+
+function closeCardActionMenus(except = null) {
+  document.querySelectorAll('.card-actions-menu[open]').forEach(menu => {
+    if (menu === except) return;
+    menu.open = false;
+    resetCardActionMenu(menu);
+  });
+}
+
+function positionCardActionMenu(menu) {
+  if (!menu.open) return;
+  const trigger = menu.querySelector('summary');
+  const popover = menu.querySelector('.card-actions-popover');
+  if (!trigger || !popover) return;
+
+  popover.classList.add('is-viewport-positioned');
+  popover.style.visibility = 'hidden';
+  const triggerRect = trigger.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const viewportWidth = document.documentElement.clientWidth;
+  const viewportHeight = document.documentElement.clientHeight;
+  const edge = 8;
+  const gap = 6;
+  const left = Math.min(
+    viewportWidth - popoverRect.width - edge,
+    Math.max(edge, triggerRect.right - popoverRect.width)
+  );
+  const spaceBelow = viewportHeight - triggerRect.bottom - edge;
+  const spaceAbove = triggerRect.top - edge;
+  const openAbove = spaceBelow < popoverRect.height + gap && spaceAbove > spaceBelow;
+  const preferredTop = openAbove
+    ? triggerRect.top - popoverRect.height - gap
+    : triggerRect.bottom + gap;
+  const top = Math.min(
+    viewportHeight - popoverRect.height - edge,
+    Math.max(edge, preferredTop)
+  );
+
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.top = `${Math.round(top)}px`;
+  popover.style.visibility = 'visible';
 }
 
 function smartKeydown(e) {
   const s = state.smart;
   if (!s || state.view !== 'smart-study') return;
-  if (s.timeUp) {
-    document.addEventListener('keydown', smartKeydown, { once: true });
-    return;
-  }
+  if (s.timeUp) return;
   // Reviewing phase: 1-4 to rate
   if (s.phase === 'reviewing') {
     if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) {
-      // Allow typing in elaboration; rebind for next event
-      document.addEventListener('keydown', smartKeydown, { once: true });
       return;
     }
     if (e.key === '1') { e.preventDefault(); smartRateCard(0); return; }
@@ -934,7 +1290,12 @@ function smartKeydown(e) {
     if (e.key === '3') { e.preventDefault(); smartRateCard(2); return; }
     if (e.key === '4') { e.preventDefault(); smartRateCard(3); return; }
   }
-  document.addEventListener('keydown', smartKeydown, { once: true });
+}
+
+function setSortColumn(col) {
+  if (state.sortCol === col) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+  else { state.sortCol = col; state.sortDir = 'asc'; }
+  render();
 }
 
 function handleClick(e) {
@@ -947,6 +1308,8 @@ function handleClick(e) {
   if (action === 'toggle-dark') toggleDark();
   else if (action === 'go-home') nav('home');
   else if (action === 'new-deck') createDeck();
+  else if (action === 'rename-deck') renameDeck(deckId);
+  else if (action === 'trigger-file') document.getElementById(btn.dataset.target)?.click();
   else if (action === 'study') startStudy(deckId);
   else if (action === 'browse') nav('browse', deckId);
   else if (action === 'delete-deck') deleteDeck(deckId);
@@ -957,7 +1320,7 @@ function handleClick(e) {
   else if (action === 'export-csv') exportCsv(state.deckId);
   else if (action === 'export-txt') exportTxt(state.deckId);
   else if (action === 'export-all') exportAll();
-  else if (action === 'flip') { state.flipped = !state.flipped; render(); }
+  else if (action === 'flip') flipStudyCard();
   else if (action === 'rate') rateCard(+btn.dataset.grade);
   else if (action === 'restart-study') startStudy(state.deckId);
   else if (action === 'smart-open-setup') nav('smart-setup');
@@ -980,6 +1343,12 @@ function handleChange(e) {
   if (action === 'import-deck' && el.files[0]) importDeckJson(el.files[0]);
   else if (action === 'import-txt' && el.files[0]) importTxtAsDeck(el.files[0]);
   else if (action === 'import-csv' && el.files[0]) importCsv(el.files[0], state.deckId);
+  else if (action === 'sort-cards') {
+    const [column, direction] = el.value.split('|');
+    state.sortCol = column;
+    state.sortDir = direction === 'desc' ? 'desc' : 'asc';
+    render();
+  }
   else if (action === 'smart-toggle-deck') {
     const id = el.dataset.deck;
     if (el.checked) { if (!state.smartConfig.deckIds.includes(id)) state.smartConfig.deckIds.push(id); }
@@ -996,7 +1365,13 @@ function handleChange(e) {
 function handleInput(e) {
   if (e.target.dataset.action === 'filter-cards') {
     state.filter = e.target.value;
+    const cursor = e.target.selectionStart;
     render();
+    const nextInput = document.querySelector('[data-action="filter-cards"]');
+    if (nextInput) {
+      nextInput.focus();
+      if (cursor !== null) nextInput.setSelectionRange(cursor, cursor);
+    }
   } else if (e.target.id === 'smart-answer-input' && state.smart) {
     state.smart.typedAnswer = e.target.value;
   } else if (e.target.id === 'smart-why-input' && state.smart) {
@@ -1005,39 +1380,114 @@ function handleInput(e) {
 }
 
 function studyKeydown(e) {
-  if (e.key === ' ' || e.key === 'Enter') {
+  if (state.view !== 'study') return;
+  if (e.target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+  if (!state.flipped && (e.key === ' ' || e.key === 'Enter')) {
     e.preventDefault();
-    if (!state.flipped) { state.flipped = true; render(); }
+    flipStudyCard();
   } else if (state.flipped) {
     if (e.key === '1') rateCard(0);
     else if (e.key === '2') rateCard(1);
     else if (e.key === '3') rateCard(2);
     else if (e.key === '4') rateCard(3);
-    else document.addEventListener('keydown', studyKeydown, { once: true });
-  } else {
-    document.addEventListener('keydown', studyKeydown, { once: true });
   }
 }
 
+function scrollFlashcardWithKeyboard(e) {
+  const face = e.currentTarget;
+  if (face.scrollHeight <= face.clientHeight) return;
+  const line = 44;
+  const page = Math.max(line, face.clientHeight - 48);
+  let next = null;
+  if (e.key === 'ArrowDown') next = face.scrollTop + line;
+  else if (e.key === 'ArrowUp') next = face.scrollTop - line;
+  else if (e.key === 'PageDown') next = face.scrollTop + page;
+  else if (e.key === 'PageUp') next = face.scrollTop - page;
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = face.scrollHeight;
+  if (next === null) return;
+  e.preventDefault();
+  face.scrollTop = next;
+}
+
 // ===== ACTIONS =====
+function flipStudyCard() {
+  state.flipped = !state.flipped;
+  render(state.flipped ? '.flashcard-back' : '.flashcard-front');
+  announceStatus(state.flipped
+    ? 'Answer revealed. Choose Again, Hard, Good, or Easy.'
+    : 'Question shown.');
+}
+
 function createDeck() {
-  document.getElementById('deck-modal-name').value = '';
-  document.getElementById('deck-modal-overlay').classList.remove('hidden');
-  setTimeout(() => document.getElementById('deck-modal-name').focus(), 50);
+  openDeckModal(null);
+}
+
+function renameDeck(deckId) {
+  openDeckModal(deckId);
+}
+
+function openDeckModal(deckId) {
+  const deck = deckId ? loadData().decks.find(item => item.id === deckId) : null;
+  state.lastFocus = document.activeElement;
+  state.editDeckId = deck?.id || null;
+  document.getElementById('deck-modal-title').textContent = deck ? 'Rename deck' : 'New deck';
+  document.getElementById('deck-modal-save').textContent = deck ? 'Save changes' : 'Create deck';
+  document.getElementById('deck-modal-name').value = deck?.name || '';
+  document.getElementById('deck-modal-error').hidden = true;
+  document.getElementById('deck-modal-name').removeAttribute('aria-invalid');
+  document.getElementById('deck-modal-name').removeAttribute('aria-describedby');
+  const overlay = document.getElementById('deck-modal-overlay');
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  setTimeout(() => {
+    const input = document.getElementById('deck-modal-name');
+    input.focus();
+    input.select();
+  }, 20);
 }
 
 function saveDeckModal() {
   const name = document.getElementById('deck-modal-name').value.trim();
-  if (!name) return;
-  closeDeckModal();
+  if (!name) {
+    const error = document.getElementById('deck-modal-error');
+    error.textContent = 'Enter a deck name.';
+    error.hidden = false;
+    const input = document.getElementById('deck-modal-name');
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', 'deck-modal-error');
+    input.focus();
+    return;
+  }
   const data = loadData();
-  data.decks.push({ id: genId(), name, cards: [] });
+  const editedDeckId = state.editDeckId;
+  const wasEditing = Boolean(editedDeckId);
+  if (editedDeckId) {
+    const deck = data.decks.find(item => item.id === editedDeckId);
+    if (deck) deck.name = name;
+  } else {
+    data.decks.push({ id: genId(), name, cards: [] });
+  }
   saveData(data);
-  render();
+  closeDeckModal();
+  const focusSelector = state.view === 'browse'
+    ? '.browse-toolbar > .menu > summary'
+    : (wasEditing
+      ? `.deck-menu summary[data-deck="${editedDeckId}"]`
+      : '[data-action="new-deck"]');
+  render(focusSelector, state.view === 'smart-setup' ? '.page-heading h1' : '.brand-button');
+  showToast(wasEditing ? 'Deck renamed.' : 'Deck created.');
 }
 
 function closeDeckModal() {
-  document.getElementById('deck-modal-overlay').classList.add('hidden');
+  const overlay = document.getElementById('deck-modal-overlay');
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  state.editDeckId = null;
+  if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus();
+  state.lastFocus = null;
 }
 
 function deleteDeck(deckId) {
@@ -1092,7 +1542,7 @@ function startStudy(deckId) {
   state.studyIndex = 0;
   state.flipped = false;
   state.sessionStats = { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 };
-  nav('study', deckId);
+  nav('study', deckId, '.flashcard-front', `Study session started. ${mainQueue.length} card${mainQueue.length !== 1 ? 's' : ''} in this session.`);
 }
 
 function rateCard(grade) {
@@ -1120,26 +1570,6 @@ function rateCard(grade) {
     if (grade === 1) cs.hard++;
     deck.cardStats[cardId] = cs;
 
-    // Save session summary when session ends
-    const nextIndex = state.studyIndex + 1;
-    const isLastMain    = isMain && nextIndex >= state.studyQueue.length && (grade !== 0 || state.learningQueue.length === 0);
-    const isLastLearning = !isMain && nextIndex >= state.learningQueue.length;
-    if (isLastMain || isLastLearning) {
-      if (!deck.sessions) deck.sessions = [];
-      const ss = state.sessionStats;
-      deck.sessions.push({
-        date: todayStr(),
-        reviewed: ss.reviewed + 1, // +1 for this card not yet incremented
-        again: ss.again,
-        hard: ss.hard,
-        good: ss.good,
-        easy: ss.easy
-      });
-      // Keep last 90 sessions
-      if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90);
-    }
-
-    saveData(data);
   }
 
   // If Again, re-queue for end of session (both main and learning phase)
@@ -1155,31 +1585,90 @@ function rateCard(grade) {
     state.studyIndex = 0;
   }
 
+  const sessionComplete =
+    (state.studyPhase === 'main' && state.studyIndex >= state.studyQueue.length) ||
+    (state.studyPhase === 'learning' && state.studyIndex >= state.learningQueue.length);
+
+  if (deck && sessionComplete) {
+    if (!deck.sessions) deck.sessions = [];
+    const ss = state.sessionStats;
+    deck.sessions.push({
+      date: todayStr(),
+      reviewed: ss.reviewed,
+      again: ss.again,
+      hard: ss.hard,
+      good: ss.good,
+      easy: ss.easy
+    });
+    if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90);
+  }
+
+  saveData(data);
   state.flipped = false;
-  render();
+  render(sessionComplete ? '.completion-title' : '.flashcard-front');
+  announceStatus(sessionComplete ? 'Study session complete.' : 'Next question.');
 }
 
 // ===== MODAL EVENTS =====
+function trapDialogFocus(e, overlay, closeFn) {
+  if (overlay.classList.contains('hidden')) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeFn();
+    return;
+  }
+  if (e.key !== 'Tab') return;
+  const focusable = [...overlay.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')];
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
 function bindModalEvents() {
+  const cardOverlay = document.getElementById('modal-overlay');
+  const deckOverlay = document.getElementById('deck-modal-overlay');
+
   document.getElementById('modal-save').onclick = saveModal;
   document.getElementById('modal-cancel').onclick = closeModal;
   document.getElementById('modal-close').onclick = closeModal;
-  document.getElementById('modal-overlay').onclick = e => {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  cardOverlay.onclick = e => {
+    if (e.target === cardOverlay) closeModal();
   };
-  document.getElementById('modal-front').addEventListener('keydown', e => {
-    if (e.key === 'Tab') { e.preventDefault(); document.getElementById('modal-back').focus(); }
+  cardOverlay.addEventListener('keydown', e => trapDialogFocus(e, cardOverlay, closeModal));
+  ['modal-front', 'modal-back'].forEach(id => {
+    document.getElementById(id).addEventListener('input', e => {
+      if (!e.target.value.trim()) return;
+      e.target.removeAttribute('aria-invalid');
+      e.target.removeAttribute('aria-describedby');
+      const fields = ['modal-front', 'modal-back'].map(fieldId => document.getElementById(fieldId));
+      if (fields.every(field => field.value.trim())) {
+        document.getElementById('modal-error').hidden = true;
+      }
+    });
   });
 
   document.getElementById('deck-modal-save').onclick = saveDeckModal;
   document.getElementById('deck-modal-cancel').onclick = closeDeckModal;
   document.getElementById('deck-modal-close').onclick = closeDeckModal;
-  document.getElementById('deck-modal-overlay').onclick = e => {
-    if (e.target === document.getElementById('deck-modal-overlay')) closeDeckModal();
+  deckOverlay.onclick = e => {
+    if (e.target === deckOverlay) closeDeckModal();
   };
+  deckOverlay.addEventListener('keydown', e => trapDialogFocus(e, deckOverlay, closeDeckModal));
   document.getElementById('deck-modal-name').addEventListener('keydown', e => {
     if (e.key === 'Enter') saveDeckModal();
-    if (e.key === 'Escape') closeDeckModal();
+  });
+  document.getElementById('deck-modal-name').addEventListener('input', e => {
+    if (!e.target.value.trim()) return;
+    e.target.removeAttribute('aria-invalid');
+    e.target.removeAttribute('aria-describedby');
+    document.getElementById('deck-modal-error').hidden = true;
   });
 }
 
@@ -1196,12 +1685,16 @@ function applyTheme() {
 function toggleDark() {
   localStorage.setItem('ankiweb_dark', isDark() ? '0' : '1');
   applyTheme();
-  const btn = document.getElementById('btn-theme');
-  if (btn) btn.textContent = isDark() ? 'Light' : 'Dark';
+  render();
 }
 
-function themeBtn() {
-  return `<button class="btn btn-secondary btn-sm" id="btn-theme" data-action="toggle-dark">${isDark() ? 'Light' : 'Dark'}</button>`;
+function themeBtn(iconOnly = false) {
+  const nextTheme = isDark() ? 'light' : 'dark';
+  return `
+    <button class="${iconOnly ? 'btn-icon' : 'btn btn-secondary btn-sm'} theme-button" type="button" id="btn-theme" data-action="toggle-dark" aria-label="Switch to ${nextTheme} theme" title="${nextTheme[0].toUpperCase() + nextTheme.slice(1)} theme">
+      ${icon(isDark() ? 'sun' : 'moon', 17)}
+      ${iconOnly ? '' : `<span>${isDark() ? 'Light' : 'Dark'}</span>`}
+    </button>`;
 }
 
 // ===== SMART STUDY: TEXT SIMILARITY =====
@@ -1375,41 +1868,44 @@ function renderSmartSetup() {
   cfg.deckIds = cfg.deckIds.filter(id => data.decks.some(d => d.id === id));
 
   const deckRows = data.decks.length === 0
-    ? `<div class="smart-empty">No decks yet. Go back and create one first.</div>`
+    ? `<div class="smart-empty">
+        ${icon('layers-3', 24)}
+        <strong>No decks available</strong>
+        <button class="btn btn-secondary btn-sm" type="button" data-action="new-deck">${icon('plus', 15)}<span>Create deck</span></button>
+      </div>`
     : data.decks.map(d => {
         const due = d.cards.filter(isDue).length;
         const practice = d.cards.filter(c => !isDue(c) && isSmartNeedsPracticeCard(d, c.id)).length;
-        const meta = [
-          due > 0 ? `<span class="due-badge">${due}</span> due` : '',
-          practice > 0 ? `<span class="due-badge">${practice}</span> practice` : '',
-          `${d.cards.length} total`
-        ].filter(Boolean).join(' &middot; ');
         const checked = cfg.deckIds.includes(d.id);
         const disabled = d.cards.length === 0;
         return `
-          <label class="smart-row ${disabled ? 'is-disabled' : ''}">
-            <input type="checkbox" data-action="smart-toggle-deck" data-deck="${d.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+          <label class="smart-deck-row ${checked ? 'is-selected' : ''} ${disabled ? 'is-disabled' : ''}">
+            <input class="check-input" type="checkbox" data-action="smart-toggle-deck" data-deck="${d.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+            <span class="check-control">${icon('check', 13)}</span>
             <div class="smart-row-body">
               <div class="smart-row-title">${esc(d.name)}</div>
-              <div class="smart-row-meta">${meta}</div>
+              <div class="smart-row-meta">
+                <span>${d.cards.length} total</span>
+                ${due > 0 ? `<span class="is-emphasis">${due} due</span>` : '<span>Caught up</span>'}
+                ${practice > 0 ? `<span>${practice} practice</span>` : ''}
+              </div>
             </div>
           </label>`;
       }).join('');
 
   const techniques = [
-    { key: 'typeRecall',      title: 'Active Recall (Typing)',  desc: 'Type the answer instead of just thinking it. Forces real retrieval &mdash; strongest single learning boost (Roediger & Karpicke).' },
-    { key: 'confidenceCheck', title: 'Confidence Calibration',  desc: 'Predict certainty before revealing. Trains metacognition; reveals overconfidence early.' },
-    { key: 'whyPrompt',       title: 'Elaborative Why-Prompt',  desc: 'After review, briefly state WHY it is correct. Self-explanation deepens encoding (Chi et al.).' },
-    { key: 'interleaving',    title: 'Interleaving',            desc: 'Round-robin cards from selected decks. Improves discrimination, builds flexible recall (Rohrer & Pashler).' }
+    { key: 'typeRecall',      title: 'Typed recall', icon: 'keyboard' },
+    { key: 'confidenceCheck', title: 'Confidence check', icon: 'gauge' },
+    { key: 'whyPrompt',       title: 'Elaboration prompt', icon: 'message-square-text' },
+    { key: 'interleaving',    title: 'Interleaving', icon: 'shuffle' }
   ];
 
   const techRows = techniques.map(t => `
-    <label class="smart-row">
-      <input type="checkbox" data-action="smart-toggle-technique" data-key="${t.key}" ${cfg.techniques[t.key] ? 'checked' : ''}>
-      <div class="smart-row-body">
-        <div class="smart-row-title">${t.title}</div>
-        <div class="smart-row-desc">${t.desc}</div>
-      </div>
+    <label class="technique-row">
+      <span class="technique-icon">${icon(t.icon, 17)}</span>
+      <span class="smart-row-title">${t.title}</span>
+      <input class="switch-input" type="checkbox" data-action="smart-toggle-technique" data-key="${t.key}" ${cfg.techniques[t.key] ? 'checked' : ''}>
+      <span class="switch-control" aria-hidden="true"></span>
     </label>`).join('');
 
   const durations = [
@@ -1418,43 +1914,77 @@ function renderSmartSetup() {
     { val: 0,  label: 'No limit' }
   ];
   const durButtons = durations.map(d => `
-    <button class="btn ${cfg.duration === d.val ? 'btn-primary' : 'btn-secondary'} btn-sm" data-action="smart-set-duration" data-val="${d.val}">${d.label}</button>
+    <button class="segment-button ${cfg.duration === d.val ? 'is-selected' : ''}" type="button" data-action="smart-set-duration" data-val="${d.val}" aria-pressed="${cfg.duration === d.val}">${d.label}</button>
   `).join('');
 
   const canStart = cfg.deckIds.length > 0 && data.decks.some(d => cfg.deckIds.includes(d.id) && d.cards.length > 0);
+  const selectedDecks = cfg.deckIds.map(id => data.decks.find(deck => deck.id === id)).filter(Boolean);
+  const available = canStart ? buildSmartStudyQueue(selectedDecks, cfg) : { queue: [], hasCore: false };
+  const selectedDue = selectedDecks.reduce((sum, deck) => sum + deck.cards.filter(isDue).length, 0);
+  const durationLabel = cfg.duration === 0 ? 'No limit' : `${cfg.duration} min`;
 
   return `
-    <div class="page">
-      <div class="header">
-        <div class="header-back">
-          <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-          <h1>Smart Study</h1>
+    <div class="app-shell">
+      ${renderAppBar('smart')}
+      <main class="workspace smart-workspace">
+        <header class="page-heading">
+          <div>
+            <p class="page-kicker">Session planner</p>
+            <h1>Smart Study</h1>
+            <p class="page-subtitle">${cfg.deckIds.length > 0 ? `${cfg.deckIds.length} deck${cfg.deckIds.length !== 1 ? 's' : ''} selected.` : 'Select the decks for this session.'}</p>
+          </div>
+        </header>
+
+        <div class="smart-config-grid">
+          <section class="config-section" aria-labelledby="smart-decks-title">
+            <div class="config-heading">
+              <div>
+                <span class="config-step">1</span>
+                <h2 id="smart-decks-title">Choose decks</h2>
+              </div>
+              <span>${cfg.deckIds.length} selected</span>
+            </div>
+            <div class="smart-deck-list">${deckRows}</div>
+          </section>
+
+          <div class="smart-options">
+            <aside class="session-plan" aria-label="Session plan">
+              <div class="session-plan-heading">
+                <span>${icon('sparkles', 18)}</span>
+                <div><strong>${canStart ? 'Session ready' : 'Session plan'}</strong><span>${canStart ? (available.hasCore ? 'Scheduled review' : 'Practice round') : 'Choose decks to begin'}</span></div>
+              </div>
+              <dl class="session-plan-stats">
+                <div><dt>Decks</dt><dd>${selectedDecks.length}</dd></div>
+                <div><dt>Cards</dt><dd>${available.queue.length}</dd></div>
+                <div><dt>Due</dt><dd>${selectedDue}</dd></div>
+                <div><dt>Length</dt><dd>${durationLabel}</dd></div>
+              </dl>
+              <button class="btn btn-smart btn-lg" type="button" data-action="smart-start" ${canStart ? '' : 'disabled'}>${icon('play', 18)}<span>Start session</span></button>
+              ${!canStart ? `<p class="smart-hint">Select at least one deck with cards.</p>` : ''}
+            </aside>
+
+            <section class="config-section" aria-labelledby="smart-techniques-title">
+              <div class="config-heading">
+                <div>
+                  <span class="config-step">2</span>
+                  <h2 id="smart-techniques-title">Techniques</h2>
+                </div>
+              </div>
+              <div class="technique-list">${techRows}</div>
+            </section>
+
+            <section class="config-section" aria-labelledby="smart-duration-title">
+              <div class="config-heading">
+                <div>
+                  <span class="config-step">3</span>
+                  <h2 id="smart-duration-title">Session length</h2>
+                </div>
+              </div>
+              <div class="segmented-control" aria-label="Session length">${durButtons}</div>
+            </section>
+          </div>
         </div>
-        <div class="header-actions">${themeBtn()}</div>
-      </div>
-      <p class="smart-intro">
-        Combine evidence-based techniques: active recall, spacing (FSRS), interleaving, and metacognition for faster long-term retention.
-      </p>
-
-      <div class="smart-section">
-        <div class="smart-section-title">Decks</div>
-        <div class="smart-list">${deckRows}</div>
-      </div>
-
-      <div class="smart-section">
-        <div class="smart-section-title">Techniques</div>
-        <div class="smart-list">${techRows}</div>
-      </div>
-
-      <div class="smart-section">
-        <div class="smart-section-title">Session length</div>
-        <div class="smart-duration">${durButtons}</div>
-      </div>
-
-      <div class="smart-start-wrap">
-        <button class="btn btn-smart btn-lg" data-action="smart-start" ${canStart ? '' : 'disabled'}>Start Smart Study</button>
-        ${!canStart ? `<div class="smart-hint">Pick at least one deck with cards.</div>` : ''}
-      </div>
+      </main>
     </div>`;
 }
 
@@ -1480,7 +2010,7 @@ function startSmartStudy() {
       sessionSaved: true
     };
     startSmartBreakTimer();
-    nav('smart-study');
+    nav('smart-study', undefined, '.completion-title', 'Pomodoro break resumed.');
     return;
   }
 
@@ -1521,7 +2051,8 @@ function startSmartStudy() {
   };
 
   startSmartTimer();
-  nav('smart-study');
+  const firstFocus = cfg.techniques.typeRecall ? '#smart-answer-input' : '.smart-card-front';
+  nav('smart-study', undefined, firstFocus, `Smart Study started. ${queue.length} card${queue.length !== 1 ? 's' : ''} in this session.`);
 }
 
 function stopSmartTimer() {
@@ -1541,10 +2072,13 @@ function startSmartTimer() {
       saveSmartSessionsIfNeeded();
       if (state.smartConfig.duration === SMART_POMODORO_DURATION_MINUTES) startSmartBreak();
       else sm.timeUp = true;
-      render();
+      render('.completion-title');
+      announceStatus(state.smartConfig.duration === SMART_POMODORO_DURATION_MINUTES
+        ? 'Focus block complete. Pomodoro break started.'
+        : 'Smart Study session complete.');
       return;
     }
-    const el = document.getElementById('smart-timer');
+    const el = document.getElementById('smart-timer-value');
     if (el) {
       const min = Math.floor(remaining / 60000);
       const sec = Math.floor((remaining % 60000) / 1000);
@@ -1576,13 +2110,17 @@ function startSmartBreakTimer() {
       sm.breakDone = true;
       setSmartPomodoroBreakUntil(0);
       stopSmartTimer();
-      render();
+      render('.completion-title');
+      announceStatus('Break complete. You can start the next session.');
       return;
     }
     const el = document.getElementById('smart-break-timer');
     if (el) el.textContent = fmtMs(remaining);
+    const progressValue = smartBreakProgress(sm);
     const ring = document.querySelector('.smart-break-ring-fill');
-    if (ring) ring.style.setProperty('--break-progress', smartBreakProgress(sm));
+    if (ring) ring.style.setProperty('--break-progress', progressValue);
+    const progressBar = document.querySelector('.smart-break-ring');
+    if (progressBar) progressBar.setAttribute('aria-valuenow', String(Math.round(progressValue * 100)));
   }, 500);
 }
 
@@ -1652,16 +2190,8 @@ function renderSmartStudy() {
   const pct = Math.round((s.index / total) * 100);
 
   const timerHtml = s.durationMs > 0
-    ? ` &middot; <span id="smart-timer" class="smart-timer">${fmtSmartTimer(s.startTime, s.durationMs)}</span>`
+    ? `<span class="smart-timer" aria-live="off">${icon('timer', 13)}<span id="smart-timer-value">${fmtSmartTimer(s.startTime, s.durationMs)}</span></span>`
     : '';
-
-  const statsBar = ss.reviewed > 0 ? `
-    <div class="session-stats">
-      ${ss.again > 0 ? `<span class="sstat sstat-again">&#8635; ${ss.again}</span>` : ''}
-      ${ss.hard > 0  ? `<span class="sstat sstat-hard">&#9650; ${ss.hard}</span>` : ''}
-      ${ss.good > 0  ? `<span class="sstat sstat-good">&#10003; ${ss.good}</span>` : ''}
-      ${ss.easy > 0  ? `<span class="sstat sstat-easy">&#9733; ${ss.easy}</span>` : ''}
-    </div>` : '<div class="session-stats"></div>';
 
   let body = '';
 
@@ -1670,12 +2200,12 @@ function renderSmartStudy() {
     if (cfg.techniques.confidenceCheck) {
       const lvl = s.confidenceLevel;
       confidenceUI = `
-        <div class="smart-confidence">
-          <div class="smart-prompt">How confident are you?</div>
+        <div class="smart-confidence" role="group" aria-labelledby="smart-confidence-label">
+          <p class="smart-prompt" id="smart-confidence-label">Confidence</p>
           <div class="smart-conf-buttons">
-            <button class="btn ${lvl === 'low'    ? 'btn-primary' : 'btn-secondary'} btn-sm" data-action="smart-confidence" data-val="low">Not sure</button>
-            <button class="btn ${lvl === 'medium' ? 'btn-primary' : 'btn-secondary'} btn-sm" data-action="smart-confidence" data-val="medium">Maybe</button>
-            <button class="btn ${lvl === 'high'   ? 'btn-primary' : 'btn-secondary'} btn-sm" data-action="smart-confidence" data-val="high">Confident</button>
+            <button class="segment-button ${lvl === 'low' ? 'is-selected' : ''}" type="button" data-action="smart-confidence" data-val="low" aria-pressed="${lvl === 'low'}">Not sure</button>
+            <button class="segment-button ${lvl === 'medium' ? 'is-selected' : ''}" type="button" data-action="smart-confidence" data-val="medium" aria-pressed="${lvl === 'medium'}">Maybe</button>
+            <button class="segment-button ${lvl === 'high' ? 'is-selected' : ''}" type="button" data-action="smart-confidence" data-val="high" aria-pressed="${lvl === 'high'}">Confident</button>
           </div>
         </div>`;
     }
@@ -1684,24 +2214,26 @@ function renderSmartStudy() {
     if (cfg.techniques.typeRecall) {
       answerUI = `
         <div class="smart-answer-area">
-          <label class="field-label">Your answer</label>
-          <textarea id="smart-answer-input" class="textarea smart-answer-input" rows="2" placeholder="Type your answer, then press Enter">${esc(s.typedAnswer)}</textarea>
+          <label class="field-label" for="smart-answer-input">Your answer</label>
+          <textarea id="smart-answer-input" class="textarea smart-answer-input" rows="3" placeholder="Type your answer" aria-describedby="smart-question-content">${esc(s.typedAnswer)}</textarea>
           <div class="smart-answer-actions">
-            <button class="btn btn-primary" data-action="smart-check">Check answer</button>
-            <button class="btn btn-ghost btn-sm" data-action="smart-skip">Skip / don't know</button>
-            <span class="smart-hint-inline">Enter to check &middot; Shift+Enter for newline</span>
+            <button class="btn btn-primary" type="button" data-action="smart-check">${icon('check', 17)}<span>Check answer</span></button>
+            <button class="btn btn-quiet btn-sm" type="button" data-action="smart-skip">I don't know</button>
           </div>
         </div>`;
     } else {
-      answerUI = `<div class="show-answer-wrap"><button class="btn btn-primary btn-lg" data-action="smart-reveal">Show Answer</button></div>`;
+      answerUI = `<div class="show-answer-wrap"><button class="btn btn-primary btn-lg" type="button" data-action="smart-reveal">${icon('eye', 18)}<span>Reveal answer</span></button></div>`;
     }
 
     body = `
-      <div class="smart-deck-tag">${esc(deck.name)}</div>
-      <div class="smart-card-block smart-card-front">
-        <div class="card-side-label">Question</div>
-        <div class="card-content">${esc(card.front)}</div>
+      <div class="smart-session-meta">
+        <span class="smart-deck-tag">${icon('book-open', 13)}${esc(deck.name)}</span>
+        <span>${s.mode === 'practice' ? 'Practice' : 'Scheduled review'}</span>
       </div>
+      <section class="smart-card-block smart-card-front" tabindex="-1" aria-labelledby="smart-question-label" aria-describedby="smart-question-content">
+        <div class="card-side-label" id="smart-question-label">Question</div>
+        <div class="card-content" id="smart-question-content">${esc(card.front)}</div>
+      </section>
       ${confidenceUI}
       ${answerUI}
     `;
@@ -1713,7 +2245,7 @@ function renderSmartStudy() {
       const pct2 = Math.round(s.similarity * 100);
       feedback = `
         <div class="smart-feedback smart-feedback-${band.band}">
-          <div class="smart-feedback-score">${band.label} &middot; ${pct2}% match</div>
+          <div class="smart-feedback-score"><span>${band.label}</span><strong>${pct2}% match</strong></div>
           <div class="smart-feedback-row"><span class="smart-feedback-label">You wrote:</span><span class="smart-feedback-text">${s.typedAnswer ? esc(s.typedAnswer) : '<em class="muted">(skipped)</em>'}</span></div>
           <div class="smart-feedback-row"><span class="smart-feedback-label">Correct:</span><span class="smart-feedback-text smart-feedback-correct">${esc(card.back)}</span></div>
         </div>`;
@@ -1725,7 +2257,8 @@ function renderSmartStudy() {
       const calLabel = calibrated === null ? '' : (calibrated ? 'well calibrated' : 'mismatch &mdash; recalibrate next time');
       confFeedback = `
         <div class="smart-calibration ${calibrated === null ? '' : (calibrated ? 'is-good' : 'is-off')}">
-          Confidence: <strong>${s.confidenceLevel}</strong>${calLabel ? ' &middot; ' + calLabel : ''}
+          ${icon(calibrated ? 'check-circle-2' : 'gauge', 16)}
+          <span>Confidence: <strong>${s.confidenceLevel}</strong>${calLabel ? ' &middot; ' + calLabel : ''}</span>
         </div>`;
     }
 
@@ -1733,49 +2266,48 @@ function renderSmartStudy() {
     if (cfg.techniques.whyPrompt) {
       whyPrompt = `
         <div class="smart-why">
-          <label class="field-label">Why is this correct? <span class="muted">(optional)</span></label>
-          <textarea id="smart-why-input" class="textarea" rows="2" placeholder="Briefly explain why...">${esc(s.elaboration)}</textarea>
-          <div class="smart-hint-inline">Self-explanation strengthens memory traces.</div>
+          <label class="field-label" for="smart-why-input">Why is this correct? <span class="muted">(optional)</span></label>
+          <textarea id="smart-why-input" class="textarea" rows="2" placeholder="Add a short explanation">${esc(s.elaboration)}</textarea>
         </div>`;
     }
 
     const suggested = s.similarity !== null ? similarityBand(s.similarity).suggested : null;
     const labels = ['Again', 'Hard', 'Good', 'Easy'];
-    const classes = ['btn-again', 'btn-hard', 'btn-good', 'btn-easy'];
     const rateBtns = [0, 1, 2, 3].map(g => `
-      <div class="rating-btn-wrap">
-        <button class="btn ${classes[g]} btn-lg ${suggested === g ? 'is-suggested' : ''}" data-action="smart-rate" data-grade="${g}">${labels[g]}${suggested === g ? ' &#9678;' : ''}</button>
-      </div>`).join('');
+      <button class="rating-button rating-${labels[g].toLowerCase()} ${suggested === g ? 'is-suggested' : ''}" type="button" data-action="smart-rate" data-grade="${g}">
+        <span>${labels[g]}</span>
+        ${suggested === g ? '<strong class="suggested-label">Suggested</strong>' : '<strong>Rate</strong>'}
+      </button>`).join('');
 
     body = `
-      <div class="smart-deck-tag">${esc(deck.name)}</div>
+      <div class="smart-session-meta">
+        <span class="smart-deck-tag">${icon('book-open', 13)}${esc(deck.name)}</span>
+        <span>Review answer</span>
+      </div>
       <div class="smart-card-pair">
-        <div class="smart-card-block smart-card-front compact">
+        <section class="smart-card-block smart-card-front compact" tabindex="-1" aria-label="Question">
           <div class="card-side-label">Question</div>
           <div class="card-content">${esc(card.front)}</div>
-        </div>
-        <div class="smart-card-block smart-card-back">
+        </section>
+        <section class="smart-card-block smart-card-back" tabindex="-1" aria-label="Answer">
           <div class="card-side-label">Answer</div>
           <div class="card-content">${esc(card.back)}</div>
-        </div>
+        </section>
       </div>
       ${feedback}
       ${confFeedback}
       ${whyPrompt}
-      <div class="rating-buttons">${rateBtns}</div>
+      <div class="rating-buttons smart-rating-buttons" role="group" aria-label="Rate this answer">${rateBtns}</div>
     `;
   }
 
   return `
-    <div class="study-page">
-      <div class="study-header">
-        <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-        <span class="progress-label">${s.index} / ${total}${timerHtml}</span>
-        ${themeBtn()}
-      </div>
-      <div class="smart-body">${body}</div>
-      ${statsBar}
+    <div class="study-shell smart-study-shell">
+      ${renderStudyHeader('Smart Study', pct, `${s.index + 1} of ${total}`, timerHtml)}
+      <main class="smart-study-main">
+        <div class="smart-body">${body}</div>
+        ${renderSessionStats(ss)}
+      </main>
     </div>`;
 }
 
@@ -1792,42 +2324,28 @@ function renderSmartBreak() {
   const reviewed = s.sessionStats.reviewed;
   const progress = smartBreakProgress(s);
   const nextDisabled = done ? '' : 'disabled';
-  const nextLabel = done ? 'Start next Smart Session' : 'Break in progress';
+  const nextLabel = done ? 'Start next session' : 'Break in progress';
 
   return `
-    <div class="study-page">
-      <div class="study-header">
-        <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%"></div></div>
-        <span class="progress-label">Pomodoro break</span>
-        ${themeBtn()}
-      </div>
-      <div class="smart-break-screen">
-        <div class="smart-break-kicker">25 minutes complete</div>
+    <div class="study-shell">
+      ${renderStudyHeader('Smart Study', 100, 'Focus block complete')}
+      <main class="smart-break-screen">
+        <div class="break-icon">${icon(done ? 'check' : 'coffee', 22)}</div>
+        <p class="completion-kicker">${done ? 'Ready' : 'Pomodoro break'}</p>
+        <h1 class="completion-title" tabindex="-1">${done ? 'Break complete' : 'Pause and reset'}</h1>
         <div class="smart-break-timer-wrap">
-          <div class="smart-break-ring">
+          <span id="smart-break-timer" class="smart-break-timer">${fmtMs(remaining)}</span>
+          <span class="smart-break-label">${done ? 'Ready for the next round' : 'Remaining'}</span>
+          <div class="smart-break-ring" role="progressbar" aria-label="Break progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress * 100)}">
             <div class="smart-break-ring-fill" style="--break-progress:${progress}"></div>
-            <div class="smart-break-ring-center">
-              <span id="smart-break-timer" class="smart-break-timer">${fmtMs(remaining)}</span>
-              <span class="smart-break-label">${done ? 'ready' : 'rest'}</span>
-            </div>
           </div>
-        </div>
-        <h2>Take the break seriously.</h2>
-        <p>
-          Pomodoro pairs deep focus with a real pause. Use these 7 minutes away from active recall so your attention can recover before the next round.
-        </p>
-        <div class="smart-break-tips">
-          <span>Stand up</span>
-          <span>Drink water</span>
-          <span>Look away from the screen</span>
         </div>
         <div class="smart-break-meta">${reviewed} card${reviewed !== 1 ? 's' : ''} reviewed in this focus block.</div>
         <div class="smart-done-actions">
-          <button class="btn btn-smart" data-action="smart-break-start-next" ${nextDisabled}>${nextLabel}</button>
-          <button class="btn btn-secondary" data-action="go-home">Back to Home</button>
+          <button class="btn btn-smart" type="button" data-action="smart-break-start-next" ${nextDisabled}>${icon('play', 17)}<span>${nextLabel}</span></button>
+          <button class="btn btn-secondary" type="button" data-action="go-home">${icon('library', 17)}<span>Back to library</span></button>
         </div>
-      </div>
+      </main>
     </div>`;
 }
 
@@ -1839,14 +2357,6 @@ function renderSmartDone() {
     ? `Time's up after ${state.smartConfig.duration} minute${state.smartConfig.duration !== 1 ? 's' : ''}.`
     : `You went through all ${s.queue.length} card${s.queue.length !== 1 ? 's' : ''}.`;
 
-  const statBar = total > 0 ? `
-    <div class="session-stats-done">
-      ${ss.again > 0 ? `<span class="sstat sstat-again">${ss.again} Again</span>` : ''}
-      ${ss.hard > 0  ? `<span class="sstat sstat-hard">${ss.hard} Hard</span>` : ''}
-      ${ss.good > 0  ? `<span class="sstat sstat-good">${ss.good} Good</span>` : ''}
-      ${ss.easy > 0  ? `<span class="sstat sstat-easy">${ss.easy} Easy</span>` : ''}
-    </div>` : '';
-
   const data = loadData();
   const selectedDecks = state.smartConfig.deckIds
     .map(id => data.decks.find(d => d.id === id))
@@ -1856,23 +2366,20 @@ function renderSmartDone() {
   const nextLabel = nextAvailability.hasCore ? 'New Smart Session' : 'Practice Anyway';
 
   return `
-    <div class="study-page">
-      <div class="study-header">
-        <button class="btn btn-ghost btn-sm" data-action="go-home">&larr; Home</button>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%"></div></div>
-        <span class="progress-label">${total} reviewed</span>
-        ${themeBtn()}
-      </div>
-      <div class="study-done">
-        <h2>Smart session complete!</h2>
-        <p>${reason}</p>
-        ${statBar}
+    <div class="study-shell">
+      ${renderStudyHeader('Smart Study', 100, `${total} reviewed`)}
+      <main class="study-done" tabindex="-1">
+        <div class="completion-mark">${icon('sparkles', 23)}</div>
+        <p class="completion-kicker">Smart Study complete</p>
+        <h1 class="completion-title" tabindex="-1">${total} card${total !== 1 ? 's' : ''} reviewed</h1>
+        <p class="completion-note">${reason}</p>
+        ${renderSessionStats(ss, 'session-stats-done')}
         <div class="smart-done-actions">
-          ${canStartNext ? `<button class="btn btn-smart" data-action="smart-restart">${nextLabel}</button>` : ''}
-          <button class="btn btn-secondary" data-action="smart-tweak">Adjust Setup</button>
-          <button class="btn btn-secondary" data-action="go-home">Back to Home</button>
+          ${canStartNext ? `<button class="btn btn-smart" type="button" data-action="smart-restart">${icon('rotate-ccw', 17)}<span>${nextLabel}</span></button>` : ''}
+          <button class="btn btn-secondary" type="button" data-action="smart-tweak">${icon('settings-2', 17)}<span>Adjust setup</span></button>
+          <button class="btn btn-quiet" type="button" data-action="go-home">Back to library</button>
         </div>
-      </div>
+      </main>
     </div>`;
 }
 
@@ -1898,7 +2405,8 @@ function smartCheckAnswer() {
   if (!card) return;
   s.similarity = answerSimilarity(s.typedAnswer, card.back);
   s.phase = 'reviewing';
-  render();
+  render('.smart-card-back');
+  announceStatus('Answer checked. Review the feedback, then choose a rating.');
 }
 
 function smartSkip() {
@@ -1907,7 +2415,8 @@ function smartSkip() {
   s.typedAnswer = '';
   s.similarity = 0;
   s.phase = 'reviewing';
-  render();
+  render('.smart-card-back');
+  announceStatus('Answer revealed. Review the feedback, then choose a rating.');
 }
 
 function smartReveal() {
@@ -1915,7 +2424,8 @@ function smartReveal() {
   if (!s || s.phase !== 'asking') return;
   s.similarity = null;
   s.phase = 'reviewing';
-  render();
+  render('.smart-card-back');
+  announceStatus('Answer revealed. Choose a rating.');
 }
 
 function smartQueueKey(item) {
@@ -1990,7 +2500,12 @@ function smartRateCard(grade) {
   s.confidenceLevel = null;
   s.elaboration = '';
   s.phase = 'asking';
-  render();
+  const complete = s.index >= s.queue.length || s.timeUp;
+  const nextFocus = complete
+    ? '.completion-title'
+    : (state.smartConfig.techniques.typeRecall ? '#smart-answer-input' : '.smart-card-front');
+  render(nextFocus);
+  announceStatus(complete ? 'Smart Study session complete.' : 'Next Smart Study question.');
 }
 
 function saveSmartSessionsIfNeeded() {
@@ -2029,7 +2544,7 @@ function syncStatusBarStyle() {
   // 'LIGHT' = dark text (for our light theme); 'DARK' = light text (for dark theme).
   sb.setStyle({ style: dark ? 'DARK' : 'LIGHT' });
   // Match the reserved status-bar strip to the theme's base background.
-  sb.setBackgroundColor({ color: dark ? '#1b201a' : '#eef0e8' });
+  sb.setBackgroundColor({ color: dark ? '#101416' : '#f6f7f8' });
 }
 
 // ===== INIT =====
@@ -2038,4 +2553,9 @@ window.addEventListener('DOMContentLoaded', () => {
   setupStatusBar();
   render();
   bindModalEvents();
+  window.addEventListener('resize', () => {
+    closeCardActionMenus();
+    if (state.view === 'study') adjustFlashcardHeight();
+  });
+  document.addEventListener('scroll', () => closeCardActionMenus(), true);
 });

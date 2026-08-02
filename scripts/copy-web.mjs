@@ -1,6 +1,6 @@
 // Mirrors the root web assets into www/ for Capacitor.
 // The root files remain the single source of truth (shared with the Electron build).
-import { mkdirSync, copyFileSync, rmSync } from 'fs';
+import { mkdirSync, copyFileSync, cpSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,9 +10,10 @@ const www = join(root, 'www');
 rmSync(www, { recursive: true, force: true });
 mkdirSync(join(www, 'build'), { recursive: true });
 
-for (const f of ['index.html', 'style.css', 'app.js']) {
+for (const f of ['index.html', 'style.css', 'app.js', 'i18n.js']) {
   copyFileSync(join(root, f), join(www, f));
 }
 copyFileSync(join(root, 'build', 'icon.png'), join(www, 'build', 'icon.png'));
+cpSync(join(root, 'vendor'), join(www, 'vendor'), { recursive: true });
 
 console.log('Copied web assets to www/');
