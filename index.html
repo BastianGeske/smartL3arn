@@ -2,51 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>smartL3arn</title>
   <link rel="icon" type="image/png" href="build/icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app"></div>
-  <div id="modal-overlay" class="modal-overlay hidden">
-    <div class="modal">
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal" tabindex="-1">
       <div class="modal-header">
         <h2 id="modal-title">Edit Card</h2>
-        <button class="btn-icon" id="modal-close">&times;</button>
+        <button class="btn-icon" id="modal-close" type="button" aria-label="Close card editor" title="Close">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
       </div>
       <div class="modal-body">
-        <label class="field-label">Front</label>
+        <label class="field-label" for="modal-front">Front</label>
         <textarea id="modal-front" class="textarea" rows="5" placeholder="Front side of card"></textarea>
-        <label class="field-label">Back</label>
+        <label class="field-label" for="modal-back">Back</label>
         <textarea id="modal-back" class="textarea" rows="5" placeholder="Back side of card"></textarea>
+        <p id="modal-error" class="form-error" aria-live="polite" hidden>Add text to both sides of the card.</p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
-        <button class="btn btn-primary" id="modal-save">Save Card</button>
+        <button class="btn btn-secondary" id="modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="modal-save" type="button">Save Card</button>
       </div>
     </div>
   </div>
-  <div id="deck-modal-overlay" class="modal-overlay hidden">
-    <div class="modal">
+  <div id="deck-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="deck-modal-title" aria-hidden="true">
+    <div class="modal modal-compact" tabindex="-1">
       <div class="modal-header">
-        <h2>New Deck</h2>
-        <button class="btn-icon" id="deck-modal-close">&times;</button>
+        <h2 id="deck-modal-title">New Deck</h2>
+        <button class="btn-icon" id="deck-modal-close" type="button" aria-label="Close deck editor" title="Close">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
       </div>
       <div class="modal-body">
-        <label class="field-label">Deck Name</label>
-        <input id="deck-modal-name" class="search-input" type="text" placeholder="e.g. Spanish Vocabulary" style="width:100%;font-size:15px;padding:10px 12px">
+        <label class="field-label" for="deck-modal-name">Deck name</label>
+        <input id="deck-modal-name" class="text-input" type="text" maxlength="120" placeholder="e.g. Spanish vocabulary" autocomplete="off">
+        <p id="deck-modal-error" class="form-error" aria-live="polite" hidden>Enter a deck name.</p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" id="deck-modal-cancel">Cancel</button>
-        <button class="btn btn-primary" id="deck-modal-save">Create Deck</button>
+        <button class="btn btn-secondary" id="deck-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="deck-modal-save" type="button">Create deck</button>
       </div>
     </div>
   </div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <div id="status-region" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
   <script src="i18n.js"></script>
+  <script src="vendor/lucide.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

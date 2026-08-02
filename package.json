@@ -28,6 +28,7 @@
       "style.css",
       "app.js",
       "i18n.js",
+      "vendor/**/*",
       "build/icon.png"
     ],
     "mac": {
@@ -89,6 +90,9 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/ios": "^8.3.4",
     "@capacitor/share": "^8.0.1",
-    "@capacitor/status-bar": "^8.0.2"
+    "@capacitor/status-bar": "^8.0.2",
+    "@fontsource-variable/manrope": "5.1.1",
+    "@fontsource-variable/source-serif-4": "5.1.1",
+    "lucide": "0.468.0"
   }
 }
