@@ -4,14 +4,21 @@
   "description": "smartL3arn flashcard app with evidence-based learning techniques",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --mac dmg",
-    "build:win": "electron-builder --win",
-    "build:all": "electron-builder --mac dmg --win",
-    "cap:copy": "node scripts/copy-web.mjs && cap copy ios",
+    "dev": "vite",
+    "start": "npm run build:web && electron .",
+    "start:electron": "electron .",
+    "typecheck": "vue-tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:smoke": "electron scripts/smoke-electron.cjs",
+    "build:web": "vue-tsc -b && vite build",
+    "build": "npm run build:web && electron-builder --mac dmg",
+    "build:win": "npm run build:web && electron-builder --win",
+    "build:all": "npm run build:web && electron-builder --mac dmg --win",
+    "cap:copy": "npm run build:web && cap copy ios",
     "cap:sync": "npm run cap:copy && cap sync ios",
     "ios": "npm run cap:sync && cap open ios",
-    "cap:copy:android": "node scripts/copy-web.mjs && cap copy android",
+    "cap:copy:android": "npm run build:web && cap copy android",
     "cap:sync:android": "npm run cap:copy:android && cap sync android",
     "android": "npm run cap:sync:android && cap open android"
   },
@@ -19,17 +26,14 @@
     "appId": "com.smartl3arn.app",
     "productName": "smartL3arn",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "main.js",
       "preload.js",
-      "index.html",
-      "style.css",
-      "app.js",
-      "i18n.js",
-      "vendor/**/*",
-      "build/icon.png"
+      "web-dist/**/*",
+      "build/icon.png",
+      "!node_modules{,/**/*}"
     ],
     "mac": {
       "category": "public.app-category.education",
@@ -81,8 +85,15 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.3.4",
-    "electron": "^31.0.0",
-    "electron-builder": "^24.0.0"
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.11",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.9"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
@@ -93,6 +104,9 @@
     "@capacitor/status-bar": "^8.0.2",
     "@fontsource-variable/manrope": "5.1.1",
     "@fontsource-variable/source-serif-4": "5.1.1",
-    "lucide": "0.468.0"
+    "@lucide/vue": "^1.28.0",
+    "pinia": "^4.0.2",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0"
   }
 }

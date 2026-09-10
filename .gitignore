@@ -3,9 +3,11 @@ node_modules/
 
 # Build output
 dist/
+web-dist/
+release/
 out/
 
-# Capacitor (www/ is generated from root web assets by scripts/copy-web.mjs)
+# Legacy/generated Capacitor assets
 www/
 ios/App/App/public/
 ios/App/Pods/

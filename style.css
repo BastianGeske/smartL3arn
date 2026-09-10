@@ -277,6 +277,33 @@ button {
   font-size: 13px;
   font-weight: 680;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.app-loading {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  background: var(--bg);
+  font-weight: 650;
+}
+
+.save-error {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 120;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 12px 14px;
+  border: 1px solid var(--again-border);
+  border-radius: var(--radius);
+  color: var(--danger);
+  background: var(--danger-soft);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .app-nav-item::after {

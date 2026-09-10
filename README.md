@@ -2,7 +2,7 @@
 
 A desktop flashcard app for long-term retention. It combines the FSRS-5 spaced-repetition scheduler with an optional Smart Study mode that layers evidence-based learning techniques (active recall by typing, confidence calibration, elaborative interrogation, interleaving, and a Pomodoro timer) on top of the standard review loop.
 
-Built as an Electron app; the same `app.js` also runs in a plain browser using `localStorage`, and ships as a native iOS and Android app via Capacitor (same web assets, also `localStorage`-backed).
+Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web app runs in Electron, a browser, and native iOS/Android shells through Capacitor.
 
 ---
 
@@ -94,16 +94,23 @@ Typical use cases:
 
 ## Install and run
 
-Requirements: Node.js 18 or newer, npm.
+Requirements: Node.js 20.19 or newer, npm.
 
 ```bash
 npm install
-npm start          # launch the Electron app (dev)
+npm run dev        # Vite browser development server with hot reload
+npm start          # production web build, then launch Electron
 ```
 
-The app window opens directly. Data is persisted to your OS user-data folder (see [Data storage](#data-storage)).
+Electron data is persisted to your OS user-data folder (see [Data storage](#data-storage)). The browser development version uses `localStorage`.
 
-You can also open `index.html` in a plain browser. In that mode data is stored in `localStorage` instead of a file.
+Useful checks:
+
+```bash
+npm run typecheck  # Vue + TypeScript validation
+npm test           # domain/unit tests
+npm run test:smoke # hidden Electron flow test (requires a desktop session)
+```
 
 ## Building distributables
 
@@ -111,13 +118,14 @@ You can also open `index.html` in a plain browser. In that mode data is stored i
 npm run build      # macOS DMG (arm64; x64 if signing/build env permits)
 npm run build:win  # Windows NSIS installer + portable .exe
 npm run build:all  # both
+npm run build:web  # web bundle only
 ```
 
-Output goes to `dist/`. The bundled app icon is `build/icon.png` (1024x1024); electron-builder converts it to `.icns` and `.ico` automatically.
+The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. The bundled app icon is `build/icon.png` (1024x1024); electron-builder converts it to `.icns` and `.ico` automatically.
 
 ## Mobile builds (iOS and Android)
 
-The same `index.html` / `style.css` / `app.js` run unchanged inside a Capacitor WebView. `scripts/copy-web.mjs` mirrors the root web assets into `www/` (the root files stay the single source of truth shared with the Electron build), then Capacitor copies `www/` into the native projects.
+Vite creates the shared `web-dist/` bundle. Capacitor copies that same output into the native projects, so Electron, iOS, Android, and the browser use one renderer source.
 
 Requirements:
 - **iOS**: macOS with Xcode (and CocoaPods).
@@ -131,15 +139,15 @@ npm run android    # copy web assets, sync, open the project in Android Studio
 Lower-level steps if you only need part of the pipeline:
 
 ```bash
-npm run cap:copy            # copy-web + cap copy ios
+npm run cap:copy            # Vite build + cap copy ios
 npm run cap:sync            # cap:copy + cap sync ios
-npm run cap:copy:android    # copy-web + cap copy android
+npm run cap:copy:android    # Vite build + cap copy android
 npm run cap:sync:android    # cap:copy:android + cap sync android
 ```
 
-Native projects live in `ios/` and `android/`; Capacitor config is `capacitor.config.json` (appId `com.smartl3arn.app`, webDir `www`).
+Native projects live in `ios/` and `android/`; Capacitor config is `capacitor.config.json` (appId `com.smartl3arn.app`, webDir `web-dist`).
 
-**Status bar / safe area.** `env(safe-area-inset-*)` resolves to `0` in Capacitor's iOS WebView, so the Dynamic Island / status-bar clearance is handled natively via the `@capacitor/status-bar` plugin instead: `setupStatusBar()` in `app.js` takes the status bar out of overlay mode (`setOverlaysWebView({ overlay: false })`) so the native layer insets the web view, and `syncStatusBarStyle()` matches the bar background/text to the active light or dark theme (wired into the theme toggle). The same code path applies on Android.
+**Status bar / safe area.** The native status bar is handled through `src/services/native.ts`, which disables WebView overlay and synchronizes its color/style with the active theme. The same code path applies on Android.
 
 ## Usage walkthrough
 
@@ -341,21 +349,31 @@ The last 90 sessions per deck are retained for the streak indicator. The last 3 
 
 ```
 .
-├── main.js              # Electron main process; IPC, window, dock icon, data migration
-├── preload.js           # contextBridge: exposes window.db.load / window.db.save
-├── index.html           # Single page, mounts on #app
-├── style.css            # All styles (light + dark themes)
-├── app.js               # Renderer logic: state, routing, render, FSRS, Smart Study
+├── main.js                 # Electron main process and async data IPC
+├── preload.js              # safe contextBridge for renderer persistence
+├── index.html              # Vite entry page
+├── style.css               # shared design system and responsive styles
+├── src/
+│   ├── components/         # reusable Vue UI components and dialogs
+│   ├── views/              # route-level Library, Browse, Study, and Smart Study screens
+│   ├── stores/             # Pinia stores for data, settings, UI, and study sessions
+│   ├── domain/             # framework-independent FSRS, queues, dates, parsing, and types
+│   ├── services/           # storage adapters, native APIs, and import handling
+│   ├── App.vue
+│   ├── main.ts
+│   └── router.ts
 ├── build/
-│   └── icon.png         # 1024x1024 app icon (electron-builder picks up automatically)
+│   └── icon.png            # application icon and Vite public asset
 ├── scripts/
-│   └── copy-web.mjs     # mirrors root web assets into www/ for Capacitor
-├── capacitor.config.json# Capacitor config (appId, appName, webDir: www)
-├── www/                 # generated web bundle Capacitor copies into the native apps
-├── ios/                 # Capacitor iOS project (Xcode)
-├── android/             # Capacitor Android project (Android Studio)
+│   └── smoke-electron.cjs  # isolated end-to-end renderer smoke test
+├── capacitor.config.json   # Capacitor config (webDir: web-dist)
+├── web-dist/               # generated Vite bundle (gitignored)
+├── ios/                    # Capacitor iOS project (Xcode)
+├── android/                # Capacitor Android project (Android Studio)
+├── vite.config.mts
+├── tsconfig.json
 ├── package.json
 └── README.md
 ```
 
-`app.js` is intentionally a single file with section banners (`// ===== ... =====`); no bundler is needed.
+The `domain/` modules deliberately have no Vue or platform dependencies. They can be tested independently and are shared by the browser, Electron, and Capacitor flows.

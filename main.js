@@ -9,44 +9,40 @@ function getDbPath() {
 }
 
 // One-time migration from the pre-rename "Anki Web" userData folder.
-function migrateLegacyDataIfNeeded() {
+async function migrateLegacyDataIfNeeded() {
   try {
     const newPath = getDbPath();
     if (fs.existsSync(newPath)) return;
     const legacyDir = path.join(path.dirname(app.getPath('userData')), 'Anki Web');
     const legacyPath = path.join(legacyDir, 'ankiweb_data.json');
     if (fs.existsSync(legacyPath)) {
-      fs.mkdirSync(path.dirname(newPath), { recursive: true });
-      fs.copyFileSync(legacyPath, newPath);
+      await fs.promises.mkdir(path.dirname(newPath), { recursive: true });
+      await fs.promises.copyFile(legacyPath, newPath);
     }
   } catch (_) {}
 }
 
-function dbLoad() {
-  migrateLegacyDataIfNeeded();
+async function dbLoad() {
+  await migrateLegacyDataIfNeeded();
   try {
-    const raw = fs.readFileSync(getDbPath(), 'utf8');
+    const raw = await fs.promises.readFile(getDbPath(), 'utf8');
     return JSON.parse(raw);
   } catch (_) {
     return { decks: [] };
   }
 }
 
-function dbSave(data) {
-  fs.writeFileSync(getDbPath(), JSON.stringify(data), 'utf8');
+async function dbSave(data) {
+  const target = getDbPath();
+  const temporary = `${target}.tmp`;
+  await fs.promises.mkdir(path.dirname(target), { recursive: true });
+  await fs.promises.writeFile(temporary, JSON.stringify(data), 'utf8');
+  await fs.promises.rename(temporary, target);
 }
 
-ipcMain.on('db:load', (event) => {
-  event.returnValue = dbLoad();
-});
-
-ipcMain.on('db:save', (event, data) => {
-  try {
-    dbSave(data);
-    event.returnValue = true;
-  } catch (err) {
-    event.returnValue = false;
-  }
+ipcMain.handle('db:load', () => dbLoad());
+ipcMain.handle('db:save', async (_event, data) => {
+  await dbSave(data);
 });
 
 function createWindow() {
@@ -64,7 +60,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile(path.join(__dirname, 'index.html'));
+  win.loadFile(path.join(__dirname, 'web-dist', 'index.html'));
   win.setMenuBarVisibility(false);
 }
 
