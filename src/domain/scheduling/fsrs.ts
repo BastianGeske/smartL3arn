@@ -103,28 +103,9 @@ export function scheduleCard(card: Card, rating: Rating, today = todayStr()): Ca
 }
 
 export function previewIntervals(card: Card, today = todayStr()): string[] {
-  const daysSince = card.lastReview
-    ? Math.max(0, daysBetweenIsoDates(card.lastReview, today))
-    : 0
-  const retrievability = card.stability
-    ? fsrsRetrievability(daysSince, card.stability)
-    : 1
-
-  if (!card.stability) return ['1d', '1d', '1d', '4d']
-
-  return [1, 2, 3, 4].map((grade) => {
-    if (grade === 1) return '1d'
-    const stability = Math.max(
-      0.1,
-      fsrsNextStabilityRecall(
-        card.difficulty ?? 5,
-        card.stability as number,
-        retrievability,
-        grade,
-      ),
-    )
-    return formatInterval(fsrsInterval(stability))
-  })
+  return ([0, 1, 2, 3] as const).map((rating) => (
+    formatInterval(scheduleCard(card, rating, today).interval)
+  ))
 }
 
 function formatInterval(days: number): string {

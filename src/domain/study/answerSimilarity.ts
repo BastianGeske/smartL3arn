@@ -11,7 +11,9 @@ export function normalizeAnswer(value: string): string {
     .trim()
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[.,;:!?'"()[\]{}\-_/\\]/g, ' ')
+    .replace(/\u2212/g, '-')
+    .replace(/-(?!\d)/g, ' ')
+    .replace(/[.,;:!?'"()[\]{}_/\\]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -38,6 +40,11 @@ export function levenshtein(left: string, right: string): number {
 }
 
 export function answerSimilarity(typed: string, correct: string): number {
+  const numericTyped = canonicalNumber(typed)
+  const numericCorrect = canonicalNumber(correct)
+  if (numericCorrect !== null) {
+    return numericTyped === numericCorrect ? 1 : 0
+  }
   const normalizedTyped = normalizeAnswer(typed)
   const normalizedCorrect = normalizeAnswer(correct)
   if (!normalizedTyped && !normalizedCorrect) return 1
@@ -45,6 +52,18 @@ export function answerSimilarity(typed: string, correct: string): number {
   if (normalizedTyped === normalizedCorrect) return 1
   const maxLength = Math.max(normalizedTyped.length, normalizedCorrect.length)
   return Math.max(0, 1 - levenshtein(normalizedTyped, normalizedCorrect) / maxLength)
+}
+
+/** Compare decimal strings exactly, including values beyond floating-point precision. */
+function canonicalNumber(value: string): string | null {
+  const text = value.trim().replace(/\u2212/g, '-')
+  if (!/^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(text)) return null
+  const negative = text.startsWith('-')
+  const [whole, fraction = ''] = text.replace(/^[+-]/, '').replace(',', '.').split('.')
+  const integer = whole.replace(/^0+/, '') || '0'
+  const decimal = fraction.replace(/0+$/, '')
+  const sign = negative && (integer !== '0' || decimal) ? '-' : ''
+  return `${sign}${integer}${decimal ? `.${decimal}` : ''}`
 }
 
 export interface SimilarityBand {

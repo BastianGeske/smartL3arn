@@ -91,6 +91,7 @@ export const de = {
   "import.invalidJson": "Erwartet wird ein JSON-Array oder ein Objekt mit einem „cards“-Array.",
   "import.noCards": "Keine Karten mit den Feldern „front“ und „back“ gefunden.",
   "import.invalidText": "Keine gültigen Karten gefunden. Erwartet werden zwei durch Tabulator oder Komma getrennte Spalten.",
+  "import.invalidCsv": "Ungültige CSV-Datei: Bei einem Feld fehlt das schließende Anführungszeichen. Es wurden keine Karten importiert.",
   "import.nativeExport": "{filename} exportieren",
   "browse.title": "Kartensammlung",
   "browse.study": "{count} lernen",

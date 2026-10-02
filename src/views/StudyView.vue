@@ -28,7 +28,7 @@ const progressLabel = computed(() => (
     : t('study.relearning', { current: study.index + 1, total: study.learningQueue.length })
 ))
 const intervals = computed(() => (
-  study.currentCard ? previewIntervals(study.currentCard) : ['1d', '1d', '1d', '4d']
+  study.currentCard ? previewIntervals(study.currentCard) : []
 ))
 const upcomingDate = computed(() => {
   if (!study.deck || study.deck.cards.some((card) => isDue(card))) return null

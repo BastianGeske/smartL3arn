@@ -23,15 +23,44 @@ export function createCard(front: string, back: string): Card {
 }
 
 export function parseCards(text: string): ParsedCard[] {
-  const lines = text
-    .split(/\r?\n/)
+  const content = text.replace(/^\uFEFF/, '')
+  const firstLine = content
+    .split(/\r\n|\r|\n/)
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'))
-  if (!lines.length) return []
-  const delimiter = lines[0].includes('\t') ? '\t' : ','
+    .find((line) => line && !line.startsWith('#'))
+  if (!firstLine) return []
+  let inQuote = false
+  let atFieldStart = true
+  let tabDelimited = false
+  for (let index = 0; index < firstLine.length; index += 1) {
+    const character = firstLine[index]
+    if (inQuote) {
+      if (character === '"') {
+        if (firstLine[index + 1] === '"') index += 1
+        else inQuote = false
+      }
+    } else if (character === '\t') {
+      tabDelimited = true
+      break
+    } else if (character === ',') {
+      atFieldStart = true
+    } else if (character === '"' && atFieldStart) {
+      inQuote = true
+      atFieldStart = false
+    } else if (character.trim()) {
+      atFieldStart = false
+    }
+  }
+  const rows = tabDelimited
+    ? content.split(/\r\n|\r|\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .map((line) => line.split('\t').map((field) => field.trim()))
+    : parseCsvRecords(content, true).filter((row) => row.length > 1 || row[0])
   const cards: ParsedCard[] = []
-  lines.forEach((line) => {
-    const parts = delimiter === '\t' ? line.split('\t') : parseCsvLine(line)
+  rows.forEach((parts, index) => {
+    if (index === 0 && parts.length === 2
+      && parts[0].toLowerCase() === 'front' && parts[1].toLowerCase() === 'back') return
     if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
       cards.push({ front: parts[0].trim(), back: parts[1].trim() })
     }
@@ -40,32 +69,56 @@ export function parseCards(text: string): ParsedCard[] {
 }
 
 export function parseCsvLine(line: string): string[] {
-  const result: string[] = []
+  return parseCsvRecords(line)[0] || ['']
+}
+
+function parseCsvRecords(text: string, skipComments = false): string[][] {
+  const result: string[][] = []
+  let row: string[] = []
   let inQuote = false
+  let atFieldStart = true
   let current = ''
-  for (let index = 0; index < line.length; index += 1) {
-    const character = line[index]
-    if (character === '"') {
-      if (inQuote && line[index + 1] === '"') {
+  const finishRow = () => {
+    result.push([...row, current.trim()])
+    row = []
+    current = ''
+    atFieldStart = true
+  }
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]
+    if (skipComments && !inQuote && !row.length && atFieldStart && character === '#') {
+      while (index + 1 < text.length && !/[\r\n]/.test(text[index + 1])) index += 1
+      continue
+    }
+    // Quotes within ordinary text (such as inch marks) are literal characters.
+    if (character === '"' && (inQuote || atFieldStart)) {
+      if (inQuote && text[index + 1] === '"') {
         current += '"'
         index += 1
       } else {
         inQuote = !inQuote
+        atFieldStart = false
       }
     } else if (character === ',' && !inQuote) {
-      result.push(current)
+      row.push(current.trim())
       current = ''
+      atFieldStart = true
+    } else if ((character === '\r' || character === '\n') && !inQuote) {
+      finishRow()
+      if (character === '\r' && text[index + 1] === '\n') index += 1
     } else {
       current += character
+      if (character.trim()) atFieldStart = false
     }
   }
-  result.push(current)
-  return result.map((field) => field.trim())
+  if (inQuote) throw new SyntaxError('Unterminated quoted CSV field.')
+  finishRow()
+  return result
 }
 
 export function csvEscape(value: unknown): string {
   const text = String(value ?? '')
-  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  if (/[",\r\n]/.test(text) || /^\s*#/.test(text)) return `"${text.replace(/"/g, '""')}"`
   return text
 }
 
@@ -86,6 +139,6 @@ export function deckToAnkiText(deck: Deck): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\t/g, ' ')
-    .replace(/\r?\n/g, '<br>')
+    .replace(/\r\n|\r|\n/g, '<br>')
   return deck.cards.map((card) => `${field(card.front)}\t${field(card.back)}`).join('\n')
 }

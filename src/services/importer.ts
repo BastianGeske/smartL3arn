@@ -23,7 +23,7 @@ function cardFromUnknown(value: unknown, preserveId = false): Card | null {
   }
 }
 
-function deckFromBackup(value: unknown): Deck | null {
+function deckFromBackup(value: unknown, fallbackName = t('import.defaultDeck')): Deck | null {
   if (!isRecord(value) || !Array.isArray(value.cards)) return null
   const cards = value.cards
     .map((card) => cardFromUnknown(card, true))
@@ -31,7 +31,7 @@ function deckFromBackup(value: unknown): Deck | null {
   const deck: Deck = {
     ...(value as unknown as Deck),
     id: genId(),
-    name: typeof value.name === 'string' && value.name ? value.name : t('import.defaultDeck'),
+    name: typeof value.name === 'string' && value.name ? value.name : fallbackName,
     cards,
   }
   return deck
@@ -43,27 +43,22 @@ export async function importJsonFile(file: File): Promise<Deck[]> {
   try { parsed = JSON.parse(content) } catch { throw new Error(t('import.parseError')) }
   if (isRecord(parsed) && Array.isArray((parsed as unknown as AppData).decks)) {
     const decks = (parsed as unknown as AppData).decks
-      .map(deckFromBackup)
+      .map((deck) => deckFromBackup(deck))
       .filter((deck): deck is Deck => Boolean(deck))
     if (!decks.length) throw new Error(t('import.noDecks'))
     return decks
   }
 
-  let name: string
-  let rawCards: unknown[]
-  if (Array.isArray(parsed)) {
-    name = file.name.replace(/\.[^.]+$/, '').replace(/_/g, ' ') || t('import.defaultDeck')
-    rawCards = parsed
-  } else if (isRecord(parsed) && Array.isArray(parsed.cards)) {
-    name = typeof parsed.name === 'string'
-      ? parsed.name
-      : file.name.replace(/\.[^.]+$/, '')
-    rawCards = parsed.cards
-  } else {
-    throw new Error(t('import.invalidJson'))
+  if (isRecord(parsed) && Array.isArray(parsed.cards)) {
+    const fallbackName = typeof parsed.name === 'string'
+      ? parsed.name : file.name.replace(/\.[^.]+$/, '')
+    const deck = deckFromBackup(parsed, fallbackName)
+    if (!deck?.cards.length) throw new Error(t('import.noCards'))
+    return [deck]
   }
-
-  const cards = rawCards
+  if (!Array.isArray(parsed)) throw new Error(t('import.invalidJson'))
+  const name = file.name.replace(/\.[^.]+$/, '').replace(/_/g, ' ') || t('import.defaultDeck')
+  const cards = parsed
     .map((card) => cardFromUnknown(card))
     .filter((card): card is Card => Boolean(card))
   if (!cards.length) throw new Error(t('import.noCards'))
@@ -71,10 +66,7 @@ export async function importJsonFile(file: File): Promise<Deck[]> {
 }
 
 export async function importTextFile(file: File): Promise<Deck> {
-  const parsed = parseCards(await file.text())
-  if (!parsed.length) {
-    throw new Error(t('import.invalidText'))
-  }
+  const parsed = await parsedCardsFromFile(file)
   return {
     id: genId(),
     name: file.name.replace(/\.[^.]+$/, '').replace(/_/g, ' ') || t('import.defaultDeck'),
@@ -83,9 +75,21 @@ export async function importTextFile(file: File): Promise<Deck> {
 }
 
 export async function cardsFromTextFile(file: File): Promise<Card[]> {
-  const parsed = parseCards(await file.text())
+  const parsed = await parsedCardsFromFile(file)
+  return parsed.map(({ front, back }) => createCard(front, back))
+}
+
+async function parsedCardsFromFile(file: File) {
+  const content = await file.text()
+  let parsed
+  try {
+    parsed = parseCards(content)
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error(t('import.invalidCsv'))
+    throw error
+  }
   if (!parsed.length) {
     throw new Error(t('import.invalidText'))
   }
-  return parsed.map(({ front, back }) => createCard(front, back))
+  return parsed
 }

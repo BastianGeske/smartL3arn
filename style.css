@@ -206,9 +206,8 @@ button {
 .brand-mark {
   width: 34px;
   height: 34px;
-  object-fit: cover;
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-name {
@@ -2840,7 +2839,7 @@ body.dark .rating-button:hover {
 .app-bar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); border: 0; border-right: 1px solid var(--border); background: var(--surface-2); z-index: 45; }
 .app-bar-inner { width: 100%; height: 100%; padding: 28px 15px 24px; display: flex; flex-direction: column; align-items: stretch; gap: 32px; }
 .brand-button { gap: 7px; padding: 0 4px; }
-.brand-mark { width: 30px; height: 30px; border-radius: 9px; }
+.brand-mark { width: 30px; height: 30px; }
 .brand-name { font-size: 16px; letter-spacing: -.5px; }
 .app-nav { display: flex; flex-direction: column; gap: 8px; align-self: auto; }
 .app-nav-item { min-height: 42px; padding: 10px 12px; border-radius: 11px; font-size: 13px; font-weight: 600; gap: 9px; }
@@ -3025,8 +3024,7 @@ body.dark .deck-due.is-due { color: #ffcb82; background: #453321; }
   .technique-description { font-size: 11px; }
 }
 kbd { display: inline-block; font: 500 10px var(--font-body); border: 1px solid currentColor; opacity: .65; padding: 1px 5px; border-radius: 5px; margin-left: 5px; line-height: 1.4; }
-.brand-name span { color: #0e8a7d; }
-body.dark .brand-name span { color: #6ee3ce; }
+.brand-name span { color: var(--primary); }
 @media(max-width:719px) { kbd { display: none; } }
 /* Align the collection's hierarchy and action density with the selected concept. */
 .library-overview { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--border); padding-bottom: 25px; margin-bottom: 22px; }

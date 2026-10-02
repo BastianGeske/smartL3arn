@@ -32,15 +32,17 @@ function boundedString(value, field, allowEmpty = false) {
   return result
 }
 
-async function fetchWithTimeout(fetchImpl, url, options, timeoutMs) {
+async function requestWithTimeout(fetchImpl, url, options, timeoutMs, readResponse = (response) => response) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    return await fetchImpl(url, { ...options, signal: controller.signal })
+    const response = await fetchImpl(url, { ...options, signal: controller.signal })
+    return await readResponse(response)
   } catch (error) {
     if (error && (error.name === 'AbortError' || controller.signal.aborted)) {
       throw new OpenRouterError('timeout', 'OpenRouter did not respond in time.')
     }
+    if (error instanceof OpenRouterError) throw error
     throw new OpenRouterError('unavailable', 'OpenRouter is unavailable.')
   } finally {
     clearTimeout(timeout)
@@ -97,7 +99,7 @@ function createOpenRouterClient({
 
   async function validateKey(apiKey) {
     const key = boundedString(apiKey, 'API key')
-    const response = await fetchWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/key`, {
+    const response = await requestWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/key`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${key}` },
     }, timeoutMs)
@@ -114,7 +116,7 @@ function createOpenRouterClient({
       learner_answer: boundedString(input?.userAnswer, 'User answer'),
     }
 
-    const response = await fetchWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/chat/completions`, {
+    return requestWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${key}`,
@@ -169,18 +171,19 @@ function createOpenRouterClient({
           },
         },
       }),
-    }, timeoutMs)
-
-    let body
-    try {
-      body = await response.json()
-    } catch {
+    }, timeoutMs, async (response) => {
+      let body
+      try {
+        body = await response.json()
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error
+        if (!response.ok) throw errorForStatus(response.status)
+        throw new OpenRouterError('invalid-response', 'OpenRouter returned invalid JSON.')
+      }
+      onResponse(body)
       if (!response.ok) throw errorForStatus(response.status)
-      throw new OpenRouterError('invalid-response', 'OpenRouter returned invalid JSON.')
-    }
-    onResponse(body)
-    if (!response.ok) throw errorForStatus(response.status)
-    return parseEvaluation(body)
+      return parseEvaluation(body)
+    })
   }
 
   return { validateKey, evaluate }

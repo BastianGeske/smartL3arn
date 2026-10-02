@@ -14,7 +14,7 @@ const router = useRouter()
   <aside class="app-bar">
     <div class="app-bar-inner">
       <button class="brand-button" type="button" :aria-label="t('nav.openLibrary')" @click="router.push('/')">
-        <img src="/icon.png" alt="" class="brand-mark">
+        <img src="/design/brand-kartenfaecher.png" alt="" class="brand-mark" width="30" height="30">
         <span class="brand-name">smart<span>L3arn</span></span>
       </button>
       <nav class="app-nav" :aria-label="t('nav.primary')">

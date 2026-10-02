@@ -37,7 +37,19 @@ describe('FSRS scheduling', () => {
     expect(scheduled.repetitions).toBe(0)
   })
 
-  it('keeps the established preview behavior for new cards', () => {
-    expect(previewIntervals(newCard(), '2026-08-03')).toEqual(['1d', '1d', '1d', '4d'])
+  it('shows the actual intervals for a new card', () => {
+    expect(previewIntervals(newCard(), '2026-08-03')).toEqual(['1d', '1d', '3d', '15d'])
+  })
+
+  it.each([0, 4, 80])('matches previews to saved due dates with stability %s', (stability) => {
+    const card = { ...newCard(), stability, difficulty: 5, lastReview: '2026-08-01' }
+    const previews = previewIntervals(card, '2026-08-03')
+    const original = { ...card }
+    for (const rating of [0, 1, 2, 3] as const) {
+      const scheduled = scheduleCard(card, rating, '2026-08-03')
+      const dueDays = (Date.parse(scheduled.dueDate) - Date.parse('2026-08-03')) / 86_400_000
+      expect(previews[rating]).toBe(dueDays < 30 ? `${dueDays}d` : `${Math.round(dueDays / 30)}mo`)
+    }
+    expect(card).toEqual(original)
   })
 })

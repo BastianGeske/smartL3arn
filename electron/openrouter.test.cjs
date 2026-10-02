@@ -117,6 +117,53 @@ test('times out a stalled request', async () => {
   )
 })
 
+for (const status of [200, 429]) {
+  test(`times out a stalled response body after HTTP ${status}`, { timeout: 1000 }, async () => {
+    let receivedBody = false
+    const client = createOpenRouterClient({
+      timeoutMs: 5,
+      fetchImpl: async (_url, options) => ({
+        ok: status === 200,
+        status,
+        json: () => new Promise((_resolve, reject) => {
+          options.signal.addEventListener('abort', () => {
+            const error = new Error('aborted')
+            error.name = 'AbortError'
+            reject(error)
+          })
+        }),
+      }),
+    })
+
+    await assert.rejects(
+      client.evaluate('key', {
+        deckName: 'Deck', question: 'Question', referenceAnswer: 'Answer', userAnswer: 'Answer',
+      }, () => { receivedBody = true }),
+      (error) => error instanceof OpenRouterError && error.code === 'timeout',
+    )
+    assert.equal(receivedBody, false)
+  })
+}
+
+for (const [status, expectedCode] of [[200, 'invalid-response'], [401, 'auth']]) {
+  test(`maps malformed response JSON after HTTP ${status}`, async () => {
+    const client = createOpenRouterClient({
+      fetchImpl: async () => ({
+        ok: status === 200,
+        status,
+        json: async () => { throw new SyntaxError('Invalid JSON') },
+      }),
+    })
+
+    await assert.rejects(
+      client.evaluate('key', {
+        deckName: 'Deck', question: 'Question', referenceAnswer: 'Answer', userAnswer: 'Answer',
+      }),
+      (error) => error instanceof OpenRouterError && error.code === expectedCode,
+    )
+  })
+}
+
 test('stores credentials encrypted and removes them', async (context) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'smartl3arn-key-test-'))
   context.after(() => fs.rmSync(directory, { recursive: true, force: true }))

@@ -89,6 +89,7 @@ export const en = {
   "import.invalidJson": "Expected a JSON array or an object with a \"cards\" array.",
   "import.noCards": "No cards with both \"front\" and \"back\" fields found.",
   "import.invalidText": "No valid cards found. Expected two columns separated by a tab or comma.",
+  "import.invalidCsv": "Invalid CSV: a quoted field is missing its closing quote. No cards were imported.",
   "import.nativeExport": "Export {filename}",
   "browse.title": "Card collection",
   "browse.study": "Study {count}",

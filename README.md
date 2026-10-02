@@ -1,8 +1,10 @@
 # smartL3arn
 
-A desktop flashcard app for long-term retention. It combines the FSRS-5 spaced-repetition scheduler with an optional Smart Study mode that layers evidence-based learning techniques (active recall by typing, confidence calibration, elaborative interrogation, interleaving, and a Pomodoro timer) on top of the standard review loop.
+A flashcard app for long-term retention, with local deck storage, FSRS-5 spaced repetition, and an optional Smart Study mode for typed recall, confidence checks, explanations, interleaving, and timed sessions.
 
 Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web app runs in Electron, a browser, and native iOS/Android shells through Capacitor.
+
+The interface is available in German and English. OpenRouter answer evaluation is optional and currently exposed in the **macOS Electron app**; Windows Electron, browser, iOS, and Android study flows use local evaluation. Decks and local study work without an OpenRouter account.
 
 ---
 
@@ -10,12 +12,19 @@ Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web
 
 - [What it is for](#what-it-is-for)
 - [Features](#features)
+- [Recent improvements](#recent-improvements)
 - [Install and run](#install-and-run)
 - [Building distributables](#building-distributables)
 - [Mobile builds (iOS and Android)](#mobile-builds-ios-and-android)
 - [Usage walkthrough](#usage-walkthrough)
 - [Smart Study mode](#smart-study-mode)
+  - [Local answer comparison](#local-answer-comparison)
   - [OpenRouter answer evaluation](#openrouter-answer-evaluation)
+    - [Set up OpenRouter in the app](#set-up-openrouter-in-the-app)
+    - [Configure a local .env file](#configure-a-local-env-file)
+    - [Choose a model](#choose-a-model)
+    - [Troubleshooting](#troubleshooting)
+- [API usage overview](#api-usage-overview)
 - [Import formats](#import-formats)
   - [JSON](#json)
   - [AI prompt for high-quality flashcards](#ai-prompt-for-high-quality-flashcards)
@@ -24,14 +33,17 @@ Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data storage](#data-storage)
 - [Project layout](#project-layout)
+- [Prism UI and app icons](#prism-ui-and-app-icons)
+- [Language / i18n](#language--i18n)
 
 ---
 
 ## What it is for
 
-You write flashcards (front + back), the app schedules reviews so you see each card right before you would forget it. The FSRS-5 algorithm (the same scheduler used by modern Anki forks) computes the next due date from your rating history. Smart Study mode lets you opt in to additional cognitive techniques that research has shown to accelerate learning beyond passive review.
+Write flashcards with a question and reference answer. The app computes the next due date from your ratings using FSRS-5. Standard Study reviews one deck; Smart Study combines selected decks and optional learning techniques. Both modes let you choose every rating yourself.
 
 Typical use cases:
+
 - Vocabulary (languages, medical terms, legal concepts)
 - Definitions and formulas
 - Anything you need to recall verbatim or fast
@@ -39,30 +51,34 @@ Typical use cases:
 ## Features
 
 **Decks and cards**
+
 - Create, rename, delete decks
 - Add, edit, delete cards
 - Inline cell editing in the browse view
-- Sortable browse table (front, back, due date, interval, difficulty, fail percentage)
+- Sortable browse table (front, back, due date, interval, difficulty), with a displayed fail percentage
 - Search filter
 
 **Scheduling**
-- FSRS-5 with default weights trained on around 700 million Anki reviews
+
+- FSRS-5 with bundled default weights
 - 90% desired retention target
 - Four-button rating: Again, Hard, Good, Easy
-- Predicted next interval shown on each rating button
+- Standard Study rating buttons show the interval produced by the same scheduler that saves the review; for a new card, Again / Hard / Good / Easy are **1 / 1 / 3 / 15 days**
 - Per-card difficulty pill (easy, medium, hard)
 - Per-card fail-rate statistics
 
 **Standard study session**
+
 - Due cards sorted into two priority groups: overdue first, then today-due
 - Cards shuffled within each group to avoid memorising the order
-- Within-group ordering is by difficulty (hardest first) before shuffling
 - "Again" cards are re-queued in a learning phase at the end of the main queue
 - Session statistics bar (live counts of Again / Hard / Good / Easy)
 - Daily streak tracking (consecutive days with a session)
-- "Study Again" button on the done screen only appears if cards are still due; otherwise it shows the next review date
+- The completion screen offers **Study Again** if cards remain due, or **Practice again** plus the next review date when the deck is caught up
+- When no cards are due, you can voluntarily practice the deck
 
 **Smart Study mode (separate tab)**
+
 - Multi-deck selection (interleave across decks in one session)
 - Four optional techniques, toggle each on or off:
   - Active recall by typing the answer
@@ -71,12 +87,13 @@ Typical use cases:
   - Interleaving (round-robin across selected decks)
 - Session length: 10 min, 25 min (Pomodoro), or no limit
 - Live countdown timer in the header
-- 25-minute Pomodoro sessions transition into a 7-minute active break timer before the next Smart Study session
+- When a 25-minute Pomodoro timer expires, a 7-minute break is shown before the next Pomodoro round; completing the queue earlier finishes the session directly
 - Typed-answer comparison with a similarity score (Levenshtein based, diacritics stripped, punctuation ignored)
+- Pure integer and decimal answers are compared exactly, including their sign; decimal comma and point are equivalent, and large values retain full precision. This does not evaluate fractions, expressions, scientific notation, or thousands separators.
 - Optional semantic answer evaluation through OpenRouter in the macOS desktop app
 - Secure local API-key storage through Electron and automatic local fallback on API errors
 - Color-coded feedback band: perfect (>=97%), close (>=82%), partial (>=50%), wrong (<50%)
-- Suggested rating button highlighted based on similarity
+- Ratings remain manual; local or AI feedback never chooses or highlights a suggested rating
 - Confidence-vs-result calibration feedback
 - Why-prompt elaborations stored per card (latest three kept)
 - Four-button Smart Study queue control: Good/Easy leave the session and rely on FSRS spacing; Hard is re-queued once, Again is re-queued up to two retries
@@ -85,55 +102,79 @@ Typical use cases:
 - Session stats logged per deck (streak compatible)
 
 **Import and export**
+
 - JSON import (creates a new deck from an array or deck object)
 - TXT and CSV import (comma or tab delimited)
 - Two import entry points on Home: "Import JSON" and "Import TXT / CSV" both create a new deck
 - "Import TXT / CSV" inside a deck appends cards to the open deck
-- JSON and CSV export per deck
+- JSON, CSV, and Anki-compatible TXT export per deck; **Export All** creates a full JSON backup
+- JSON deck and backup restoration preserve scheduling, statistics, explanations, and session history
+- CSV header detection, quoted multiline fields, escaped quotes, and UTF-8 BOM support
+
+**OpenRouter and usage**
+
+- Optional semantic answer checks in macOS Electron, with encrypted in-app API-key storage or local environment configuration
+- Configurable model ID and automatic local fallback on failed or incompatible AI requests
+- API usage overview with model/date filters, token counts, reported USD costs, and an estimate for 10,000 evaluations
 
 **UI**
+
 - Light and dark theme (persisted)
 - Keyboard shortcuts for study (space to flip, 1-4 to rate)
 - Responsive layout
+- German, English, and system-language selection under **Preferences**
+- Violet Prism UI with Kartenfächer branding and native app icons
+
+## Recent improvements
+
+- CSV exports can be re-imported without turning the header into a card or losing quoted multiline content. An unclosed quoted field rejects the whole import with a translated error.
+- Re-importing an individual JSON deck now retains card IDs, statistics, elaborations, extra-practice flags, and session history, matching full-backup restoration.
+- Pure integer and decimal reference answers are checked exactly, including signs and values beyond floating-point precision.
+- Standard Study interval previews now match the saved review schedule for all four ratings.
+- The current UI includes manual ratings, localized settings and feedback, API usage reporting, and refreshed desktop/mobile branding.
 
 ## Install and run
 
-Requirements: Node.js 20.19 or newer, npm.
+Requirements: **Node.js 22.12 or newer**, npm, and a desktop session for Electron. This satisfies the installed Vite and Capacitor CLI requirements.
 
 ```bash
-npm install
+npm ci             # install the versions recorded in package-lock.json
 npm run dev        # Vite browser development server with hot reload
 npm start          # production web build, then launch Electron
 ```
 
-Electron data is persisted to your OS user-data folder (see [Data storage](#data-storage)). The browser development version uses `localStorage`.
+Electron data is persisted to your OS user-data folder (see [Data storage](#data-storage)). The browser development version uses `localStorage`; it does not load your Electron decks or expose OpenRouter credentials. To launch Electron without rebuilding an existing web bundle, use `npm run start:electron`.
 
 Useful checks:
 
 ```bash
 npm run typecheck  # Vue + TypeScript validation
-npm test           # domain/unit tests
+npm test           # Electron service tests, then Vitest domain/import tests
+npm run build:web  # typecheck and build; required before the Electron smoke test
 npm run test:smoke # hidden Electron flow test (requires a desktop session)
 ```
+
+Regression coverage includes CSV export/import, header handling and malformed CSV, JSON learning-data restoration, exact numeric answers, scheduler previews, OpenRouter timeouts, credential resolution, and API usage accounting. The smoke test uses example decks, an in-memory partition, and mocked IPC; it does not change your real deck database or call OpenRouter.
 
 ## Building distributables
 
 ```bash
-npm run build      # macOS DMG (arm64; x64 if signing/build env permits)
+npm run build      # macOS DMG targets for arm64 and x64
 npm run build:win  # Windows NSIS installer + portable .exe
 npm run build:all  # both
 npm run build:web  # web bundle only
 ```
 
-The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. The bundled app icon is `build/icon.png` (1024x1024); electron-builder converts it to `.icns` and `.ico` automatically.
+The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. Build/signing prerequisites depend on the target platform. The desktop/browser artwork is `build/icon.png`; electron-builder converts it to platform icon formats. See [Prism UI and app icons](#prism-ui-and-app-icons) for native icon generation.
 
 ## Mobile builds (iOS and Android)
 
 Vite creates the shared `web-dist/` bundle. Capacitor copies that same output into the native projects, so Electron, iOS, Android, and the browser use one renderer source.
 
 Requirements:
-- **iOS**: macOS with Xcode (and CocoaPods).
-- **Android**: Android Studio (which bundles the Android SDK), or the command-line SDK tools with `ANDROID_HOME` set. Java 17+.
+
+- **iOS**: macOS with Xcode compatible with Capacitor 8. This project uses Swift Package Manager, rather than a CocoaPods project, and targets iOS 15 or newer.
+- **Android**: Android Studio or command-line SDK tools with `ANDROID_HOME` set, **JDK 21**, and Android SDK 36. The project targets SDK 36 with a minimum SDK of 24.
 
 ```bash
 npm run ios        # copy web assets, sync, open the project in Xcode
@@ -158,11 +199,12 @@ Native projects live in `ios/` and `android/`; Capacitor config is `capacitor.co
 1. Click **New Deck**, give it a name.
 2. Click **Browse** on the deck, then **+ Add Card** to add cards (or use **Import TXT / CSV** at the top to bulk-import).
 3. From Home, click **Study (n)** to start a standard session, or click **Smart Study** in the header for a configurable session.
-4. Press **Space** (or click the card) to flip; rate the card with the four buttons or keys **1**-**4**.
+4. Press **Space** / **Enter** or click **Reveal answer**; rate the card with the four buttons or keys **1**-**4**.
+5. Open **Preferences** (**Einstellungen**) to change language or appearance. Open **API Usage** (**API-Verbrauch**) to inspect recorded AI requests.
 
 ## Smart Study mode
 
-The Smart Study tab is the recommended mode if you want to learn faster, not just review.
+Use Smart Study to combine multiple decks and configure how you recall and review answers.
 
 | Technique | What it does | Research origin |
 |---|---|---|
@@ -171,31 +213,114 @@ The Smart Study tab is the recommended mode if you want to learn faster, not jus
 | Elaborative Why-Prompt | After reviewing, you briefly type why the answer is correct. Saved to the card history. | Pressley et al.; Chi et al. (self-explanation) |
 | Interleaving | Cards are pulled round-robin from every selected deck rather than block by block. | Rohrer and Pashler (2007) |
 | Spacing (always on) | FSRS-5 schedules each card individually. | Cepeda et al.; Ebbinghaus |
-| Pomodoro timer | Optional 10 or 25 minute focused session; 25-minute sessions require a 7-minute break before the next round. | Cirillo |
+| Pomodoro timer | Optional 10 or 25 minute focused session, or no limit; expiration of a 25-minute timer starts a 7-minute break. | Cirillo |
 
-Each technique can be toggled independently in Smart Study setup. Preferences (selected decks, toggles, duration) persist in `localStorage` under `ankiweb_smart_config`.
+Each technique can be toggled independently in Smart Study setup. Preferences (selected decks, toggles, duration, and evaluation mode) persist in `localStorage` under `ankiweb_smart_config`. Answer feedback is separate from your rating: **Again**, **Hard**, **Good**, and **Easy** are always chosen manually. Session counts include repeated ratings of re-queued cards.
+
+### Local answer comparison
+
+Local comparison requires no API key or network request. Text answers use normalized Levenshtein similarity: casing, diacritics, ordinary punctuation, and repeated whitespace are ignored, while minus signs directly before digits are retained. This measures textual similarity, rather than semantic correctness; synonyms and paraphrases can receive a lower score.
+
+When the reference answer is a pure integer or decimal, the learner answer must also be a valid number with the same value. Comparison uses strings, retaining precision for large values. Decimal comma and point, leading/trailing zeros, a positive sign, and Unicode minus are normalized.
+
+| Typed answer | Reference answer | Local result |
+|---|---|---|
+| `Héllo, world!` | `hello world` | 100% match |
+| `1,50` | `1.5` | 100% match |
+| `+003.00` | `3` | 100% match |
+| `3` | `-3` | Incorrect, 0% |
+| `9007199254740992` | `9007199254740993` | Incorrect, 0% |
+
+Pure numeric answers use exact equality; text uses the four similarity bands described above. This is not a mathematical expression evaluator: fractions, scientific notation, expressions, and grouped thousands are outside the exact-number comparison. AI mode uses the provider's semantic verdict instead of a local percentage; the same local comparison is used if AI falls back.
 
 ### OpenRouter answer evaluation
 
-For personal Electron use, copy `.env.example` to `.env` in the project root and fill in `OPENROUTER_API_KEY` locally. An empty `.env` is provided when setting up this workflow. Restart Electron after changing the file, then select **OpenRouter AI** in Smart Study's answer evaluation settings.
+OpenRouter compares the meaning of a typed answer with the current question and reference answer. It returns one of four verdicts with brief feedback in the selected UI language. It never sets an FSRS rating for you.
 
-Credential precedence is: the `OPENROUTER_API_KEY` process environment variable, the local `.env` value, then the encrypted settings key. Blank values fall through to the next source. The UI identifies the active source without displaying the key. Removing a stored key does not remove an environment key.
+#### Set up OpenRouter in the app
 
-Set `OPENROUTER_MODEL` to the OpenRouter model ID you want to use. The process environment takes precedence over `.env`; missing or blank values default to `openrouter/free`. Restart Electron after changing the model. The selected model must support the structured JSON response requested by the evaluator; incompatible responses use the existing local fallback.
+1. Sign in to [OpenRouter](https://openrouter.ai/) and create a personal inference API key on the [API keys page](https://openrouter.ai/settings/keys). Use a regular API key, not a [management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys), which cannot call completion endpoints.
+2. Start the macOS desktop app with `npm start`, or open the installed macOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
+3. Open **Smart Study → Answer evaluation** (German: **Smart Study → Antwortbewertung**). Paste the key into **OpenRouter API key** and click **Validate and save** (**Prüfen und speichern**).
+4. Confirm the **Configured** (**Eingerichtet**) indicator and select **OpenRouter AI** (**OpenRouter-KI**). Saving a key selects AI mode; if an environment key is configured, it remains the active credential.
+5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. A local percentage or fallback notice means this answer was checked locally.
+6. Open [API Usage](#api-usage-overview) and click **Refresh** to inspect the recorded request, tokens, and reported cost. A successful key validation alone does not prove the chosen model can produce the required response format; the first answer check verifies that.
 
-When running a packaged macOS app, place `.env` at `~/Library/Application Support/smartL3arn/.env`. Project `.env` files are ignored by Git and explicitly excluded from packaged builds. Keys are read only by Electron's main process; do not use a `VITE_` prefix for credentials. Browser and mobile builds continue to use local evaluation.
+The in-app key is encrypted through Electron's OS-backed secure storage and stored as `openrouter-key.bin` in the app's user-data folder. It is separate from deck data and exports. To stop using AI, select **Local** (**Lokal**). **Remove stored key** removes only the encrypted local copy; revoke a key in OpenRouter if you also want to disable it at the provider.
 
-The macOS desktop app can evaluate typed answers semantically instead of relying only on character similarity. Open **Smart Study**, find **Answer evaluation**, enter a personal OpenRouter API key, and choose **OpenRouter AI**. The key is validated before it is stored and is encrypted through Electron's OS-backed secure storage; it is never included in deck data or exports.
+#### Configure a local .env file
 
-For each checked answer, the app sends only the deck name, current question, reference answer, and typed answer to the configured model (default: `openrouter/free`). The response reports whether the answer is correct, mostly correct, partially correct, or incorrect, with brief feedback. The result never selects an FSRS rating automatically. If OpenRouter is unavailable, times out, rejects the key, or reaches its rate limit, smartL3arn immediately uses the existing local comparison and labels the result as a fallback.
+For source/development use, create `.env` beside `package.json`. If it does not exist, copy the example:
 
-Browser, iOS, and Android builds continue to use local evaluation. OpenRouter's free tier is subject to provider availability and account rate limits.
+```sh
+cp .env.example .env
+```
+
+If `.env` already exists, edit it instead of overwriting it. Replace the example's `OPEN_ROUTER_API_KEY` placeholder with your actual personal key:
+
+```dotenv
+OPENROUTER_API_KEY=sk-or-v1-PASTE_YOUR_PERSONAL_KEY_HERE
+OPENROUTER_MODEL=openrouter/free
+```
+
+Fully quit and restart Electron after changing `.env` or the model, then select **OpenRouter AI** in Smart Study. Closing the window alone may leave Electron running on macOS. With an installed macOS app, the file belongs at `~/Library/Application Support/smartL3arn/.env`, rather than inside the application bundle.
+
+Keys are resolved in this order; empty or whitespace-only values fall through:
+
+| Priority | Key source |
+|---|---|
+| 1 | `OPENROUTER_API_KEY` in the Electron process environment |
+| 2 | `OPENROUTER_API_KEY` in the applicable local `.env` file |
+| 3 | Encrypted key saved in Smart Study |
+
+The UI groups the first two sources as an **environment key**. If one is active, saving a key in the app stores an encrypted fallback; removing that stored key leaves the environment key active. Change or remove the active environment value and restart to switch sources.
+
+An `.env` file stores its key as plain text; the in-app method uses encrypted storage. Repository `.env` files are ignored by Git and excluded from packaged builds. Credentials are resolved in Electron's main process: never give them a `VITE_` prefix, which would expose them to the web build.
+
+#### Choose a model
+
+The model is configured with `OPENROUTER_MODEL`; there is no model picker in the current UI. Its precedence is the process environment, then `.env`, then the bundled default **`openrouter/free`**. Changing it requires a full Electron restart. Model configuration is independent of whether the key comes from `.env` or encrypted storage.
+
+- The default [Free Models Router](https://openrouter.ai/openrouter/free) chooses an available free model that supports the requested features. The actual returned model can differ between requests and is shown in feedback and usage history.
+- For a fixed model, copy its exact ID from the [OpenRouter model catalog](https://openrouter.ai/models) into `OPENROUTER_MODEL`. Select a model/provider supporting [structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs): the evaluator requests a strict JSON schema with `response_format.type = "json_schema"` and `provider.require_parameters: true`. A valid key alone does not guarantee model compatibility.
+- Paid models need sufficient account credits and an appropriate key limit. Free-model availability and quotas can change; consult the current [credit and rate-limit documentation](https://openrouter.ai/docs/api_reference/limits) rather than relying on a fixed daily allowance.
+
+#### What is sent and how fallback works
+
+Each non-empty AI answer check sends the deck name, current question, reference answer, and learner answer, alongside the evaluator instructions and selected feedback language. Other cards, session history, confidence selections, and elaborations are not sent. OpenRouter receives the API key for authentication and routes the evaluation to the selected provider.
+
+The configured request timeout is **8 seconds**, including reading the answer response body. Authentication failures, rate limits, unavailable providers, timeouts, and malformed evaluations trigger a labeled local comparison. Empty answers and **I don't know** are handled locally without an API request. The fallback applies to that answer; the configured AI mode remains available for subsequent checks.
+
+#### Troubleshooting
+
+| Symptom | What to check |
+|---|---|
+| AI configuration is unavailable | Use the macOS Electron app; Windows Electron, browser, iOS, and Android currently use local evaluation. |
+| A key is saved, but checks remain local | Enable **Typed recall**, select **OpenRouter AI**, and submit a non-empty answer. Inspect any fallback notice. |
+| Key rejected | Replace the example placeholder, check that the key is active, and use a regular inference key rather than a management key. |
+| The app keeps using an old key | Process environment and `.env` override the encrypted settings key. Change the active source and fully restart Electron. |
+| Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
+| OpenRouter unavailable | Check the connection, account credits/key limit for paid models, and whether the configured model supports structured outputs. The UI groups these failures under availability. |
+| Invalid evaluation or repeated timeouts | Try a compatible model with a shorter response latency. Unsupported JSON schemas, truncated responses, or a stalled response body can cause local fallback. |
+| Card too long | Deck name, question, reference answer, and typed answer are each limited to 4,000 characters after trimming. Shorten the affected field. |
+| Secure key storage unavailable | Check the OS secure-storage availability, or use the local `.env` configuration described above. |
+| Usage shows `—` | The provider did not supply that information; it means unknown, not free. Refresh after the request finishes. |
+
+## API usage overview
+
+Open **API Usage** (**API-Verbrauch**) in the navigation to see requests recorded by this Electron installation, the configured model, successful/failed checks, input/output tokens, cached/reasoning tokens, and reported USD costs. Filter by today, the last 7 or 30 days, or all time, and by the actual returned model. Click **Refresh** to load completed requests.
+
+The 10,000-evaluation projection uses the average of requests with reported costs in the current selection. It is an estimate, not a quote or spending limit. Payment fees and taxes are excluded. Unknown costs remain unknown; reported zero cost is treated as free. Cached and reasoning tokens are subsets of the token counts and are not added twice.
+
+Local checks and key validation are excluded. Failed API attempts are counted, and usage returned with a malformed evaluation is still captured. Tracking uses OpenRouter's [usage accounting response](https://openrouter.ai/docs/cookbook/administration/usage-accounting), without extra API requests. Historical activity from the OpenRouter account is not imported; this is not an account balance or complete billing dashboard.
+
+The metadata journal, `api-usage.jsonl`, is separate from decks and contains timestamps, model IDs, outcomes, tokens, and reported costs, without card content, learner answers, or API keys. It is not included in deck backups. Browser/mobile views explain that their checks are local.
 
 ## Import formats
 
 ### JSON
 
-Two shapes are accepted by **Import JSON** on Home.
+Three shapes are accepted by **Import JSON** on Home.
 
 **1. Deck object** (recommended; matches the export format):
 
@@ -227,12 +352,18 @@ Two shapes are accepted by **Import JSON** on Home.
 |---|---|---|---|---|
 | `front` | string | yes | - | Question side |
 | `back` | string | yes | - | Answer side |
+| `id` | string | no | generated | Retained for deck objects and full backups; regenerated for bare arrays |
 | `interval` | number | no | `0` | Days until next review |
 | `repetitions` | number | no | `0` | Successful review streak |
 | `easeFactor` | number | no | `2.5` | Legacy SM-2 ease (kept for compat) |
 | `dueDate` | string | no | today | ISO date `YYYY-MM-DD` |
+| `stability` | number | no | unset | FSRS stability for a reviewed card |
+| `difficulty` | number | no | unset | FSRS difficulty |
+| `lastReview` | string | no | unset | Last review date, `YYYY-MM-DD` |
 
-Cards missing `front` or `back` are skipped. Unknown fields are ignored. Card IDs are always generated fresh on import to avoid collisions.
+Cards missing a non-empty `front` or `back` are skipped. Unknown card fields are ignored. Deck objects and full backups preserve existing card IDs so `cardStats` still refers to the right cards; missing IDs are generated. Deck IDs are always regenerated, and imports add decks rather than merging existing ones. Bare arrays generate fresh card IDs.
+
+Optional deck-level `cardStats`, `sessions`, and `smartSessionSeq` are restored from deck objects and full backups. This retains review/failure statistics, elaborations, extra-practice flags, and learning history alongside the card scheduling fields.
 
 ### AI prompt for high-quality flashcards
 
@@ -311,11 +442,13 @@ Both **Import TXT / CSV** entry points (Home or inside a deck) use the same pars
 **Rules**
 
 - Two columns: `front`, `back`.
-- Delimiter is auto-detected: if the first non-empty line contains a tab, tab is used; otherwise comma.
-- Lines starting with `#` are treated as comments and skipped.
-- Empty lines are skipped.
+- Delimiter is auto-detected: if the first non-empty, non-comment line contains a tab outside quoted fields, tab is used; otherwise comma.
+- CSV quoting starts only at the beginning of a field (after optional whitespace). A quote inside ordinary text, such as `Convert 6" to centimetres`, is literal and does not hide a following tab separator. Tab-delimited imports preserve quotes unchanged.
+- Lines starting with `#` are treated as comments and skipped outside quoted CSV fields. Quoted content, including lines starting with `#`, is preserved.
+- Empty lines are skipped outside quoted CSV fields.
 - For CSV, fields containing comma, quote, or newline must be wrapped in double quotes. Literal double quotes inside a quoted field are escaped by doubling them (`""`), per RFC 4180.
-- No header row is expected; if you include one (e.g. `front,back`) it is parsed as a card and will appear in the deck.
+- An optional first row containing exactly `front,back` (or their tab-delimited equivalents) is recognized as a header, ignoring case and surrounding whitespace. Later rows with these values remain cards. A leading UTF-8 BOM is accepted.
+- Quoted fields can contain LF, CRLF, or CR line breaks. An unclosed quoted field rejects the whole import with an error; no partial deck is imported.
 
 **TXT example (tab delimited)**
 
@@ -330,10 +463,13 @@ hola	hello
 **CSV example (comma delimited)**
 
 ```csv
+front,back
 casa,house
 "Hola, ¿qué tal?","Hi, how are you?"
 "He said ""hi""","Said hello"
 perro,dog
+"Name both stages","First stage
+Second stage"
 ```
 
 Imports made via **Home > Import TXT / CSV** create a new deck named after the file (underscores become spaces, extension stripped). Imports via **Browse > Import TXT / CSV** append cards to the currently open deck.
@@ -342,22 +478,14 @@ Imports made via **Home > Import TXT / CSV** create a new deck named after the f
 
 Per-deck exports live in the **Browse** view; a full backup of every deck lives on **Home**.
 
-- **Export JSON** (Browse) writes the full deck object (including scheduling state) as `<deck_name>.json`, suitable for re-import.
-- **Export CSV** (Browse) writes two columns (`front`, `back`) as `<deck_name>.csv`. Scheduling state is not exported.
-- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. Newlines inside a field become `<br>` (Anki renders HTML) and literal tabs become spaces. Import directly in Anki via *File > Import*.
+- **Export JSON** (Browse) writes the full deck object as `<deck_name>.json`. Re-import preserves scheduling state, card IDs, card statistics, elaborations, extra-practice flags and session history; the deck receives a new ID.
+- **Export CSV** (Browse) writes two columns (`front`, `back`) with a header as `<deck_name>.csv`. Re-import recognizes the header and preserves multiline content. Scheduling state is not exported.
+- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. LF, CRLF, and CR line breaks inside a field become `<br>` (Anki renders HTML), literal tabs become spaces, and quotes are kept. Import directly in Anki via *File > Import*.
 - **Export All** (Home) writes every deck — with cards, per-card stats, and session history — as a single `smartL3arn_backup_<date>.json`. Re-import it with **Import JSON** on Home to restore the whole collection (decks are added, not merged; deck IDs are regenerated).
 
 On Windows/macOS (Electron) and in a browser, exports download as a file. On iOS/Android the file is written to the app cache and the native **share sheet** opens, so you can save it to Files, Drive, email, etc. (via `@capacitor/filesystem` + `@capacitor/share`).
 
 ## Keyboard shortcuts
-
-### API usage overview
-
-Open **API-Verbrauch** in the app navigation to see local answer-evaluation requests, input/output tokens, cached/reasoning tokens, and OpenRouter-reported costs in USD. Filter by today, the last 7 or 30 days, or all time, and by model. The 10,000-request projection uses the average of requests with reported costs in the current selection and is explicitly an estimate.
-
-Tracking starts with this feature; previous OpenRouter activity is not imported. Local answer checks and key validation are excluded. Failed API attempts are counted; usage returned for malformed evaluations is still included. Timeouts or missing provider data have unknown costs, rather than being treated as free. Counts and costs are taken from OpenRouter's [usage accounting response](https://openrouter.ai/docs/cookbook/administration/usage-accounting); no extra API calls are made for tracking. Payment fees and taxes are not included.
-
-Metadata is stored separately from decks in `api-usage.jsonl` in Electron's user-data folder. It contains timestamps, model IDs, outcomes, token counts, and reported costs, never API keys, card text, or answers. Refresh the overview to load recent results. Browser/mobile versions show an explanation because their evaluation is local.
 
 **Standard study**
 
@@ -380,7 +508,9 @@ Metadata is stored separately from decks in `api-usage.jsonl` in Electron's user
 
 | Key | Action |
 |---|---|
-| 1 / 2 / 3 / 4 | Rate Again / Hard / Good / Easy (disabled while the why-prompt textarea is focused) |
+| 1 / 2 / 3 / 4 | Rate Again / Hard / Good / Easy (disabled while an input or textarea is focused) |
+
+Standard Study shortcuts apply when focus is outside buttons, inputs, textareas, selects, and editable cells. **Enter** submits the deck-name dialog; **Escape** closes an editor dialog.
 
 ## Data storage
 
@@ -396,8 +526,21 @@ Other persisted keys:
 
 | Key | Purpose |
 |---|---|
-| `ankiweb_smart_config` | Smart Study preferences (selected decks, toggles, duration) |
+| `ankiweb_smart_config` | Smart Study preferences (selected decks, toggles, duration, evaluation mode) |
 | `ankiweb_dark` | Dark mode flag (`"1"` or `"0"`) |
+| `smartl3arn_language` | Language preference (`system`, `de`, or `en`) |
+| `ankiweb_smart_pomodoro_break_until` | Timestamp until which a Pomodoro break remains active |
+
+Electron also keeps these files in its user-data directory:
+
+| File | Purpose | Included in deck exports? |
+|---|---|---|
+| `ankiweb_data.json` | Decks, cards, scheduling, statistics, and sessions | Yes, through deck JSON or Export All |
+| `openrouter-key.bin` | Encrypted key saved in the app | No |
+| `api-usage.jsonl` | Local AI usage metadata | No |
+| `.env` | Optional key/model configuration for a packaged app | No |
+
+Source/development `.env` configuration is read from the repository root. Decks are local to each app/browser installation; there is no automatic synchronization between Electron, browser, and mobile storage. Use **Export All** and **Import JSON** to transfer decks and learning data. Re-import adds copies with new deck IDs.
 
 A one-time migration in `main.js` copies data from the pre-rename `Anki Web` userData folder into the new `smartL3arn` folder on first launch.
 
@@ -409,6 +552,7 @@ The on-disk shape mirrors the in-memory state:
     {
       "id": "abc123def",
       "name": "Spanish",
+      "smartSessionSeq": 2,
       "cards": [
         {
           "id": "card123",
@@ -428,6 +572,9 @@ The on-disk shape mirrors the in-memory state:
           "reviews": 5,
           "again": 1,
           "hard": 1,
+          "smartNeedsPractice": true,
+          "smartLastGrade": "hard",
+          "smartLastReviewedSession": 2,
           "elaborations": [
             { "date": "2026-05-25", "text": "Spanish for house" }
           ]
@@ -449,21 +596,27 @@ The last 90 sessions per deck are retained for the streak indicator. The last 3 
 .
 ├── main.js                 # Electron main process and async data IPC
 ├── preload.js              # safe contextBridge for renderer persistence
+├── electron/               # OpenRouter client, credential resolution, usage journal, tests
 ├── index.html              # Vite entry page
 ├── style.css               # shared design system and responsive styles
 ├── src/
 │   ├── components/         # reusable Vue UI components and dialogs
 │   ├── views/              # route-level Library, Browse, Study, and Smart Study screens
 │   ├── stores/             # Pinia stores for data, settings, UI, and study sessions
-│   ├── domain/             # framework-independent FSRS, queues, dates, parsing, and types
+│   ├── domain/             # shared FSRS, queues, dates, answer comparison, parsing, and types
 │   ├── services/           # storage adapters, native APIs, and import handling
+│   ├── i18n/               # German/English catalogs and reactive locale helpers
 │   ├── App.vue
 │   ├── main.ts
 │   └── router.ts
 ├── build/
-│   └── icon.png            # application icon and Vite public asset
+│   ├── icon.png            # desktop/browser application icon
+│   └── design/             # deck covers, Kartenfächer artwork and asset notes
 ├── scripts/
-│   └── smoke-electron.cjs  # isolated end-to-end renderer smoke test
+│   ├── smoke-electron.cjs  # isolated end-to-end renderer smoke test
+│   ├── design-preview-electron.cjs # example-data visual captures
+│   └── generate-native-icons.swift # packages iOS/Android launcher artwork
+├── .env.example            # local OpenRouter key/model configuration example
 ├── capacitor.config.json   # Capacitor config (webDir: web-dist)
 ├── web-dist/               # generated Vite bundle (gitignored)
 ├── ios/                    # Capacitor iOS project (Xcode)
@@ -474,14 +627,22 @@ The last 90 sessions per deck are retained for the streak indicator. The last 3 
 └── README.md
 ```
 
-The `domain/` modules deliberately have no Vue or platform dependencies. They can be tested independently and are shared by the browser, Electron, and Capacitor flows.
+Scheduling, queues, answer comparison, and import/export logic are shared by the browser, Electron, and Capacitor flows and covered by Vitest. Locale-aware domain helpers use the shared i18n module; platform persistence and native APIs live in services.
 
-## Prism UI
+## Prism UI and app icons
 
 The library, card browser, Smart Study setup, both study modes, completion and
 Pomodoro screens, API usage and editor dialogs share a violet theme, macOS system
 typography and coordinated light/dark surfaces. Deck covers use local artwork in
 `build/design/`; they require no network requests. Existing decks need no migration.
+
+The Kartenfächer logo uses a transparent navigation mark and matching desktop, browser, iOS, and Android artwork. Asset notes are in [build/design/brand-kartenfaecher.md](build/design/brand-kartenfaecher.md). On macOS, regenerate the native launcher images after changing their source artwork with:
+
+```sh
+swift scripts/generate-native-icons.swift
+```
+
+This replaces the iOS and Android icon assets. It uses the full-bleed `build/design/brand-kartenfaecher-ios.png` for the opaque 1024px iOS icon, and `build/icon.png` for Android legacy/round icons and adaptive foregrounds at all five densities. Android's adaptive background is configured separately in `android/app/src/main/res/values/ic_launcher_background.xml`.
 
 Start the desktop app with `npm start`. A browser preview runs with `npm run dev`;
 Electron-only API and file capabilities still require the desktop app.
