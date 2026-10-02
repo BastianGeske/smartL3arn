@@ -1,6 +1,17 @@
 export type Rating = 0 | 1 | 2 | 3
 export type RatingKey = 'again' | 'hard' | 'good' | 'easy'
 export type ConfidenceLevel = 'low' | 'medium' | 'high'
+export type AnswerVerdict = 'correct' | 'mostly_correct' | 'partially_correct' | 'incorrect'
+export type EvaluationMode = 'local' | 'openrouter'
+
+export interface AnswerEvaluation {
+  source: 'openrouter' | 'local'
+  verdict: AnswerVerdict
+  feedback: string
+  model?: string
+  fallbackReason?: string
+  localSimilarity?: number
+}
 
 export interface SessionStats {
   reviewed: number
@@ -69,6 +80,7 @@ export interface SmartConfig {
   deckIds: string[]
   techniques: SmartTechniques
   duration: number
+  evaluationMode: EvaluationMode
 }
 
 export interface SmartQueueItem {
@@ -84,7 +96,8 @@ export interface SmartSessionState {
   index: number
   phase: 'asking' | 'reviewing' | 'break'
   typedAnswer: string
-  similarity: number | null
+  evaluation: AnswerEvaluation | null
+  isEvaluating: boolean
   confidenceLevel: ConfidenceLevel | null
   elaboration: string
   startTime: number

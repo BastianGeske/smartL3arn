@@ -1,6 +1,7 @@
+import { locale, type TranslationKey } from '../i18n'
 import { computed, onScopeDispose, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { answerSimilarity } from '../domain/study/answerSimilarity'
+import { localEvaluation } from '../domain/study/answerSimilarity'
 import { buildSmartStudyQueue } from '../domain/study/smartQueue'
 import { scheduleCard } from '../domain/scheduling/fsrs'
 import {
@@ -29,12 +30,23 @@ const REQUEUE_LIMITS: Record<RatingKey, number> = {
 const POMODORO_MINUTES = 25
 const BREAK_MINUTES = 7
 
+const fallbackMessages: Record<string, TranslationKey> = {
+  'not-configured': 'ai.notConfigured',
+  auth: 'ai.auth',
+  'rate-limit': 'ai.rateLimit',
+  timeout: 'ai.timeout',
+  'invalid-response': 'ai.invalidResponse',
+  'invalid-input': 'ai.invalidInput',
+  unavailable: 'ai.unavailable',
+}
+
 export const useSmartStudyStore = defineStore('smart-study', () => {
   const library = useLibraryStore()
   const settings = useSettingsStore()
   const session = ref<SmartSessionState | null>(null)
   const clockNow = ref(Date.now())
   let timer: ReturnType<typeof setInterval> | null = null
+  let evaluationSequence = 0
 
   const currentItem = computed(() => session.value?.queue[session.value.index])
   const currentDeck = computed(() => {
@@ -84,7 +96,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
         index: 0,
         phase: 'break',
         typedAnswer: '',
-        similarity: null,
+        evaluation: null,
+        isEvaluating: false,
         confidenceLevel: null,
         elaboration: '',
         startTime: Date.now(),
@@ -134,7 +147,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       index: 0,
       phase: 'asking',
       typedAnswer: '',
-      similarity: null,
+      evaluation: null,
+      isEvaluating: false,
       confidenceLevel: null,
       elaboration: '',
       startTime: Date.now(),
@@ -199,26 +213,84 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     if (session.value) session.value.confidenceLevel = level
   }
 
-  function checkAnswer(): void {
+  async function checkAnswer(): Promise<void> {
     const value = session.value
     const card = currentCard.value
-    if (!value || !card || value.phase !== 'asking') return
-    value.similarity = answerSimilarity(value.typedAnswer, card.back)
+    const deck = currentDeck.value
+    if (!value || !card || !deck || value.phase !== 'asking' || value.isEvaluating) return
+
+    const typedAnswer = value.typedAnswer.trim()
+    if (!typedAnswer) {
+      value.evaluation = localEvaluation('', card.back)
+      value.phase = 'reviewing'
+      return
+    }
+
+    if (settings.smartConfig.evaluationMode !== 'openrouter' || !window.smartL3arn) {
+      value.evaluation = localEvaluation(typedAnswer, card.back)
+      value.phase = 'reviewing'
+      return
+    }
+
+    const sequence = ++evaluationSequence
+    const cardId = card.id
+    const index = value.index
+    value.isEvaluating = true
+
+    let result
+    try {
+      result = await window.smartL3arn.evaluateAnswer({
+        deckName: deck.name,
+        question: card.front,
+        referenceAnswer: card.back,
+        userAnswer: typedAnswer,
+        language: locale.value,
+      })
+    } catch {
+      result = { ok: false, reason: 'unavailable' }
+    }
+
+    if (
+      sequence !== evaluationSequence
+      || session.value !== value
+      || value.index !== index
+      || value.phase !== 'asking'
+      || value.timeUp
+      || currentCard.value?.id !== cardId
+    ) return
+
+    value.isEvaluating = false
+    if (result.ok && result.result) {
+      value.evaluation = {
+        source: 'openrouter',
+        verdict: result.result.verdict,
+        feedback: result.result.feedback,
+        ...(result.result.model ? { model: result.result.model } : {}),
+      }
+    } else {
+      const reason = result.reason || 'unavailable'
+      value.evaluation = localEvaluation(
+        typedAnswer,
+        card.back,
+        fallbackMessages[reason] || fallbackMessages.unavailable,
+      )
+    }
     value.phase = 'reviewing'
   }
 
   function skip(): void {
     const value = session.value
-    if (!value || value.phase !== 'asking') return
+    const card = currentCard.value
+    if (!value || !card || value.phase !== 'asking' || value.isEvaluating) return
     value.typedAnswer = ''
-    value.similarity = 0
+    value.evaluation = localEvaluation('', card.back)
     value.phase = 'reviewing'
   }
 
   function reveal(): void {
     const value = session.value
-    if (!value || value.phase !== 'asking') return
-    value.similarity = null
+    if (!value || value.phase !== 'asking' || value.isEvaluating) return
+    value.evaluation = null
     value.phase = 'reviewing'
   }
 
@@ -275,7 +347,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
     value.index += 1
     value.typedAnswer = ''
-    value.similarity = null
+    value.evaluation = null
+    value.isEvaluating = false
     value.confidenceLevel = null
     value.elaboration = ''
     value.phase = 'asking'

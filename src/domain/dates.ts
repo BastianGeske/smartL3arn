@@ -1,3 +1,4 @@
+import { locale as appLocale } from '../i18n'
 import type { Card, StudySession } from './types'
 
 export function localDateStr(date = new Date()): string {
@@ -35,7 +36,7 @@ export function isDue(card: Card, today = todayStr()): boolean {
 
 export function formatDateLabel(
   isoDate: string,
-  locale = document.documentElement.lang || 'en',
+  locale: string = appLocale.value,
   options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
 ): string {
   if (!isoDate) return ''

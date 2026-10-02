@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from '../i18n'
 import { computed, nextTick, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
+import { useDialogKeyboard } from '../composables/useDialogKeyboard'
 import { useLibraryStore } from '../stores/library'
 import { useUiStore } from '../stores/ui'
+
+const { t } = useI18n()
 
 const library = useLibraryStore()
 const ui = useUiStore()
@@ -12,6 +16,7 @@ const error = ref(false)
 const frontInput = ref<HTMLTextAreaElement>()
 
 const editor = computed(() => ui.cardEditor)
+useDialogKeyboard(editor)
 const existingCard = computed(() => {
   const value = editor.value
   if (!value?.cardId) return undefined
@@ -46,10 +51,10 @@ async function save(): Promise<void> {
       front: nextFront,
       back: nextBack,
     })
-    ui.showToast('Card updated.')
+    ui.showToast('card.updated')
   } else {
     await library.addCard(value.deckId, nextFront, nextBack)
-    ui.showToast('Card added.')
+    ui.showToast('card.added')
   }
   close()
 }
@@ -67,41 +72,41 @@ async function save(): Promise<void> {
   >
     <div class="modal" tabindex="-1">
       <div class="modal-header">
-        <h2 id="card-modal-title">{{ existingCard ? 'Edit Card' : 'Add Card' }}</h2>
-        <button class="btn-icon" type="button" aria-label="Close card editor" @click="close">
+        <h2 id="card-modal-title">{{ existingCard ? t('card.edit') : t('card.add') }}</h2>
+        <button class="btn-icon" type="button" :aria-label="t('card.closeEditor')" @click="close">
           <AppIcon name="x" />
         </button>
       </div>
       <div class="modal-body">
-        <label class="field-label" for="modal-front">Front</label>
+        <label class="field-label" for="modal-front">{{ t('common.front') }}</label>
         <textarea
           id="modal-front"
           ref="frontInput"
           v-model="front"
           class="textarea"
           rows="5"
-          placeholder="Front side of card"
+          :placeholder="t('card.frontPlaceholder')"
           :aria-invalid="error && !front.trim()"
           @input="error = false"
         />
-        <label class="field-label" for="modal-back">Back</label>
+        <label class="field-label" for="modal-back">{{ t('common.back') }}</label>
         <textarea
           id="modal-back"
           v-model="back"
           class="textarea"
           rows="5"
-          placeholder="Back side of card"
+          :placeholder="t('card.backPlaceholder')"
           :aria-invalid="error && !back.trim()"
           @input="error = false"
         />
         <p v-if="error" class="form-error" aria-live="polite">
-          Add text to both sides of the card.
+          {{ t('card.required') }}
         </p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" @click="close">Cancel</button>
+        <button class="btn btn-secondary" type="button" @click="close">{{ t('common.cancel') }}</button>
         <button class="btn btn-primary" type="button" @click="save">
-          {{ existingCard ? 'Save changes' : 'Add card' }}
+          {{ existingCard ? t('common.save') : t('card.add') }}
         </button>
       </div>
     </div>

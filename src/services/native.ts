@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { Capacitor } from '@capacitor/core'
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
@@ -20,7 +21,7 @@ export async function saveExport(
       await Share.share({
         title: filename,
         files: [uri],
-        dialogTitle: `Export ${filename}`,
+        dialogTitle: t('import.nativeExport', { filename }),
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)

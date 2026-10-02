@@ -13,6 +13,7 @@ export const defaultSmartConfig = (): SmartConfig => ({
     interleaving: true,
   },
   duration: 25,
+  evaluationMode: 'local',
 })
 
 export function loadSmartConfig(): SmartConfig {
@@ -29,6 +30,7 @@ export function loadSmartConfig(): SmartConfig {
         interleaving: parsed.techniques?.interleaving ?? true,
       },
       duration: typeof parsed.duration === 'number' ? parsed.duration : 25,
+      evaluationMode: parsed.evaluationMode === 'openrouter' ? 'openrouter' : 'local',
     }
   } catch {
     return defaultSmartConfig()

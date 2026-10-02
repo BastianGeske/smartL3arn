@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n, type TranslationKey } from '../i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
@@ -6,26 +7,28 @@ import SessionStats from '../components/SessionStats.vue'
 import StudyHeader from '../components/StudyHeader.vue'
 import {
   calibrationMatch,
-  similarityBand,
+  evaluationBand,
 } from '../domain/study/answerSimilarity'
 import type { ConfidenceLevel, Rating } from '../domain/types'
 import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
 
+const { t } = useI18n()
+
 const router = useRouter()
 const settings = useSettingsStore()
 const smart = useSmartStudyStore()
 
-const ratings: { value: Rating; label: string }[] = [
-  { value: 0, label: 'Again' },
-  { value: 1, label: 'Hard' },
-  { value: 2, label: 'Good' },
-  { value: 3, label: 'Easy' },
+const ratings: { value: Rating; key: string; label: TranslationKey }[] = [
+  { value: 0, key: 'again', label: 'rating.again' },
+  { value: 1, key: 'hard', label: 'rating.hard' },
+  { value: 2, key: 'good', label: 'rating.good' },
+  { value: 3, key: 'easy', label: 'rating.easy' },
 ]
-const confidences: { value: ConfidenceLevel; label: string }[] = [
-  { value: 'low', label: 'Not sure' },
-  { value: 'medium', label: 'Maybe' },
-  { value: 'high', label: 'Confident' },
+const confidences: { value: ConfidenceLevel; label: TranslationKey }[] = [
+  { value: 'low', label: 'confidence.low' },
+  { value: 'medium', label: 'confidence.medium' },
+  { value: 'high', label: 'confidence.high' },
 ]
 
 const progress = computed(() => {
@@ -37,14 +40,14 @@ const timerLabel = computed(() => (
   smart.session?.durationMs && !smart.isDone ? formatMs(smart.remainingMs) : undefined
 ))
 const feedbackBand = computed(() => (
-  smart.session?.similarity === null || smart.session?.similarity === undefined
+  !smart.session?.evaluation
     ? null
-    : similarityBand(smart.session.similarity)
+    : evaluationBand(smart.session.evaluation)
 ))
 const calibration = computed(() => {
   const session = smart.session
   if (!session?.confidenceLevel) return null
-  return calibrationMatch(session.confidenceLevel, session.similarity)
+  return calibrationMatch(session.confidenceLevel, session.evaluation?.verdict || null)
 })
 const breakProgress = computed(() => {
   const duration = smart.session?.breakDurationMs || 0
@@ -74,7 +77,7 @@ function handleKeydown(event: KeyboardEvent): void {
   if (session.phase === 'asking' && event.key === 'Enter' && !event.shiftKey) {
     if (target.id === 'smart-answer-input') {
       event.preventDefault()
-      smart.checkAnswer()
+      void smart.checkAnswer()
     }
     return
   }
@@ -120,28 +123,28 @@ async function exit(): Promise<void> {
 <template>
   <div v-if="smart.session" class="study-shell" :class="{ 'smart-study-shell': !smart.isDone && !smart.isBreak }">
     <StudyHeader
-      title="Smart Study"
+      :title="t('nav.smart')"
       :progress="smart.isDone || smart.isBreak ? 100 : progress"
-      :label="smart.isBreak ? 'Focus block complete' : (smart.isDone ? `${smart.session.sessionStats.reviewed} reviewed` : `${smart.session.index + 1} of ${smart.session.queue.length}`)"
+      :label="smart.isBreak ? t('smart.focusComplete') : (smart.isDone ? t('study.reviewed', { count: smart.session.sessionStats.reviewed }) : t('common.of', { current: smart.session.index + 1, total: smart.session.queue.length }))"
       :smart-timer="timerLabel"
       @exit="exit"
     />
 
     <main v-if="smart.isBreak" class="smart-break-screen">
       <div class="break-icon"><AppIcon :name="smart.session.breakDone ? 'check' : 'coffee'" :size="22" /></div>
-      <p class="completion-kicker">{{ smart.session.breakDone ? 'Ready' : 'Pomodoro break' }}</p>
+      <p class="completion-kicker">{{ smart.session.breakDone ? t('smart.breakReady') : t('smart.pomodoroBreak') }}</p>
       <h1 class="completion-title" tabindex="-1">
-        {{ smart.session.breakDone ? 'Break complete' : 'Pause and reset' }}
+        {{ smart.session.breakDone ? t('smart.breakComplete') : t('smart.pause') }}
       </h1>
       <div class="smart-break-timer-wrap">
         <span class="smart-break-timer">{{ formatMs(smart.breakRemainingMs) }}</span>
         <span class="smart-break-label">
-          {{ smart.session.breakDone ? 'Ready for the next round' : 'Remaining' }}
+          {{ smart.session.breakDone ? t('smart.nextReady') : t('smart.remaining') }}
         </span>
         <div
           class="smart-break-ring"
           role="progressbar"
-          aria-label="Break progress"
+          :aria-label="t('smart.breakProgress')"
           aria-valuemin="0"
           aria-valuemax="100"
           :aria-valuenow="Math.round(breakProgress * 100)"
@@ -150,29 +153,29 @@ async function exit(): Promise<void> {
         </div>
       </div>
       <div class="smart-break-meta">
-        {{ smart.session.sessionStats.reviewed }} card{{ smart.session.sessionStats.reviewed === 1 ? '' : 's' }} reviewed in this focus block.
+        {{ t('smart.focusReviewed', { count: smart.session.sessionStats.reviewed }) }}
       </div>
       <div class="smart-done-actions">
         <button class="btn btn-smart" type="button" :disabled="!smart.session.breakDone" @click="startNext">
           <AppIcon name="play" :size="17" />
-          <span>{{ smart.session.breakDone ? 'Start next session' : 'Break in progress' }}</span>
+          <span>{{ smart.session.breakDone ? t('smart.startNext') : t('smart.breakRunning') }}</span>
         </button>
         <button class="btn btn-secondary" type="button" @click="router.push('/')">
-          <AppIcon name="library" :size="17" /><span>Back to library</span>
+          <AppIcon name="library" :size="17" /><span>{{ t('study.backLibrary') }}</span>
         </button>
       </div>
     </main>
 
     <main v-else-if="smart.isDone" class="study-done" tabindex="-1">
       <div class="completion-mark"><AppIcon name="sparkles" :size="23" /></div>
-      <p class="completion-kicker">Smart Study complete</p>
+      <p class="completion-kicker">{{ t('smart.complete') }}</p>
       <h1 class="completion-title" tabindex="-1">
-        {{ smart.session.sessionStats.reviewed }} card{{ smart.session.sessionStats.reviewed === 1 ? '' : 's' }} reviewed
+        {{ t('study.cardReviewed', { count: smart.session.sessionStats.reviewed }) }}
       </h1>
       <p class="completion-note">
         {{ smart.session.timeUp
-          ? `Time's up after ${settings.smartConfig.duration} minutes.`
-          : `You went through all ${smart.session.queue.length} cards.` }}
+          ? t('smart.timeUp', { count: settings.smartConfig.duration })
+          : t('smart.allCards', { count: smart.session.queue.length }) }}
       </p>
       <SessionStats :stats="smart.session.sessionStats" extra-class="session-stats-done" />
       <div class="smart-done-actions">
@@ -183,12 +186,12 @@ async function exit(): Promise<void> {
           @click="startNext"
         >
           <AppIcon name="rotate-ccw" :size="17" />
-          <span>{{ nextAvailability.hasCore ? 'New Smart Session' : 'Practice Anyway' }}</span>
+          <span>{{ nextAvailability.hasCore ? t('smart.newSession') : t('smart.practiceAnyway') }}</span>
         </button>
         <button class="btn btn-secondary" type="button" @click="router.push('/smart')">
-          <AppIcon name="settings-2" :size="17" /><span>Adjust setup</span>
+          <AppIcon name="settings-2" :size="17" /><span>{{ t('smart.adjust') }}</span>
         </button>
-        <button class="btn btn-quiet" type="button" @click="router.push('/')">Back to library</button>
+        <button class="btn btn-quiet" type="button" @click="router.push('/')">{{ t('study.backLibrary') }}</button>
       </div>
     </main>
 
@@ -199,8 +202,8 @@ async function exit(): Promise<void> {
             <AppIcon name="book-open" :size="13" />{{ smart.currentDeck.name }}
           </span>
           <span>{{ smart.session.phase === 'asking'
-            ? (smart.session.mode === 'practice' ? 'Practice' : 'Scheduled review')
-            : 'Review answer' }}</span>
+            ? (smart.session.mode === 'practice' ? t('study.practice') : t('smart.scheduled'))
+            : t('smart.reviewAnswer') }}</span>
         </div>
 
         <template v-if="smart.session.phase === 'asking'">
@@ -210,7 +213,7 @@ async function exit(): Promise<void> {
             aria-labelledby="smart-question-label"
             aria-describedby="smart-question-content"
           >
-            <div id="smart-question-label" class="card-side-label">Question</div>
+            <div id="smart-question-label" class="card-side-label">{{ t('study.question') }}</div>
             <div id="smart-question-content" class="card-content">{{ smart.currentCard.front }}</div>
           </section>
 
@@ -220,7 +223,7 @@ async function exit(): Promise<void> {
             role="group"
             aria-labelledby="smart-confidence-label"
           >
-            <p id="smart-confidence-label" class="smart-prompt">Confidence</p>
+            <p id="smart-confidence-label" class="smart-prompt">{{ t('smart.confidence') }}</p>
             <div class="smart-conf-buttons">
               <button
                 v-for="confidence in confidences"
@@ -231,64 +234,89 @@ async function exit(): Promise<void> {
                 :aria-pressed="smart.session.confidenceLevel === confidence.value"
                 @click="smart.setConfidence(confidence.value)"
               >
-                {{ confidence.label }}
+                {{ t(confidence.label) }}
               </button>
             </div>
           </div>
 
           <div v-if="settings.smartConfig.techniques.typeRecall" class="smart-answer-area">
-            <label class="field-label" for="smart-answer-input">Your answer</label>
+            <label class="field-label" for="smart-answer-input">{{ t('smart.yourAnswer') }}</label>
             <textarea
               id="smart-answer-input"
               v-model="smart.session.typedAnswer"
               class="textarea smart-answer-input"
               rows="3"
-              placeholder="Type your answer"
+              :placeholder="t('smart.answerPlaceholder')"
+              :disabled="smart.session.isEvaluating"
             />
             <div class="smart-answer-actions">
-              <button class="btn btn-primary" type="button" @click="smart.checkAnswer">
-                <AppIcon name="check" :size="17" /><span>Check answer</span>
+              <button
+                class="btn btn-primary"
+                type="button"
+                :disabled="smart.session.isEvaluating"
+                @click="smart.checkAnswer"
+              >
+                <AppIcon name="check" :size="17" />
+                <span>{{ smart.session.isEvaluating ? t('smart.evaluating') : t('smart.checkAnswer') }}</span>
               </button>
-              <button class="btn btn-quiet btn-sm" type="button" @click="smart.skip">I don't know</button>
+              <button
+                class="btn btn-quiet btn-sm"
+                type="button"
+                :disabled="smart.session.isEvaluating"
+                @click="smart.skip"
+              >{{ t('smart.dontKnow') }}</button>
             </div>
+            <p v-if="smart.session.isEvaluating" class="smart-evaluation-status" role="status">
+              {{ t('smart.checking') }}
+            </p>
           </div>
           <div v-else class="show-answer-wrap">
             <button class="btn btn-primary btn-lg" type="button" @click="smart.reveal">
-              <AppIcon name="eye" /><span>Reveal answer</span>
+              <AppIcon name="eye" /><span>{{ t('study.reveal') }}</span>
             </button>
           </div>
         </template>
 
         <template v-else>
           <div class="smart-card-pair">
-            <section class="smart-card-block smart-card-front compact" tabindex="-1" aria-label="Question">
-              <div class="card-side-label">Question</div>
+            <section class="smart-card-block smart-card-front compact" tabindex="-1" :aria-label="t('study.question')">
+              <div class="card-side-label">{{ t('study.question') }}</div>
               <div class="card-content">{{ smart.currentCard.front }}</div>
             </section>
-            <section class="smart-card-block smart-card-back" tabindex="-1" aria-label="Answer">
-              <div class="card-side-label">Answer</div>
+            <section class="smart-card-block smart-card-back" tabindex="-1" :aria-label="t('study.answer')">
+              <div class="card-side-label">{{ t('study.answer') }}</div>
               <div class="card-content">{{ smart.currentCard.back }}</div>
             </section>
           </div>
 
           <div
-            v-if="settings.smartConfig.techniques.typeRecall && feedbackBand && smart.session.similarity !== null"
+            v-if="settings.smartConfig.techniques.typeRecall && feedbackBand && smart.session.evaluation"
             class="smart-feedback"
             :class="`smart-feedback-${feedbackBand.band}`"
           >
             <div class="smart-feedback-score">
-              <span>{{ feedbackBand.label }}</span>
-              <strong>{{ Math.round(smart.session.similarity * 100) }}% match</strong>
+              <span>{{ t(`verdict.${feedbackBand.verdict}`) }}</span>
+              <strong v-if="smart.session.evaluation.source === 'local'">
+                {{ t('smart.localMatch', { value: Math.round((smart.session.evaluation.localSimilarity || 0) * 100) }) }}
+              </strong>
+              <strong v-else>{{ t('smart.aiReview') }}</strong>
+            </div>
+            <p v-if="smart.session.evaluation.fallbackReason" class="smart-feedback-fallback">
+              {{ t('smart.localFallback', { reason: t(smart.session.evaluation.fallbackReason as TranslationKey) }) }}
+            </p>
+            <div v-if="smart.session.evaluation.source === 'openrouter'" class="smart-feedback-row">
+              <span class="smart-feedback-label">{{ t('smart.feedback') }}</span>
+              <span class="smart-feedback-text">{{ smart.session.evaluation.feedback }}</span>
             </div>
             <div class="smart-feedback-row">
-              <span class="smart-feedback-label">You wrote:</span>
+              <span class="smart-feedback-label">{{ t('smart.youWrote') }}</span>
               <span class="smart-feedback-text">
                 <template v-if="smart.session.typedAnswer">{{ smart.session.typedAnswer }}</template>
-                <em v-else class="muted">(skipped)</em>
+                <em v-else class="muted">{{ t('smart.skipped') }}</em>
               </span>
             </div>
             <div class="smart-feedback-row">
-              <span class="smart-feedback-label">Correct:</span>
+              <span class="smart-feedback-label">{{ t('smart.correctAnswer') }}</span>
               <span class="smart-feedback-text smart-feedback-correct">{{ smart.currentCard.back }}</span>
             </div>
           </div>
@@ -300,42 +328,38 @@ async function exit(): Promise<void> {
           >
             <AppIcon :name="calibration ? 'check-circle-2' : 'gauge'" :size="16" />
             <span>
-              Confidence: <strong>{{ smart.session.confidenceLevel }}</strong>
+              {{ t('smart.confidenceLabel') }} <strong>{{ t(`confidence.${smart.session.confidenceLevel}`) }}</strong>
               <template v-if="calibration !== null">
-                · {{ calibration ? 'well calibrated' : 'mismatch — recalibrate next time' }}
+                · {{ calibration ? t('smart.calibrated') : t('smart.mismatch') }}
               </template>
             </span>
           </div>
 
           <div v-if="settings.smartConfig.techniques.whyPrompt" class="smart-why">
             <label class="field-label" for="smart-why-input">
-              Why is this correct? <span class="muted">(optional)</span>
+              {{ t('smart.why') }} <span class="muted">{{ t('common.optional') }}</span>
             </label>
             <textarea
               id="smart-why-input"
               v-model="smart.session.elaboration"
               class="textarea"
               rows="2"
-              placeholder="Add a short explanation"
+              :placeholder="t('smart.explanationPlaceholder')"
             />
           </div>
 
-          <div class="rating-buttons smart-rating-buttons" role="group" aria-label="Rate this answer">
+          <div class="rating-buttons smart-rating-buttons" role="group" :aria-label="t('study.rateAnswer')">
             <button
               v-for="rating in ratings"
               :key="rating.value"
               class="rating-button"
-              :class="[
-                `rating-${rating.label.toLowerCase()}`,
-                { 'is-suggested': feedbackBand?.suggested === rating.value },
-              ]"
+              :class="`rating-${rating.key}`"
               type="button"
+              :aria-keyshortcuts="String(rating.value + 1)"
               @click="rate(rating.value)"
             >
-              <span>{{ rating.label }}</span>
-              <strong :class="{ 'suggested-label': feedbackBand?.suggested === rating.value }">
-                {{ feedbackBand?.suggested === rating.value ? 'Suggested' : 'Rate' }}
-              </strong>
+              <span>{{ t(rating.label) }} <kbd>{{ rating.value + 1 }}</kbd></span>
+              <strong>{{ t('rating.rate') }}</strong>
             </button>
           </div>
         </template>

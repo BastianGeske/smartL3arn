@@ -1,8 +1,15 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { createCredentialResolver } = require('./electron/credentials.cjs');
+const { createUsageStore } = require('./electron/usage.cjs');
+const {
+  createCredentialStore,
+  createOpenRouterClient,
+  publicError,
+} = require('./electron/openrouter.cjs');
 
 function getDbPath() {
   return path.join(app.getPath('userData'), 'ankiweb_data.json');
@@ -43,6 +50,100 @@ async function dbSave(data) {
 ipcMain.handle('db:load', () => dbLoad());
 ipcMain.handle('db:save', async (_event, data) => {
   await dbSave(data);
+});
+
+let openRouter;
+function getOpenRouterClient() {
+  if (!openRouter) {
+    openRouter = createOpenRouterClient({ model: getCredentialResolver().model });
+  }
+  return openRouter;
+}
+
+function getCredentialStore() {
+  return createCredentialStore({
+    safeStorage,
+    fs,
+    filePath: path.join(app.getPath('userData'), 'openrouter-key.bin'),
+  });
+}
+
+let credentialResolver;
+function getCredentialResolver() {
+  if (!credentialResolver) {
+    credentialResolver = createCredentialResolver({
+      envPath: path.join(app.isPackaged ? app.getPath('userData') : __dirname, '.env'),
+      store: getCredentialStore(),
+    });
+  }
+  return credentialResolver;
+}
+
+ipcMain.handle('ai:status', async () => {
+  if (process.platform !== 'darwin') {
+    return { available: false, configured: false, credentialSource: null };
+  }
+  return { available: true, ...await getCredentialResolver().status() };
+});
+
+ipcMain.handle('ai:save-key', async (_event, apiKey) => {
+  try {
+    await getOpenRouterClient().validateKey(apiKey);
+    await getCredentialStore().write(String(apiKey).trim());
+    return { ok: true };
+  } catch (error) {
+    return publicError(error);
+  }
+});
+
+ipcMain.handle('ai:remove-key', async () => {
+  try {
+    await getCredentialStore().remove();
+    return { ok: true };
+  } catch (error) {
+    return publicError(error);
+  }
+});
+
+let usageStore;
+function getUsageStore() {
+  if (!usageStore) {
+    usageStore = createUsageStore(path.join(app.getPath('userData'), 'api-usage.jsonl'));
+  }
+  return usageStore;
+}
+
+ipcMain.handle('ai:usage', async () => ({
+  ...await getUsageStore().report(),
+  model: getCredentialResolver().model,
+}));
+
+ipcMain.handle('ai:evaluate', async (_event, input) => {
+  let attempted = false;
+  let responseMetadata;
+  let outcome = 'failure';
+  try {
+    const apiKey = await getCredentialResolver().read();
+    if (!apiKey) return { ok: false, reason: 'not-configured' };
+    attempted = true;
+    const result = await getOpenRouterClient().evaluate(apiKey, input, (body) => {
+      responseMetadata = body;
+    });
+    outcome = 'success';
+    return { ok: true, result };
+  } catch (error) {
+    if (error?.code === 'invalid-input') attempted = false;
+    return publicError(error);
+  } finally {
+    if (attempted) {
+      await getUsageStore().record({
+        model: typeof responseMetadata?.model === 'string'
+          ? responseMetadata.model : getCredentialResolver().model,
+        outcome,
+        usage: responseMetadata?.usage,
+      }).catch(() => console.warn('Could not save API usage.'));
+    }
+  }
 });
 
 function createWindow() {

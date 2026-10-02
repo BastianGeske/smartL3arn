@@ -26,6 +26,7 @@ const config: SmartConfig = {
     interleaving: true,
   },
   duration: 25,
+  evaluationMode: 'local',
 }
 
 describe('study queues', () => {
@@ -37,7 +38,7 @@ describe('study queues', () => {
   })
 
   it('falls back to a voluntary practice queue when nothing is due', () => {
-    const source = deck('a', ['2026-08-10', '2026-08-11'])
+    const source = deck('a', ['2999-08-10', '2999-08-11'])
     const result = buildSmartStudyQueue([source], config, () => 0.5)
 
     expect(result.mode).toBe('practice')

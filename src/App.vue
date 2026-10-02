@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from './i18n'
 import CardEditorModal from './components/CardEditorModal.vue'
 import DeckEditorModal from './components/DeckEditorModal.vue'
 import { useLibraryStore } from './stores/library'
 import { useUiStore } from './stores/ui'
+
+const { t } = useI18n()
 
 const library = useLibraryStore()
 const ui = useUiStore()
@@ -10,7 +13,7 @@ const ui = useUiStore()
 
 <template>
   <RouterView v-if="library.ready" />
-  <div v-else class="app-loading" role="status">Loading smartL3arn…</div>
+  <div v-else class="app-loading" role="status">{{ t('common.loading') }}</div>
   <CardEditorModal />
   <DeckEditorModal />
   <div
@@ -22,6 +25,6 @@ const ui = useUiStore()
     {{ ui.toast }}
   </div>
   <div v-if="library.saveError" class="save-error" role="alert">
-    Could not save changes: {{ library.saveError }}
+    {{ t('common.saveError', { error: library.saveError }) }}
   </div>
 </template>

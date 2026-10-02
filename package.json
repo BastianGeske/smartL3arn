@@ -8,7 +8,7 @@
     "start": "npm run build:web && electron .",
     "start:electron": "electron .",
     "typecheck": "vue-tsc -b",
-    "test": "vitest run",
+    "test": "node --test electron/*.test.cjs && vitest run",
     "test:watch": "vitest",
     "test:smoke": "electron scripts/smoke-electron.cjs",
     "build:web": "vue-tsc -b && vite build",
@@ -31,6 +31,10 @@
     "files": [
       "main.js",
       "preload.js",
+      "electron/**/*.cjs",
+      "!electron/**/*.test.cjs",
+      "!.env",
+      "!.env.*",
       "web-dist/**/*",
       "build/icon.png",
       "!node_modules{,/**/*}"

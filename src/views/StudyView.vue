@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n, type TranslationKey } from '../i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
@@ -8,6 +9,8 @@ import { formatDateLabel, isDue } from '../domain/dates'
 import { previewIntervals } from '../domain/scheduling/fsrs'
 import type { Rating } from '../domain/types'
 import { useStudyStore } from '../stores/study'
+
+const { t, formatStudyInterval, formatNumber } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -21,14 +24,14 @@ const progress = computed(() => {
 })
 const progressLabel = computed(() => (
   study.phase === 'main'
-    ? `${study.index} / ${study.mainQueue.length}${study.learningQueue.length ? ` +${study.learningQueue.length}` : ''}`
-    : `Re-learning ${study.index + 1} / ${study.learningQueue.length}`
+    ? `${formatNumber(study.index)} / ${formatNumber(study.mainQueue.length)}${study.learningQueue.length ? ` +${formatNumber(study.learningQueue.length)}` : ''}`
+    : t('study.relearning', { current: study.index + 1, total: study.learningQueue.length })
 ))
 const intervals = computed(() => (
   study.currentCard ? previewIntervals(study.currentCard) : ['1d', '1d', '1d', '4d']
 ))
 const upcomingDate = computed(() => {
-  if (!study.deck || study.deck.cards.some(isDue)) return null
+  if (!study.deck || study.deck.cards.some((card) => isDue(card))) return null
   return [...study.deck.cards]
     .filter((card) => card.dueDate)
     .sort((left, right) => left.dueDate.localeCompare(right.dueDate))[0]?.dueDate || null
@@ -94,28 +97,28 @@ function adjustFlashcardHeight(): void {
     <StudyHeader
       :title="study.deck.name"
       :progress="study.complete ? 100 : progress"
-      :label="study.complete ? `${study.sessionStats.reviewed} reviewed` : progressLabel"
+      :label="study.complete ? t('study.reviewed', { count: study.sessionStats.reviewed }) : progressLabel"
       @exit="router.push('/')"
     />
 
     <main v-if="study.complete" class="study-done" tabindex="-1">
       <div class="completion-mark"><AppIcon name="check" :size="24" /></div>
-      <p class="completion-kicker">Session complete</p>
+      <p class="completion-kicker">{{ t('study.complete') }}</p>
       <h1 class="completion-title" tabindex="-1">
-        {{ study.sessionStats.reviewed }} card{{ study.sessionStats.reviewed === 1 ? '' : 's' }} reviewed
+        {{ t('study.cardReviewed', { count: study.sessionStats.reviewed }) }}
       </h1>
       <p v-if="upcomingDate" class="completion-note">
         <AppIcon name="calendar-days" :size="16" />
-        Next review {{ formatDateLabel(upcomingDate, undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }}
+        {{ t('study.nextReview', { date: formatDateLabel(upcomingDate, undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }) }}
       </p>
       <SessionStats :stats="study.sessionStats" extra-class="session-stats-done" />
       <div class="study-done-actions">
         <button v-if="study.deck.cards.length" class="btn btn-primary" type="button" @click="study.start(study.deck.id)">
           <AppIcon name="rotate-ccw" :size="17" />
-          <span>{{ study.deck.cards.some(isDue) ? 'Study again' : 'Practice again' }}</span>
+          <span>{{ study.deck.cards.some((card) => isDue(card)) ? t('study.studyAgain') : t('study.practiceAgain') }}</span>
         </button>
         <button class="btn btn-secondary" type="button" @click="router.push('/')">
-          <AppIcon name="library" :size="17" /><span>Back to library</span>
+          <AppIcon name="library" :size="17" /><span>{{ t('study.backLibrary') }}</span>
         </button>
       </div>
     </main>
@@ -133,7 +136,7 @@ function adjustFlashcardHeight(): void {
                 aria-labelledby="study-front-label"
                 aria-describedby="study-front-content"
               >
-                <span id="study-front-label" class="card-side-label">Question</span>
+                <span id="study-front-label" class="card-side-label">{{ t('study.question') }}</span>
                 <span id="study-front-content" class="card-content">{{ study.currentCard.front }}</span>
               </section>
               <section
@@ -145,8 +148,8 @@ function adjustFlashcardHeight(): void {
                 aria-describedby="study-back-content"
               >
                 <span class="card-side-row">
-                  <span id="study-back-label" class="card-side-label">Answer</span>
-                  <button class="btn-icon card-return-button" type="button" aria-label="Show question" @click="study.flip">
+                  <span id="study-back-label" class="card-side-label">{{ t('study.answer') }}</span>
+                  <button class="btn-icon card-return-button" type="button" :aria-label="t('study.returnQuestion')" @click="study.flip">
                     <AppIcon name="rotate-ccw" :size="16" />
                   </button>
                 </span>
@@ -158,22 +161,23 @@ function adjustFlashcardHeight(): void {
         <SessionStats :stats="study.sessionStats" />
       </main>
       <div class="study-actions">
-        <div v-if="study.flipped" class="rating-buttons" role="group" aria-label="Rate this answer">
+        <div v-if="study.flipped" class="rating-buttons" role="group" :aria-label="t('study.rateAnswer')">
           <button
-            v-for="(label, rating) in ['Again', 'Hard', 'Good', 'Easy']"
+            v-for="(label, rating) in ['again', 'hard', 'good', 'easy']"
             :key="label"
             class="rating-button"
             :class="`rating-${label.toLowerCase()}`"
             type="button"
+            :aria-keyshortcuts="String(rating + 1)"
             @click="study.rate(rating as Rating)"
           >
-            <span>{{ label }}</span>
-            <strong>{{ intervals[rating] }}</strong>
+            <span>{{ t(`rating.${label}` as TranslationKey) }} <kbd>{{ rating + 1 }}</kbd></span>
+            <strong>{{ formatStudyInterval(intervals[rating] || '') }}</strong>
           </button>
         </div>
         <div v-else class="show-answer-wrap">
           <button class="btn btn-primary btn-lg" type="button" @click="study.flip">
-            <AppIcon name="eye" /><span>Reveal answer</span>
+            <AppIcon name="eye" /><span>{{ t('study.reveal') }}</span><kbd>{{ t('common.space') }}</kbd>
           </button>
         </div>
       </div>

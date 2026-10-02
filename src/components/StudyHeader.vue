@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from '../i18n'
 import AppIcon from './AppIcon.vue'
 import ThemeButton from './ThemeButton.vue'
+
+const { t } = useI18n()
 
 defineProps<{
   title: string
@@ -15,10 +18,10 @@ defineEmits<{ exit: [] }>()
   <header class="study-header">
     <div class="study-header-top">
       <button class="btn btn-quiet btn-sm" type="button" @click="$emit('exit')">
-        <AppIcon name="x" :size="16" /><span>Exit</span>
+        <AppIcon name="x" :size="16" /><span>{{ t('study.exit') }}</span>
       </button>
       <div class="study-context">
-        <span class="study-context-label">Study session</span>
+        <span class="study-context-label">{{ t('study.session') }}</span>
         <strong :title="title">{{ title }}</strong>
       </div>
       <ThemeButton />
@@ -27,7 +30,7 @@ defineEmits<{ exit: [] }>()
       <div
         class="progress-bar-wrap"
         role="progressbar"
-        aria-label="Session progress"
+        :aria-label="t('study.progress')"
         aria-valuemin="0"
         aria-valuemax="100"
         :aria-valuenow="Math.round(progress)"
