@@ -7,7 +7,7 @@ function nonEmpty(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function createCredentialResolver({ env = process.env, envPath, store }) {
+function createCredentialResolver({ env = process.env, envPath, buildConfigPath, store }) {
   let fileEnv = {}
   try {
     fileEnv = parseEnv(fs.readFileSync(envPath, 'utf8'))
@@ -16,16 +16,30 @@ function createCredentialResolver({ env = process.env, envPath, store }) {
       console.warn('Could not read local API configuration; using other credential sources.')
     }
   }
+  let buildEnv = {}
+  if (buildConfigPath) {
+    try {
+      buildEnv = JSON.parse(fs.readFileSync(buildConfigPath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.warn('Could not read bundled API configuration; using other credential sources.')
+      }
+    }
+  }
   const environmentKey = nonEmpty(env.OPENROUTER_API_KEY) || nonEmpty(fileEnv.OPENROUTER_API_KEY)
-  const model = nonEmpty(env.OPENROUTER_MODEL) || nonEmpty(fileEnv.OPENROUTER_MODEL) || 'openrouter/free'
+  const bundledKey = nonEmpty(buildEnv?.OPENROUTER_API_KEY)
+  const model = nonEmpty(env.OPENROUTER_MODEL) || nonEmpty(fileEnv.OPENROUTER_MODEL)
+    || nonEmpty(buildEnv?.OPENROUTER_MODEL) || 'openrouter/free'
 
   async function status() {
-    const credentialSource = environmentKey ? 'environment' : await store.has() ? 'stored' : null
+    const credentialSource = environmentKey ? 'environment'
+      : bundledKey ? 'bundled'
+        : await store.has() ? 'stored' : null
     return { configured: credentialSource !== null, credentialSource }
   }
 
   async function read() {
-    return environmentKey || await store.read()
+    return environmentKey || bundledKey || await store.read()
   }
 
   return { status, read, model }

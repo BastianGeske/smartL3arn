@@ -1,5 +1,8 @@
 'use strict'
 
+const { randomUUID } = require('node:crypto')
+const { sanitizeDiagnostic } = require('./diagnostics.cjs')
+
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 const DEFAULT_TIMEOUT_MS = 8000
 const MAX_FIELD_LENGTH = 4000
@@ -32,31 +35,124 @@ function boundedString(value, field, allowEmpty = false) {
   return result
 }
 
-async function requestWithTimeout(fetchImpl, url, options, timeoutMs, readResponse = (response) => response) {
+async function requestWithTimeout(fetchImpl, url, options, timeoutMs, readResponse, onDiagnostic, metadata) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const started = performance.now()
+  const requestId = randomUUID()
+  let phase = 'connect'
+  let status
+  let bodyMetadata = {}
+  function diagnose(event, extra = {}) {
+    try {
+      // No headers, request body, card content, provider messages, or exception text.
+      const pending = onDiagnostic(sanitizeDiagnostic({
+        ...metadata, ...bodyMetadata, requestId, event, phase, status,
+        endpoint: url, method: options.method, timeoutMs,
+        durationMs: Math.round(performance.now() - started), ...extra,
+      }))
+      if (pending?.catch) pending.catch(() => {})
+    } catch { /* Diagnostics must not affect an API request. */ }
+  }
+  diagnose('request-start')
   try {
     const response = await fetchImpl(url, { ...options, signal: controller.signal })
-    return await readResponse(response)
+    status = response.status
+    phase = 'read-body'
+    const retryAfter = response.headers?.get('retry-after')
+    const retryAfterMs = typeof retryAfter === 'string' && /^\d+$/.test(retryAfter)
+      ? Number(retryAfter) * 1000 : undefined
+    diagnose('response-headers', { retryAfterMs })
+    const result = await readResponse(response, (body) => {
+      const apiError = responseError(body)
+      bodyMetadata = {
+        generationId: body?.id,
+        apiErrorCode: numericErrorCode(apiError?.code),
+        apiErrorType: apiError?.metadata?.error_type,
+        finishReason: body?.choices?.[0]?.finish_reason,
+      }
+      diagnose('response-body')
+      if (metadata.operation === 'evaluate' && response.ok && !apiError
+        && body?.choices?.[0]?.finish_reason !== 'error') phase = 'parse-evaluation'
+    })
+    diagnose('request-success')
+    return result
   } catch (error) {
+    let failure
     if (error && (error.name === 'AbortError' || controller.signal.aborted)) {
-      throw new OpenRouterError('timeout', 'OpenRouter did not respond in time.')
+      failure = new OpenRouterError('timeout', 'OpenRouter did not respond in time.')
+    } else {
+      failure = error instanceof OpenRouterError ? error
+        : new OpenRouterError('unavailable', 'OpenRouter is unavailable.')
     }
-    if (error instanceof OpenRouterError) throw error
-    throw new OpenRouterError('unavailable', 'OpenRouter is unavailable.')
+    diagnose('request-failure', {
+      reason: failure.code,
+      networkCode: error?.cause?.code || error?.code,
+    })
+    throw failure
   } finally {
     clearTimeout(timeout)
   }
 }
 
 function errorForStatus(status) {
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return new OpenRouterError('auth', 'The OpenRouter API key was rejected.')
+  }
+  if (status === 403) {
+    return new OpenRouterError('forbidden', 'OpenRouter blocked this request.')
+  }
+  if (status === 402) {
+    return new OpenRouterError('credits', 'The OpenRouter credit limit was reached.')
   }
   if (status === 429) {
     return new OpenRouterError('rate-limit', 'The OpenRouter rate limit was reached.')
   }
+  if (status === 404) {
+    return new OpenRouterError('model-unavailable', 'No compatible OpenRouter model endpoint is available.')
+  }
+  if (status === 408 || status === 504) {
+    return new OpenRouterError('timeout', 'OpenRouter did not respond in time.')
+  }
   return new OpenRouterError('unavailable', `OpenRouter returned HTTP ${status}.`)
+}
+
+function numericErrorCode(value) {
+  const code = typeof value === 'string' && /^\d{3}$/.test(value) ? Number(value) : value
+  return Number.isInteger(code) && code >= 400 && code <= 599 ? code : undefined
+}
+
+function responseError(body) {
+  return body?.error || body?.choices?.[0]?.error
+}
+
+function assertResponseOk(response, body) {
+  const apiError = responseError(body)
+  if (apiError) {
+    const typedStatuses = {
+      authentication: 401, permission_denied: 403, payment_required: 402,
+      content_policy_violation: 403, refusal: 403, rate_limit_exceeded: 429, timeout: 408,
+      provider_overloaded: 503, provider_unavailable: 502, server: 500,
+      not_found: 404,
+    }
+    const errorType = apiError.metadata?.error_type
+    const status = (Object.hasOwn(typedStatuses, errorType) ? typedStatuses[errorType] : undefined)
+      || numericErrorCode(apiError.code) || (response.ok ? 502 : response.status)
+    throw errorForStatus(status)
+  }
+  if (!response.ok) throw errorForStatus(response.status)
+  if (body?.choices?.[0]?.finish_reason === 'error') throw errorForStatus(502)
+}
+
+async function readJsonResponse(response) {
+  try {
+    return await response.json()
+  } catch (error) {
+    // A broken response stream is a connection error, not malformed model output.
+    if (!(error instanceof SyntaxError)) throw error
+    if (!response.ok) throw errorForStatus(response.status)
+    throw new OpenRouterError('invalid-response', 'OpenRouter returned invalid JSON.')
+  }
 }
 
 function parseEvaluation(body) {
@@ -92,22 +188,26 @@ function createOpenRouterClient({
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   model = 'openrouter/free',
+  onDiagnostic = () => {},
 } = {}) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('A fetch implementation is required.')
   }
 
-  async function validateKey(apiKey) {
+  async function validateKey(apiKey, diagnosticContext = {}) {
     const key = boundedString(apiKey, 'API key')
-    const response = await requestWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/key`, {
+    return requestWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/key`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${key}` },
-    }, timeoutMs)
-    if (!response.ok) throw errorForStatus(response.status)
-    return true
+    }, timeoutMs, async (response, receivedBody) => {
+      const body = await readJsonResponse(response)
+      receivedBody(body)
+      assertResponseOk(response, body)
+      return true
+    }, onDiagnostic, { operation: 'validate-key', credentialSource: diagnosticContext.credentialSource })
   }
 
-  async function evaluate(apiKey, input, onResponse = () => {}) {
+  async function evaluate(apiKey, input, onResponse = () => {}, diagnosticContext = {}) {
     const key = boundedString(apiKey, 'API key')
     const context = {
       deck: boundedString(input?.deckName, 'Deck name', true),
@@ -125,7 +225,6 @@ function createOpenRouterClient({
       },
       body: JSON.stringify({
         model,
-        temperature: 0,
         max_tokens: 160,
         provider: { require_parameters: true },
         messages: [
@@ -171,18 +270,14 @@ function createOpenRouterClient({
           },
         },
       }),
-    }, timeoutMs, async (response) => {
-      let body
-      try {
-        body = await response.json()
-      } catch (error) {
-        if (error?.name === 'AbortError') throw error
-        if (!response.ok) throw errorForStatus(response.status)
-        throw new OpenRouterError('invalid-response', 'OpenRouter returned invalid JSON.')
-      }
+    }, timeoutMs, async (response, receivedBody) => {
+      const body = await readJsonResponse(response)
+      receivedBody(body)
       onResponse(body)
-      if (!response.ok) throw errorForStatus(response.status)
+      assertResponseOk(response, body)
       return parseEvaluation(body)
+    }, onDiagnostic, {
+      operation: 'evaluate', model, credentialSource: diagnosticContext.credentialSource,
     })
   }
 

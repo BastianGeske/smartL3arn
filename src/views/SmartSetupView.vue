@@ -22,11 +22,13 @@ const ui = useUiStore()
 const aiStatus = ref<{
   available: boolean
   configured: boolean
-  credentialSource: 'environment' | 'stored' | null
+  credentialSource: 'environment' | 'bundled' | 'stored' | null
 }>({ available: Boolean(window.smartL3arn), configured: false, credentialSource: null })
 const apiKey = ref('')
 const aiBusy = ref(false)
 const aiMessage = ref<TranslationKey | ''>('')
+const fixedKeyActive = computed(() => aiStatus.value.credentialSource === 'environment'
+  || aiStatus.value.credentialSource === 'bundled')
 
 const selectedDecks = computed(() => settings.smartConfig.deckIds
   .map((id) => library.deckById(id))
@@ -59,6 +61,10 @@ const durations: { value: number; label: TranslationKey }[] = [
 
 const aiFailureMessages: Record<string, TranslationKey> = {
   auth: 'ai.auth',
+  forbidden: 'ai.forbidden',
+  credits: 'ai.credits',
+  'model-unavailable': 'ai.modelUnavailable',
+  'rate-limit': 'ai.rateLimit',
   timeout: 'ai.timeout',
   'secure-storage-unavailable': 'ai.secureStorage',
   unavailable: 'ai.unavailable',
@@ -93,7 +99,7 @@ async function saveApiKey(): Promise<void> {
     settings.smartConfig.evaluationMode = 'openrouter'
     aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.savedFallback'
-      : 'ai.saved'
+      : aiStatus.value.credentialSource === 'bundled' ? 'ai.savedBundledFallback' : 'ai.saved'
   } else {
     aiMessage.value = aiFailureMessages[result.reason || ''] || 'ai.saveFailed'
   }
@@ -109,9 +115,9 @@ async function removeApiKey(): Promise<void> {
   if (result.ok) {
     aiStatus.value = await window.smartL3arn.getAiStatus()
     if (!aiStatus.value.configured) settings.smartConfig.evaluationMode = 'local'
-    aiMessage.value = aiStatus.value.configured
+    aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.removedFallback'
-      : 'ai.removed'
+      : aiStatus.value.credentialSource === 'bundled' ? 'ai.removedBundledFallback' : 'ai.removed'
   } else {
     aiMessage.value = 'ai.removeFailed'
   }
@@ -272,11 +278,11 @@ async function start(): Promise<void> {
               <p v-if="aiStatus.configured" class="ai-status-message">
                 {{ aiStatus.credentialSource === 'environment'
                   ? t('ai.environmentKey')
-                  : t('ai.storedKey') }}
+                  : aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : t('ai.storedKey') }}
               </p>
               <form class="ai-key-form" @submit.prevent="saveApiKey">
                 <label class="field-label" for="openrouter-key">
-                  {{ aiStatus.credentialSource === 'environment' ? t('ai.fallbackKey') : aiStatus.configured ? t('ai.replaceKey') : t('ai.key') }}
+                  {{ fixedKeyActive ? t('ai.fallbackKey') : aiStatus.configured ? t('ai.replaceKey') : t('ai.key') }}
                 </label>
                 <input
                   id="openrouter-key"

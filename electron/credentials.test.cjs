@@ -7,18 +7,20 @@ const path = require('node:path')
 const test = require('node:test')
 const { createCredentialResolver } = require('./credentials.cjs')
 
-function setup(context, content, env = {}) {
+function setup(context, content, env = {}, bundled) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'smartl3arn-env-test-'))
   context.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const envPath = path.join(directory, '.env')
   if (content !== undefined) fs.writeFileSync(envPath, content)
+  const buildConfigPath = path.join(directory, 'openrouter-build-config.json')
+  if (bundled !== undefined) fs.writeFileSync(buildConfigPath, JSON.stringify(bundled))
   let stored = 'encrypted-settings-key'
   const store = {
     has: async () => Boolean(stored),
     read: async () => stored,
     remove: async () => { stored = null },
   }
-  return { resolver: createCredentialResolver({ env, envPath, store }), store }
+  return { resolver: createCredentialResolver({ env, envPath, buildConfigPath, store }), store, buildConfigPath }
 }
 
 test('process environment wins over .env and encrypted storage without exposing the key in status', async (context) => {
@@ -61,4 +63,44 @@ test('resolves model from process environment, then .env, then default', (contex
   for (const [content, env, expected] of cases) {
     assert.equal(setup(context, content, env).resolver.model, expected)
   }
+})
+
+test('a packaged key and model take precedence over an older stored key', async (context) => {
+  const { resolver } = setup(context, undefined, {}, {
+    OPENROUTER_API_KEY: ' bundled-key ',
+    OPENROUTER_MODEL: ' bundled/model ',
+  })
+  assert.equal(await resolver.read(), 'bundled-key')
+  assert.equal(resolver.model, 'bundled/model')
+  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'bundled' })
+})
+
+test('runtime environment and local .env can override the packaged key and model', async (context) => {
+  const bundled = { OPENROUTER_API_KEY: 'bundled-key', OPENROUTER_MODEL: 'bundled/model' }
+  const cases = [
+    [undefined, { OPENROUTER_API_KEY: 'process-key', OPENROUTER_MODEL: 'process/model' }, 'process-key', 'process/model'],
+    ['OPENROUTER_API_KEY=local-key\nOPENROUTER_MODEL=local/model', {}, 'local-key', 'local/model'],
+  ]
+  for (const [content, env, expectedKey, expectedModel] of cases) {
+    const { resolver } = setup(context, content, env, bundled)
+    assert.equal(await resolver.read(), expectedKey)
+    assert.equal(resolver.model, expectedModel)
+    assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'environment' })
+  }
+})
+
+test('removing encrypted storage leaves the packaged key available', async (context) => {
+  const { resolver, store } = setup(context, undefined, {}, { OPENROUTER_API_KEY: 'bundled-key' })
+  await store.remove()
+  assert.equal(await resolver.read(), 'bundled-key')
+  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'bundled' })
+})
+
+test('a model-only build still uses the encrypted settings key', async (context) => {
+  const { resolver } = setup(context, undefined, {}, {
+    OPENROUTER_API_KEY: ' ', OPENROUTER_MODEL: 'bundled/model',
+  })
+  assert.equal(await resolver.read(), 'encrypted-settings-key')
+  assert.equal(resolver.model, 'bundled/model')
+  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'stored' })
 })

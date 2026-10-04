@@ -29,11 +29,16 @@ declare global {
     smartL3arn?: {
       loadData: () => Promise<AppData>
       getApiUsage: () => Promise<ApiUsageReport>
+      getAiDiagnostics: () => Promise<{
+        filename: string
+        content: string
+        persistenceError: boolean
+      }>
       saveData: (data: AppData) => Promise<void>
       getAiStatus: () => Promise<{
         available: boolean
         configured: boolean
-        credentialSource: 'environment' | 'stored' | null
+        credentialSource: 'environment' | 'bundled' | 'stored' | null
       }>
       saveOpenRouterKey: (apiKey: string) => Promise<AiOperationResult>
       removeOpenRouterKey: () => Promise<AiOperationResult>

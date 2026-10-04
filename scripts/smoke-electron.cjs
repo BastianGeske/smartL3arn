@@ -45,12 +45,17 @@ ipcMain.handle('ai:usage', () => {
     }],
   }
 })
+ipcMain.handle('ai:diagnostics', () => ({
+  filename: 'smartL3arn-openrouter-smoke.jsonl', persistenceError: false,
+  content: `${JSON.stringify({ event: 'request-failure', reason: 'timeout', durationMs: 8000 })}\n`,
+}))
 ipcMain.handle('ai:save-key', () => ({ ok: false, reason: 'unavailable' }))
 ipcMain.handle('ai:remove-key', () => ({ ok: true }))
 ipcMain.handle('ai:evaluate', () => ({ ok: false, reason: 'unavailable' }))
 
 app.whenReady().then(async () => {
   const errors = []
+  const downloads = []
   const window = new BrowserWindow({
     show: false,
     width: 1100,
@@ -65,6 +70,10 @@ app.whenReady().then(async () => {
 
   window.webContents.on('console-message', (event) => {
     if (event.level === 'error') errors.push(event.message)
+  })
+  window.webContents.session.on('will-download', (event, item) => {
+    downloads.push(item.getFilename())
+    event.preventDefault()
   })
   await window.loadFile(path.join(root, 'web-dist', 'index.html'))
   await window.webContents.executeJavaScript(`localStorage.setItem('smartl3arn_language', 'en');window.dispatchEvent(new StorageEvent('storage', { key: 'smartl3arn_language' }))`)
@@ -146,6 +155,15 @@ app.whenReady().then(async () => {
   assert(usage.projection.includes('1,76'), 'Usage projection incorrectly counts unknown costs as free')
   assert(usage.coverage.includes('2/3'), 'Unknown usage coverage was not displayed')
   await window.webContents.executeJavaScript(`(() => {
+    const button = [...document.querySelectorAll('.usage-actions button')]
+      .find((element) => element.textContent.includes('Verbindungslogs exportieren'))
+    if (!button) throw new Error('Connection log export button is missing')
+    button.click()
+  })()`)
+  await wait(150)
+  assert(downloads.includes('smartL3arn-openrouter-smoke.jsonl'), 'Connection logs were not downloaded')
+  assert(await window.webContents.executeJavaScript(`document.querySelector('.usage-notice[role="status"]')?.textContent.includes('Verbindungslogs exportiert')`), 'Connection log export confirmation is missing')
+  await window.webContents.executeJavaScript(`(() => {
     const select = document.querySelector('.usage-filters select')
     select.value = '1'
     select.dispatchEvent(new Event('change', { bubbles: true }))
@@ -168,7 +186,7 @@ app.whenReady().then(async () => {
   }
   assert(errors.length === 0, `Renderer errors: ${errors.join('; ')}`)
 
-  process.stdout.write(`${JSON.stringify({ home, study, smart, evaluation, usage, errors })}\n`)
+  process.stdout.write(`${JSON.stringify({ home, study, smart, evaluation, usage, downloads, errors })}\n`)
   app.quit()
 }).catch((error) => {
   process.stderr.write(`${error.stack || error}\n`)

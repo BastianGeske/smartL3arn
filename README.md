@@ -24,6 +24,7 @@ The interface is available in German and English. OpenRouter answer evaluation i
     - [Configure a local .env file](#configure-a-local-env-file)
     - [Choose a model](#choose-a-model)
     - [Troubleshooting](#troubleshooting)
+    - [Connection logs](#connection-logs)
 - [API usage overview](#api-usage-overview)
 - [Import formats](#import-formats)
   - [JSON](#json)
@@ -116,6 +117,7 @@ Typical use cases:
 - Optional semantic answer checks in macOS Electron, with encrypted in-app API-key storage or local environment configuration
 - Configurable model ID and automatic local fallback on failed or incompatible AI requests
 - API usage overview with model/date filters, token counts, reported USD costs, and an estimate for 10,000 evaluations
+- Persistent connection diagnostics with an export button, HTTP/provider error codes, request phases, and durations
 
 **UI**
 
@@ -127,6 +129,8 @@ Typical use cases:
 
 ## Recent improvements
 
+- OpenRouter requests avoid unsupported sampling parameters, so strict structured-output routing works with models that do not accept `temperature`. Errors distinguish invalid keys, blocked requests, exhausted credits, and unavailable model providers.
+- Persistent connection logs record request phases, durations, HTTP/provider/network codes, and app versions, with a privacy-filtered export under API Usage.
 - CSV exports can be re-imported without turning the header into a card or losing quoted multiline content. An unclosed quoted field rejects the whole import with a translated error.
 - Re-importing an individual JSON deck now retains card IDs, statistics, elaborations, extra-practice flags, and session history, matching full-backup restoration.
 - Pure integer and decimal reference answers are checked exactly, including signs and values beyond floating-point precision.
@@ -165,7 +169,17 @@ npm run build:all  # both
 npm run build:web  # web bundle only
 ```
 
+Each desktop release command (`build`, `build:win`, or `build:all`) automatically increments the patch version in `package.json` and `package-lock.json`, for example `1.0.0` → `1.0.1` → `1.0.2`. This creates no Git commit or tag. All targets in a single `build:all` run share the new version; `build:web` leaves the version unchanged.
+
 The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. Build/signing prerequisites depend on the target platform. The desktop/browser artwork is `build/icon.png`; electron-builder converts it to platform icon formats. See [Prism UI and app icons](#prism-ui-and-app-icons) for native icon generation.
+
+Desktop packaging automatically includes `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). The packaging hook writes only these two values to `openrouter-build-config.json` in the app's resources. A build without a key still supports local study and keys entered in the app. **A configured key is extractable from the DMG or installer.** Rebuild after changing the project's key or model; existing packages retain their previous values.
+
+To build only the Apple Silicon DMG:
+
+```sh
+npm run build -- --arm64
+```
 
 ## Mobile builds (iOS and Android)
 
@@ -242,7 +256,7 @@ OpenRouter compares the meaning of a typed answer with the current question and 
 1. Sign in to [OpenRouter](https://openrouter.ai/) and create a personal inference API key on the [API keys page](https://openrouter.ai/settings/keys). Use a regular API key, not a [management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys), which cannot call completion endpoints.
 2. Start the macOS desktop app with `npm start`, or open the installed macOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
 3. Open **Smart Study → Answer evaluation** (German: **Smart Study → Antwortbewertung**). Paste the key into **OpenRouter API key** and click **Validate and save** (**Prüfen und speichern**).
-4. Confirm the **Configured** (**Eingerichtet**) indicator and select **OpenRouter AI** (**OpenRouter-KI**). Saving a key selects AI mode; if an environment key is configured, it remains the active credential.
+4. Confirm the **Configured** (**Eingerichtet**) indicator and select **OpenRouter AI** (**OpenRouter-KI**). Saving a key selects AI mode; an environment or bundled key remains the active credential if present.
 5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. A local percentage or fallback notice means this answer was checked locally.
 6. Open [API Usage](#api-usage-overview) and click **Refresh** to inspect the recorded request, tokens, and reported cost. A successful key validation alone does not prove the chosen model can produce the required response format; the first answer check verifies that.
 
@@ -263,7 +277,7 @@ OPENROUTER_API_KEY=sk-or-v1-PASTE_YOUR_PERSONAL_KEY_HERE
 OPENROUTER_MODEL=openrouter/free
 ```
 
-Fully quit and restart Electron after changing `.env` or the model, then select **OpenRouter AI** in Smart Study. Closing the window alone may leave Electron running on macOS. With an installed macOS app, the file belongs at `~/Library/Application Support/smartL3arn/.env`, rather than inside the application bundle.
+Fully quit and restart Electron after changing `.env` or the model, then select **OpenRouter AI** in Smart Study. Closing the window alone may leave Electron running on macOS. Desktop builds also embed the project's key and model automatically, so the installed app works with that configuration without copying `.env` separately. To override an existing installed build locally, place `.env` at `~/Library/Application Support/smartl3arn/.env` and restart.
 
 Keys are resolved in this order; empty or whitespace-only values fall through:
 
@@ -271,15 +285,16 @@ Keys are resolved in this order; empty or whitespace-only values fall through:
 |---|---|
 | 1 | `OPENROUTER_API_KEY` in the Electron process environment |
 | 2 | `OPENROUTER_API_KEY` in the applicable local `.env` file |
-| 3 | Encrypted key saved in Smart Study |
+| 3 | Key embedded from the build's `.env` or environment |
+| 4 | Encrypted key saved in Smart Study |
 
-The UI groups the first two sources as an **environment key**. If one is active, saving a key in the app stores an encrypted fallback; removing that stored key leaves the environment key active. Change or remove the active environment value and restart to switch sources.
+The UI groups the first two sources as an **environment key**, identifies a **bundled key** separately, and otherwise uses the encrypted settings key. When an environment or bundled key is active, saving a key in the app stores an encrypted fallback; removing that stored key leaves the active key in place. A bundled key takes precedence over older encrypted settings keys. Override it through the local runtime `.env`, or rebuild with the updated project configuration.
 
-An `.env` file stores its key as plain text; the in-app method uses encrypted storage. Repository `.env` files are ignored by Git and excluded from packaged builds. Credentials are resolved in Electron's main process: never give them a `VITE_` prefix, which would expose them to the web build.
+An `.env` file stores its key as plain text; the in-app method uses encrypted storage. Repository `.env` files are ignored by Git and the files themselves are excluded from packages, but desktop packaging copies the OpenRouter key and model into an app resource. Anyone with the package can extract that key. Credentials are resolved in Electron's main process: never give them a `VITE_` prefix, which would expose them to the web build.
 
 #### Choose a model
 
-The model is configured with `OPENROUTER_MODEL`; there is no model picker in the current UI. Its precedence is the process environment, then `.env`, then the bundled default **`openrouter/free`**. Changing it requires a full Electron restart. Model configuration is independent of whether the key comes from `.env` or encrypted storage.
+The model is configured with `OPENROUTER_MODEL`; there is no model picker in the current UI. Its precedence is the runtime process environment, then local `.env`, then the model embedded at build time, then **`openrouter/free`**. Changing a runtime value requires a full Electron restart; changing the project's build configuration requires a new package. Model configuration is independent of the key source.
 
 - The default [Free Models Router](https://openrouter.ai/openrouter/free) chooses an available free model that supports the requested features. The actual returned model can differ between requests and is shown in feedback and usage history.
 - For a fixed model, copy its exact ID from the [OpenRouter model catalog](https://openrouter.ai/models) into `OPENROUTER_MODEL`. Select a model/provider supporting [structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs): the evaluator requests a strict JSON schema with `response_format.type = "json_schema"` and `provider.require_parameters: true`. A valid key alone does not guarantee model compatibility.
@@ -298,13 +313,35 @@ The configured request timeout is **8 seconds**, including reading the answer re
 | AI configuration is unavailable | Use the macOS Electron app; Windows Electron, browser, iOS, and Android currently use local evaluation. |
 | A key is saved, but checks remain local | Enable **Typed recall**, select **OpenRouter AI**, and submit a non-empty answer. Inspect any fallback notice. |
 | Key rejected | Replace the example placeholder, check that the key is active, and use a regular inference key rather than a management key. |
-| The app keeps using an old key | Process environment and `.env` override the encrypted settings key. Change the active source and fully restart Electron. |
+| Request blocked | HTTP 403 indicates a permission, policy, or guardrail restriction. Check key/model/provider restrictions; it does not by itself mean the key is invalid. |
+| Credits or spending limit exhausted | HTTP 402 indicates insufficient credits or an exhausted key spending limit. Check the OpenRouter balance and key limit. |
+| No compatible model provider | HTTP 404 can mean that no provider supports all requested parameters. Check the model's supported parameters and structured-output support. The app keeps strict schema routing and avoids a fixed `temperature`, which some reasoning models do not support. |
+| The app keeps using an old key or model | Check the displayed key source. Runtime environment and local `.env` override the bundled configuration; the bundled key overrides encrypted storage. Restart after a runtime change, or rebuild after editing the project's `.env`. |
 | Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
-| OpenRouter unavailable | Check the connection, account credits/key limit for paid models, and whether the configured model supports structured outputs. The UI groups these failures under availability. |
-| Invalid evaluation or repeated timeouts | Try a compatible model with a shorter response latency. Unsupported JSON schemas, truncated responses, or a stalled response body can cause local fallback. |
+| OpenRouter unavailable | Export the connection logs and inspect the HTTP status, typed provider error, and network code. Check the connection and whether the configured model supports structured outputs. |
+| Invalid evaluation or repeated timeouts | Export the connection logs first. The deadline is 8 seconds; `phase` distinguishes waiting for headers from reading the body or parsing the evaluation. Unsupported JSON schemas, truncated responses, or a stalled response body can cause local fallback. |
 | Card too long | Deck name, question, reference answer, and typed answer are each limited to 4,000 characters after trimming. Shorten the affected field. |
 | Secure key storage unavailable | Check the OS secure-storage availability, or use the local `.env` configuration described above. |
 | Usage shows `—` | The provider did not supply that information; it means unknown, not free. Refresh after the request finishes. |
+
+#### Connection logs
+
+The Electron app automatically records diagnostic metadata in `openrouter-debug.jsonl` in its user-data directory. On macOS this is `~/Library/Application Support/smartl3arn/openrouter-debug.jsonl`. Logs start with this version; earlier failures cannot be recovered retrospectively.
+
+To investigate a failure, fully quit the old app, launch the new build, reproduce the failed answer check, and open **API Usage → Export connection logs** (**API-Verbrauch → Verbindungslogs exportieren**). The JSON Lines export includes the current log and its previous rotation. Each file is capped at approximately 1 MiB; older entries are replaced automatically.
+
+Each request has a `requestId` linking its start, response headers, body receipt, and success/failure. Entries include the app version, configured model, credential source, exact endpoint, elapsed `durationMs`, deadline `timeoutMs`, HTTP `status`, and sanitized provider/network codes when available. A provider generation ID and finish reason are retained when present. API keys, authorization headers, deck names, questions, answers, feedback, raw provider payloads, and arbitrary exception messages are excluded. Log export uses the same whitelist and does not make an API request.
+
+| Log evidence | Meaning |
+|---|---|
+| `reason: "timeout"`, `durationMs` near 8000, `phase: "connect"` | The app's deadline expired before response headers arrived. |
+| `reason: "timeout"`, `phase: "read-body"`, HTTP status present | Headers arrived, but the complete response body did not arrive before the deadline. |
+| `networkCode: "ENOTFOUND"` or `"EAI_AGAIN"` | DNS resolution failed. |
+| `networkCode: "ECONNRESET"` or `"UND_ERR_SOCKET"` | The connection was interrupted. |
+| `reason: "invalid-response"`, `phase: "parse-evaluation"` | The body arrived, but the model's evaluation did not match the expected JSON schema. |
+| HTTP 200 plus `apiErrorCode` / `apiErrorType` | OpenRouter reported a provider failure inside the response body. HTTP 200 alone does not prove success. |
+
+The endpoints are `POST https://openrouter.ai/api/v1/chat/completions` for evaluations and `GET https://openrouter.ai/api/v1/key` for key validation, matching OpenRouter's [chat-completion reference](https://openrouter.ai/docs/api/api-reference/chat/create-a-chat-completion) and [current-key reference](https://openrouter.ai/docs/api/api-reference/api-keys/get-current-api-key). Provider errors inside HTTP 200 responses and the distinction between 401, 402, and 403 follow the [error documentation](https://openrouter.ai/docs/api_reference/errors-and-debugging).
 
 ## API usage overview
 
@@ -516,9 +553,9 @@ Standard Study shortcuts apply when focus is outside buttons, inputs, textareas,
 
 | Context | Location |
 |---|---|
-| Electron, macOS | `~/Library/Application Support/smartL3arn/ankiweb_data.json` |
-| Electron, Windows | `%APPDATA%/smartL3arn/ankiweb_data.json` |
-| Electron, Linux | `~/.config/smartL3arn/ankiweb_data.json` |
+| Electron, macOS | `~/Library/Application Support/smartl3arn/ankiweb_data.json` |
+| Electron, Windows | `%APPDATA%/smartl3arn/ankiweb_data.json` |
+| Electron, Linux | `~/.config/smartl3arn/ankiweb_data.json` |
 | Browser only | `localStorage` key `ankiweb_v1` |
 | iOS / Android (Capacitor) | WebView `localStorage` key `ankiweb_v1` |
 
@@ -538,6 +575,7 @@ Electron also keeps these files in its user-data directory:
 | `ankiweb_data.json` | Decks, cards, scheduling, statistics, and sessions | Yes, through deck JSON or Export All |
 | `openrouter-key.bin` | Encrypted key saved in the app | No |
 | `api-usage.jsonl` | Local AI usage metadata | No |
+| `openrouter-debug.jsonl`, `openrouter-debug.jsonl.1` | Rotating connection diagnostics; export separately from API Usage | No |
 | `.env` | Optional key/model configuration for a packaged app | No |
 
 Source/development `.env` configuration is read from the repository root. Decks are local to each app/browser installation; there is no automatic synchronization between Electron, browser, and mobile storage. Use **Export All** and **Import JSON** to transfer decks and learning data. Re-import adds copies with new deck IDs.

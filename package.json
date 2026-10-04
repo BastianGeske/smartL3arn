@@ -1,6 +1,6 @@
 {
   "name": "smartl3arn",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "smartL3arn flashcard app with evidence-based learning techniques",
   "main": "main.js",
   "scripts": {
@@ -12,8 +12,11 @@
     "test:watch": "vitest",
     "test:smoke": "electron scripts/smoke-electron.cjs",
     "build:web": "vue-tsc -b && vite build",
+    "prebuild": "npm version patch --no-git-tag-version",
     "build": "npm run build:web && electron-builder --mac dmg",
+    "prebuild:win": "npm version patch --no-git-tag-version",
     "build:win": "npm run build:web && electron-builder --win",
+    "prebuild:all": "npm version patch --no-git-tag-version",
     "build:all": "npm run build:web && electron-builder --mac dmg --win",
     "cap:copy": "npm run build:web && cap copy ios",
     "cap:sync": "npm run cap:copy && cap sync ios",
@@ -25,6 +28,7 @@
   "build": {
     "appId": "com.smartl3arn.app",
     "productName": "smartL3arn",
+    "afterPack": "./scripts/embed-openrouter-config.cjs",
     "directories": {
       "output": "release"
     },

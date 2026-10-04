@@ -5,10 +5,15 @@ import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { sumApiUsage, type ApiUsageReport } from '../domain/apiUsage'
 import { todayStr } from '../domain/dates'
+import { saveExport } from '../services/native'
 
 const { t, locale, formatNumber, formatCurrency } = useI18n()
 
 const available = Boolean(window.smartL3arn?.getApiUsage)
+const diagnosticsAvailable = Boolean(window.smartL3arn?.getAiDiagnostics)
+const exportingLogs = ref(false)
+const diagnosticMessage = ref<TranslationKey | ''>('')
+const diagnosticError = ref(false)
 const report = ref<ApiUsageReport | null>(null)
 const loading = ref(false)
 const error = ref<TranslationKey | ''>('')
@@ -46,6 +51,29 @@ async function refresh() {
   }
 }
 
+async function exportLogs() {
+  if (!window.smartL3arn?.getAiDiagnostics) return
+  exportingLogs.value = true
+  diagnosticMessage.value = ''
+  diagnosticError.value = false
+  try {
+    const logs = await window.smartL3arn.getAiDiagnostics()
+    if (!logs.content) {
+      diagnosticMessage.value = logs.persistenceError ? 'usage.logsIncomplete' : 'usage.logsEmpty'
+      diagnosticError.value = logs.persistenceError
+      return
+    }
+    await saveExport(logs.filename, logs.content, 'application/x-ndjson')
+    diagnosticMessage.value = logs.persistenceError ? 'usage.logsIncomplete' : 'usage.logsExported'
+    diagnosticError.value = logs.persistenceError
+  } catch {
+    diagnosticMessage.value = 'usage.logsError'
+    diagnosticError.value = true
+  } finally {
+    exportingLogs.value = false
+  }
+}
+
 function dayLabel(day: string) {
   return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${day}T12:00:00`))
 }
@@ -63,9 +91,14 @@ onMounted(refresh)
           <h1>{{ t('nav.usage') }}</h1>
           <p class="page-subtitle">{{ t('usage.subtitle') }}</p>
         </div>
-        <button v-if="available" class="btn btn-secondary" type="button" :disabled="loading" @click="refresh">
-          <AppIcon name="rotate-ccw" :size="16" />{{ loading ? t('usage.refreshing') : t('usage.refresh') }}
-        </button>
+        <div class="usage-actions">
+          <button v-if="diagnosticsAvailable" class="btn btn-secondary" type="button" :disabled="exportingLogs" @click="exportLogs">
+            <AppIcon name="file-text" :size="16" />{{ exportingLogs ? t('usage.logsExporting') : t('usage.exportLogs') }}
+          </button>
+          <button v-if="available" class="btn btn-secondary" type="button" :disabled="loading" @click="refresh">
+            <AppIcon name="rotate-ccw" :size="16" />{{ loading ? t('usage.refreshing') : t('usage.refresh') }}
+          </button>
+        </div>
       </header>
 
       <p v-if="!available" class="usage-notice" role="status">
@@ -73,6 +106,8 @@ onMounted(refresh)
       </p>
       <p v-else-if="error" class="usage-notice" role="alert">{{ t(error) }}</p>
       <p v-if="loading && !report" role="status">{{ t('usage.loading') }}</p>
+      <p v-if="diagnosticMessage" class="usage-notice" :role="diagnosticError ? 'alert' : 'status'">{{ t(diagnosticMessage) }}</p>
+      <p v-if="diagnosticsAvailable" class="usage-caption usage-log-note">{{ t('usage.logsPrivacy') }}</p>
 
       <template v-if="report">
         <p v-if="report.persistenceError || report.unreadableEntries" class="usage-notice" role="alert">
@@ -162,6 +197,8 @@ onMounted(refresh)
 </template>
 
 <style scoped>
+.usage-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.usage-log-note { margin: 0 0 20px; }
 .usage-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 20px; margin: 0 0 24px; }
 .usage-filters label { display: grid; gap: 8px; color: var(--text-muted); font-size: 13px; font-weight: 650; }
 .usage-filters select { min-width: 180px; max-width: 100%; }

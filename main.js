@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { createCredentialResolver } = require('./electron/credentials.cjs');
 const { createUsageStore } = require('./electron/usage.cjs');
+const { createDiagnosticStore } = require('./electron/diagnostics.cjs');
 const {
   createCredentialStore,
   createOpenRouterClient,
@@ -53,9 +54,28 @@ ipcMain.handle('db:save', async (_event, data) => {
 });
 
 let openRouter;
+let diagnosticStore;
+function getDiagnosticStore() {
+  if (!diagnosticStore) {
+    diagnosticStore = createDiagnosticStore(
+      path.join(app.getPath('userData'), 'openrouter-debug.jsonl'),
+      { appVersion: app.getVersion() },
+    );
+  }
+  return diagnosticStore;
+}
+
+function recordDiagnostic(entry) {
+  return getDiagnosticStore().record(entry)
+    .catch(() => console.warn('Could not save OpenRouter diagnostics.'));
+}
+
 function getOpenRouterClient() {
   if (!openRouter) {
-    openRouter = createOpenRouterClient({ model: getCredentialResolver().model });
+    openRouter = createOpenRouterClient({
+      model: getCredentialResolver().model,
+      onDiagnostic: recordDiagnostic,
+    });
   }
   return openRouter;
 }
@@ -73,6 +93,8 @@ function getCredentialResolver() {
   if (!credentialResolver) {
     credentialResolver = createCredentialResolver({
       envPath: path.join(app.isPackaged ? app.getPath('userData') : __dirname, '.env'),
+      buildConfigPath: app.isPackaged
+        ? path.join(process.resourcesPath, 'openrouter-build-config.json') : undefined,
       store: getCredentialStore(),
     });
   }
@@ -88,11 +110,16 @@ ipcMain.handle('ai:status', async () => {
 
 ipcMain.handle('ai:save-key', async (_event, apiKey) => {
   try {
-    await getOpenRouterClient().validateKey(apiKey);
+    await getOpenRouterClient().validateKey(apiKey, { credentialSource: 'provided' });
     await getCredentialStore().write(String(apiKey).trim());
     return { ok: true };
   } catch (error) {
+    await recordDiagnostic({
+      event: 'credential-failure', operation: 'validate-key', reason: publicError(error).reason,
+    });
     return publicError(error);
+  } finally {
+    if (diagnosticStore) await diagnosticStore.flush();
   }
 });
 
@@ -118,23 +145,36 @@ ipcMain.handle('ai:usage', async () => ({
   model: getCredentialResolver().model,
 }));
 
+ipcMain.handle('ai:diagnostics', () => getDiagnosticStore().snapshot());
+
 ipcMain.handle('ai:evaluate', async (_event, input) => {
   let attempted = false;
   let responseMetadata;
   let outcome = 'failure';
   try {
-    const apiKey = await getCredentialResolver().read();
-    if (!apiKey) return { ok: false, reason: 'not-configured' };
+    const resolver = getCredentialResolver();
+    const { credentialSource } = await resolver.status();
+    const apiKey = await resolver.read();
+    if (!apiKey) {
+      await recordDiagnostic({ event: 'evaluation-skipped', reason: 'not-configured', model: resolver.model });
+      return { ok: false, reason: 'not-configured' };
+    }
     attempted = true;
     const result = await getOpenRouterClient().evaluate(apiKey, input, (body) => {
       responseMetadata = body;
-    });
+    }, { credentialSource });
     outcome = 'success';
     return { ok: true, result };
   } catch (error) {
-    if (error?.code === 'invalid-input') attempted = false;
+    if (error?.code === 'invalid-input') {
+      attempted = false;
+      await recordDiagnostic({ event: 'evaluation-skipped', reason: 'invalid-input' });
+    } else if (!attempted) {
+      await recordDiagnostic({ event: 'credential-failure', reason: publicError(error).reason });
+    }
     return publicError(error);
   } finally {
+    if (diagnosticStore) await diagnosticStore.flush();
     if (attempted) {
       await getUsageStore().record({
         model: typeof responseMetadata?.model === 'string'
@@ -170,6 +210,9 @@ app.whenReady().then(() => {
     try { app.dock.setIcon(path.join(__dirname, 'build', 'icon.png')); } catch (_) {}
   }
   createWindow();
+  getCredentialResolver().status().then((status) => recordDiagnostic({
+    event: 'configuration', model: getCredentialResolver().model, ...status,
+  })).catch(() => recordDiagnostic({ event: 'credential-failure', reason: 'unavailable' }));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

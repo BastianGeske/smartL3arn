@@ -33,6 +33,9 @@ const BREAK_MINUTES = 7
 const fallbackMessages: Record<string, TranslationKey> = {
   'not-configured': 'ai.notConfigured',
   auth: 'ai.auth',
+  forbidden: 'ai.forbidden',
+  credits: 'ai.credits',
+  'model-unavailable': 'ai.modelUnavailable',
   'rate-limit': 'ai.rateLimit',
   timeout: 'ai.timeout',
   'invalid-response': 'ai.invalidResponse',
