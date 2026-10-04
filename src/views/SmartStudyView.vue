@@ -12,6 +12,7 @@ import {
 import type { ConfidenceLevel, Rating } from '../domain/types'
 import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
+import { Capacitor } from '@capacitor/core'
 
 const { t } = useI18n()
 
@@ -96,6 +97,7 @@ function formatMs(milliseconds: number): string {
 }
 
 function focusCurrentInput(): void {
+  if (Capacitor.isNativePlatform() || window.matchMedia('(pointer: coarse)').matches) return
   if (settings.smartConfig.techniques.typeRecall) {
     document.querySelector<HTMLTextAreaElement>('#smart-answer-input')?.focus()
   } else {
@@ -197,6 +199,10 @@ async function exit(): Promise<void> {
 
     <main v-else-if="smart.currentCard && smart.currentDeck" class="smart-study-main">
       <div class="smart-body">
+        <div class="evaluation-mode-badge" :class="{ 'is-ai': settings.smartConfig.evaluationMode === 'openrouter' }">
+          <AppIcon :name="settings.smartConfig.evaluationMode === 'openrouter' ? 'sparkles' : 'check'" :size="14" />
+          {{ t(settings.smartConfig.evaluationMode === 'openrouter' ? 'ai.openrouter' : 'ai.local') }}
+        </div>
         <div class="smart-session-meta">
           <span class="smart-deck-tag">
             <AppIcon name="book-open" :size="13" />{{ smart.currentDeck.name }}
@@ -269,6 +275,12 @@ async function exit(): Promise<void> {
             <p v-if="smart.session.isEvaluating" class="smart-evaluation-status" role="status">
               {{ t('smart.checking') }}
             </p>
+            <div v-if="smart.evaluationError" class="ai-request-error" role="alert">
+              <strong>{{ t('ai.requestFailed') }}</strong>
+              <p>{{ t(smart.evaluationError) }}</p>
+              <p>{{ t('ai.noLocalFallback') }}</p>
+              <button class="btn btn-secondary" type="button" @click="router.push('/smart')">{{ t('smart.adjust') }}</button>
+            </div>
           </div>
           <div v-else class="show-answer-wrap">
             <button class="btn btn-primary btn-lg" type="button" @click="smart.reveal">

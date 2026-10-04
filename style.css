@@ -3073,3 +3073,112 @@ kbd { display: inline-block; font: 500 10px var(--font-body); border: 1px solid 
 .preference-content .field-label { display: block; margin-bottom: 8px; }
 .library-workspace .summary-item span:last-child { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 html[lang="de"] .deck-row-actions .btn-quiet .icon { display: none; }
+
+.evaluation-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.evaluation-mode-badge.is-ai { color: var(--primary); background: var(--primary-soft); }
+.ai-request-error { padding: 16px; border: 1px solid var(--again-border); border-radius: 14px; background: var(--danger-soft); color: var(--danger); }
+.ai-request-error p { margin: 8px 0; font-size: 13px; line-height: 1.5; }
+.ai-settings > .segmented-control { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Phone layouts: reserve safe areas and keep primary controls within thumb reach. */
+@media (max-width: 719px) {
+  .app-shell { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .app-bar { position: sticky; top: 0; z-index: 45; background: var(--surface); }
+  .app-bar-inner { min-height: 54px; padding: 8px 16px; gap: 12px; flex-wrap: nowrap; }
+  .brand-name { font-size: 17px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .app-nav {
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: 0 -4px 20px #25223508;
+  }
+  .app-nav-item { min-width: 0; min-height: 52px; padding: 5px 2px; flex-direction: column; gap: 4px; border-radius: 10px; font-size: 10px; line-height: 1.2; text-align: center; }
+  .app-nav-item span { overflow-wrap: normal; }
+  .app-nav-item .icon { width: 20px; height: 20px; }
+  .app-nav-item.is-active { color: var(--primary); background: var(--primary-soft); box-shadow: none; }
+  .workspace-toolbar { min-height: 0; padding: 10px 16px; background: var(--surface); }
+  .workspace-toolbar::before { display: none; }
+  .workspace-toolbar > strong { font-size: 14px; }
+  .workspace-toolbar:has(.toolbar-actions:empty) { display: none; }
+  .workspace, .smart-workspace, .usage-workspace { padding: 22px 16px 24px; min-width: 0; }
+  .page-heading, .library-workspace .page-heading { margin-bottom: 20px; gap: 12px; }
+  .page-heading h1, .library-workspace .page-heading h1 { font-size: 26px; line-height: 1.2; letter-spacing: -.6px; }
+  .page-kicker { margin-bottom: 6px; font-size: 12px; }
+  .page-subtitle, .library-workspace .page-subtitle { font-size: 14px; line-height: 1.5; margin-top: 8px; }
+  .page-heading-actions, .library-workspace .page-heading-actions { width: 100%; }
+  .page-heading-actions .btn { width: 100%; }
+  .btn, .btn-sm, .btn-icon, .segment-button { min-height: 44px; }
+  .text-input, .textarea, .select-input, .search-input { font-size: 16px; }
+  .library-overview { gap: 12px; padding-bottom: 16px; margin-bottom: 18px; }
+  .library-overview .summary-strip { gap: 12px; }
+  .library-workspace .summary-item { padding: 0 10px; gap: 4px; min-height: 44px; }
+  .summary-item strong { font-size: 18px; }
+  .library-transfer { width: 100%; }
+  .library-transfer > summary { justify-content: center; }
+  .deck-list { grid-template-columns: 1fr; gap: 16px; }
+  .deck-cover { height: 124px; }
+  .deck-row-main { padding: 15px 16px 0; }
+  .deck-row-status { padding: 10px 16px 0; }
+  .deck-row-actions { padding: 12px 16px 16px; gap: 8px; }
+  .deck-row-actions .btn { min-height: 44px; }
+  .deck-row-actions .deck-menu > summary { width: 44px; height: 44px; }
+  .smart-config-grid { margin: 0; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .smart-config-main, .smart-options { gap: 16px; }
+  .config-section, .session-plan { padding: 16px; border-radius: 16px; min-width: 0; }
+  .config-heading { flex-wrap: wrap; gap: 8px; }
+  .config-heading h2 { font-size: 15px; }
+  .smart-options .ai-config-section { order: -1; }
+  .session-plan { grid-row: auto; position: static; }
+  .session-plan-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+  .session-plan-stats dd { white-space: normal; overflow: visible; text-overflow: clip; font-size: 19px; line-height: 1.3; }
+  .smart-row-title { font-size: 14px; line-height: 1.4; }
+  .smart-row-meta { flex-wrap: wrap; gap: 4px 10px; font-size: 12px; }
+  .technique-row { padding: 10px 0; gap: 10px; }
+  .technique-icon { flex-shrink: 0; }
+  .technique-description { font-size: 12px; line-height: 1.45; }
+  .ai-key-form { padding: 12px; }
+  .ai-key-actions { flex-direction: column; align-items: stretch; }
+  .study-shell { padding: 12px 16px calc(18px + env(safe-area-inset-bottom)); min-height: 100dvh; }
+  .study-header { padding: 10px 12px; border-radius: 14px; }
+  .study-header-top { gap: 8px; }
+  .study-context strong { font-size: 13px; }
+  .study-exit { min-height: 44px; }
+  .smart-study-main { padding-top: 12px; }
+  .smart-body { gap: 12px; }
+  .smart-session-meta { flex-wrap: wrap; gap: 8px; }
+  .smart-deck-tag { max-width: 100%; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 1.4; }
+  .smart-deck-tag .icon { flex-shrink: 0; }
+  .smart-card-block { min-height: 148px; padding: 18px; border-radius: 16px; }
+  .smart-card-block .card-content { font-size: clamp(20px, 5.5vw, 25px); line-height: 1.45; }
+  .smart-confidence { padding: 12px; }
+  .smart-answer-area { padding: 14px; }
+  .smart-answer-input { min-height: 96px; padding: 12px; font-size: 16px; }
+  .smart-answer-actions { gap: 8px; }
+  .smart-feedback-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .smart-feedback-score { flex-wrap: wrap; gap: 8px; }
+  .smart-rating-buttons { gap: 8px; }
+  .rating-button { min-height: 60px; }
+  .modal-overlay { padding: 12px; }
+  .modal { max-height: calc(100dvh - 24px); }
+  .modal-header, .modal-body, .modal-footer { padding-inline: 16px; }
+  .toast-region { bottom: calc(84px + env(safe-area-inset-bottom)); }
+}

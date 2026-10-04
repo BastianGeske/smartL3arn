@@ -4,7 +4,7 @@ A flashcard app for long-term retention, with local deck storage, FSRS-5 spaced 
 
 Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web app runs in Electron, a browser, and native iOS/Android shells through Capacitor.
 
-The interface is available in German and English. OpenRouter answer evaluation is optional and currently exposed in the **macOS Electron app**; Windows Electron, browser, iOS, and Android study flows use local evaluation. Decks and local study work without an OpenRouter account.
+The interface is available in German and English. OpenRouter answer evaluation is available in Electron and native iOS. Browser and Android study flows use local evaluation. Decks and local study work without an OpenRouter account. Selecting AI evaluation never silently falls back to local grading on API errors.
 
 ---
 
@@ -91,8 +91,8 @@ Typical use cases:
 - When a 25-minute Pomodoro timer expires, a 7-minute break is shown before the next Pomodoro round; completing the queue earlier finishes the session directly
 - Typed-answer comparison with a similarity score (Levenshtein based, diacritics stripped, punctuation ignored)
 - Pure integer and decimal answers are compared exactly, including their sign; decimal comma and point are equivalent, and large values retain full precision. This does not evaluate fractions, expressions, scientific notation, or thousands separators.
-- Optional semantic answer evaluation through OpenRouter in the macOS desktop app
-- Secure local API-key storage through Electron and automatic local fallback on API errors
+- Optional semantic answer evaluation through OpenRouter in macOS Electron and native iOS
+- Secure local API-key storage through Electron or the iOS Keychain; AI errors preserve the answer for retry without local grading
 - Color-coded feedback band: perfect (>=97%), close (>=82%), partial (>=50%), wrong (<50%)
 - Ratings remain manual; local or AI feedback never chooses or highlights a suggested rating
 - Confidence-vs-result calibration feedback
@@ -114,8 +114,8 @@ Typical use cases:
 
 **OpenRouter and usage**
 
-- Optional semantic answer checks in macOS Electron, with encrypted in-app API-key storage or local environment configuration
-- Configurable model ID and automatic local fallback on failed or incompatible AI requests
+- Optional semantic answer checks in macOS Electron and iOS, with encrypted in-app API-key storage or private build configuration
+- Configured and actual model IDs, explicit AI failures and retry without silent local fallback
 - API usage overview with model/date filters, token counts, reported USD costs, and an estimate for 10,000 evaluations
 - Persistent connection diagnostics with an export button, HTTP/provider error codes, request phases, and durations
 
@@ -174,6 +174,8 @@ Each desktop release command (`build`, `build:win`, or `build:all`) automaticall
 The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. Build/signing prerequisites depend on the target platform. The desktop/browser artwork is `build/icon.png`; electron-builder converts it to platform icon formats. See [Prism UI and app icons](#prism-ui-and-app-icons) for native icon generation.
 
 Desktop packaging automatically includes `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). The packaging hook writes only these two values to `openrouter-build-config.json` in the app's resources. A build without a key still supports local study and keys entered in the app. **A configured key is extractable from the DMG or installer.** Rebuild after changing the project's key or model; existing packages retain their previous values.
+
+Private iOS **Debug** builds also automatically include these two values from `.env` through an Xcode build phase, including when building directly in Xcode. The configuration lives in a native bundle resource, not in the WebView's JavaScript. A manually saved iOS Keychain key takes precedence; removing it restores the bundled key. Both the configured key and model update on the next build. Release/archive builds never embed this private configuration and remove any stale Debug copy. Keep `.env` out of Git and use a limited key: the bundled key is extractable from the app, so this is only intended for personal builds, not distribution.
 
 To build only the Apple Silicon DMG:
 
@@ -254,13 +256,13 @@ OpenRouter compares the meaning of a typed answer with the current question and 
 #### Set up OpenRouter in the app
 
 1. Sign in to [OpenRouter](https://openrouter.ai/) and create a personal inference API key on the [API keys page](https://openrouter.ai/settings/keys). Use a regular API key, not a [management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys), which cannot call completion endpoints.
-2. Start the macOS desktop app with `npm start`, or open the installed macOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
+2. Start the macOS desktop app with `npm start`, or open the installed macOS/iOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
 3. Open **Smart Study → Answer evaluation** (German: **Smart Study → Antwortbewertung**). Paste the key into **OpenRouter API key** and click **Validate and save** (**Prüfen und speichern**).
-4. Confirm the **Configured** (**Eingerichtet**) indicator and select **OpenRouter AI** (**OpenRouter-KI**). Saving a key selects AI mode; an environment or bundled key remains the active credential if present.
-5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. A local percentage or fallback notice means this answer was checked locally.
+4. Confirm **Configured** (**Eingerichtet**) and the configured model, then select **OpenRouter AI** (**OpenRouter-KI**). Private iOS Debug builds use the bundled key automatically. A manually saved iOS Keychain key overrides the bundled key; Electron uses saved keys as fallbacks behind environment/build credentials.
+5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. Errors keep your answer for retry and never silently grade it locally.
 6. Open [API Usage](#api-usage-overview) and click **Refresh** to inspect the recorded request, tokens, and reported cost. A successful key validation alone does not prove the chosen model can produce the required response format; the first answer check verifies that.
 
-The in-app key is encrypted through Electron's OS-backed secure storage and stored as `openrouter-key.bin` in the app's user-data folder. It is separate from deck data and exports. To stop using AI, select **Local** (**Lokal**). **Remove stored key** removes only the encrypted local copy; revoke a key in OpenRouter if you also want to disable it at the provider.
+The in-app key uses Electron's OS-backed secure storage (`openrouter-key.bin`) or the iOS Keychain. It is separate from deck data and exports. To stop using AI, select **Local** (**Lokal**). **Remove stored key** removes only the saved local copy; on iOS a bundled key then becomes active again. Revoke a key in OpenRouter to disable it at the provider.
 
 #### Configure a local .env file
 
@@ -300,18 +302,18 @@ The model is configured with `OPENROUTER_MODEL`; there is no model picker in the
 - For a fixed model, copy its exact ID from the [OpenRouter model catalog](https://openrouter.ai/models) into `OPENROUTER_MODEL`. Select a model/provider supporting [structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs): the evaluator requests a strict JSON schema with `response_format.type = "json_schema"` and `provider.require_parameters: true`. A valid key alone does not guarantee model compatibility.
 - Paid models need sufficient account credits and an appropriate key limit. Free-model availability and quotas can change; consult the current [credit and rate-limit documentation](https://openrouter.ai/docs/api_reference/limits) rather than relying on a fixed daily allowance.
 
-#### What is sent and how fallback works
+#### What is sent and how errors work
 
 Each non-empty AI answer check sends the deck name, current question, reference answer, and learner answer, alongside the evaluator instructions and selected feedback language. Other cards, session history, confidence selections, and elaborations are not sent. OpenRouter receives the API key for authentication and routes the evaluation to the selected provider.
 
-The configured request timeout is **8 seconds**, including reading the answer response body. Authentication failures, rate limits, unavailable providers, timeouts, and malformed evaluations trigger a labeled local comparison. Empty answers and **I don't know** are handled locally without an API request. The fallback applies to that answer; the configured AI mode remains available for subsequent checks.
+The desktop request timeout is **8 seconds**; native iOS uses **30 seconds**. Authentication failures, rate limits, unavailable providers, timeouts, and malformed evaluations display an error and preserve the answer for retry. No automatic local grading takes place. Empty answers and **I don't know** do not make an API request. Local comparison is available when explicitly selecting Local mode.
 
 #### Troubleshooting
 
 | Symptom | What to check |
 |---|---|
-| AI configuration is unavailable | Use the macOS Electron app; Windows Electron, browser, iOS, and Android currently use local evaluation. |
-| A key is saved, but checks remain local | Enable **Typed recall**, select **OpenRouter AI**, and submit a non-empty answer. Inspect any fallback notice. |
+| AI configuration is unavailable | Use the macOS Electron app or native iOS app; browser and Android do not expose the AI bridge. |
+| A key is saved, but checks remain local | Enable **Typed recall**, select **OpenRouter AI**, and submit a non-empty answer. The selected mode appears in the session. |
 | Key rejected | Replace the example placeholder, check that the key is active, and use a regular inference key rather than a management key. |
 | Request blocked | HTTP 403 indicates a permission, policy, or guardrail restriction. Check key/model/provider restrictions; it does not by itself mean the key is invalid. |
 | Credits or spending limit exhausted | HTTP 402 indicates insufficient credits or an exhausted key spending limit. Check the OpenRouter balance and key limit. |
@@ -319,7 +321,7 @@ The configured request timeout is **8 seconds**, including reading the answer re
 | The app keeps using an old key or model | Check the displayed key source. Runtime environment and local `.env` override the bundled configuration; the bundled key overrides encrypted storage. Restart after a runtime change, or rebuild after editing the project's `.env`. |
 | Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
 | OpenRouter unavailable | Export the connection logs and inspect the HTTP status, typed provider error, and network code. Check the connection and whether the configured model supports structured outputs. |
-| Invalid evaluation or repeated timeouts | Export the connection logs first. The deadline is 8 seconds; `phase` distinguishes waiting for headers from reading the body or parsing the evaluation. Unsupported JSON schemas, truncated responses, or a stalled response body can cause local fallback. |
+| Invalid evaluation or repeated timeouts | Export the connection logs. Desktop uses an 8-second deadline; iOS uses 30 seconds. Unsupported JSON schemas or truncated responses can cause errors; retry or explicitly select local mode. |
 | Card too long | Deck name, question, reference answer, and typed answer are each limited to 4,000 characters after trimming. Shorten the affected field. |
 | Secure key storage unavailable | Check the OS secure-storage availability, or use the local `.env` configuration described above. |
 | Usage shows `—` | The provider did not supply that information; it means unknown, not free. Refresh after the request finishes. |
@@ -330,7 +332,7 @@ The Electron app automatically records diagnostic metadata in `openrouter-debug.
 
 To investigate a failure, fully quit the old app, launch the new build, reproduce the failed answer check, and open **API Usage → Export connection logs** (**API-Verbrauch → Verbindungslogs exportieren**). The JSON Lines export includes the current log and its previous rotation. Each file is capped at approximately 1 MiB; older entries are replaced automatically.
 
-Each request has a `requestId` linking its start, response headers, body receipt, and success/failure. Entries include the app version, configured model, credential source, exact endpoint, elapsed `durationMs`, deadline `timeoutMs`, HTTP `status`, and sanitized provider/network codes when available. A provider generation ID and finish reason are retained when present. API keys, authorization headers, deck names, questions, answers, feedback, raw provider payloads, and arbitrary exception messages are excluded. Log export uses the same whitelist and does not make an API request.
+Desktop requests have a `requestId` linking their request phases; entries include the app version, model, credential source, endpoint, durations, deadline, HTTP status and sanitized provider/network codes. iOS records one completion per attempted request with timestamp, actual model, credential source, operation, duration, HTTP status and normalized failure reason. API keys, authorization headers, deck names, questions, answers, feedback, raw provider payloads and arbitrary exception messages are excluded on both platforms. Log export reapplies a whitelist and does not make an API request.
 
 | Log evidence | Meaning |
 |---|---|
@@ -345,13 +347,15 @@ The endpoints are `POST https://openrouter.ai/api/v1/chat/completions` for evalu
 
 ## API usage overview
 
-Open **API Usage** (**API-Verbrauch**) in the navigation to see requests recorded by this Electron installation, the configured model, successful/failed checks, input/output tokens, cached/reasoning tokens, and reported USD costs. Filter by today, the last 7 or 30 days, or all time, and by the actual returned model. Click **Refresh** to load completed requests.
+Open **API Usage** (**API-Verbrauch**) in the navigation to see requests recorded by this macOS or iOS installation, the configured model and key source, successful/failed checks, input/output tokens, cached/reasoning tokens, and reported USD costs. Filter by today, the last 7 or 30 days, or all time, and by the actual returned model. Click **Refresh** to load completed requests; returning to the app refreshes the view too. On phones, history is shown as compact cards.
 
 The 10,000-evaluation projection uses the average of requests with reported costs in the current selection. It is an estimate, not a quote or spending limit. Payment fees and taxes are excluded. Unknown costs remain unknown; reported zero cost is treated as free. Cached and reasoning tokens are subsets of the token counts and are not added twice.
 
 Local checks and key validation are excluded. Failed API attempts are counted, and usage returned with a malformed evaluation is still captured. Tracking uses OpenRouter's [usage accounting response](https://openrouter.ai/docs/cookbook/administration/usage-accounting), without extra API requests. Historical activity from the OpenRouter account is not imported; this is not an account balance or complete billing dashboard.
 
-The metadata journal, `api-usage.jsonl`, is separate from decks and contains timestamps, model IDs, outcomes, tokens, and reported costs, without card content, learner answers, or API keys. It is not included in deck backups. Browser/mobile views explain that their checks are local.
+The metadata journal, `api-usage.jsonl`, is separate from decks and contains timestamps, model IDs, outcomes, tokens, and reported costs, without card content, learner answers, or API keys. It is not included in deck backups. On iOS, both usage and diagnostic journals persist in Application Support/smartL3arn-AI; diagnostic logs are bounded and can be exported with the native share sheet. Tracking starts with this version and does not import earlier iPhone requests or activity on other devices.
+
+Native journal regression checks (macOS with Xcode): `swiftc ios/App/App/NativeAiJournal.swift scripts/check-ios-ai-journal.swift -o /tmp/smartL3arn-native-ai-journal-tests && /tmp/smartL3arn-native-ai-journal-tests`.
 
 ## Import formats
 
@@ -683,7 +687,7 @@ swift scripts/generate-native-icons.swift
 This replaces the iOS and Android icon assets. It uses the full-bleed `build/design/brand-kartenfaecher-ios.png` for the opaque 1024px iOS icon, and `build/icon.png` for Android legacy/round icons and adaptive foregrounds at all five densities. Android's adaptive background is configured separately in `android/app/src/main/res/values/ic_launcher_background.xml`.
 
 Start the desktop app with `npm start`. A browser preview runs with `npm run dev`;
-Electron-only API and file capabilities still require the desktop app.
+AI evaluation and usage tracking require the macOS desktop or native iOS app; native mobile file exports use the share sheet.
 
 For isolated visual captures, run:
 

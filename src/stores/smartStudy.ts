@@ -20,6 +20,7 @@ import {
 } from '../services/settings'
 import { useLibraryStore } from './library'
 import { useSettingsStore } from './settings'
+import { getAiBridge } from '../services/ai'
 
 const REQUEUE_LIMITS: Record<RatingKey, number> = {
   again: 2,
@@ -47,6 +48,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   const library = useLibraryStore()
   const settings = useSettingsStore()
   const session = ref<SmartSessionState | null>(null)
+  const evaluationError = ref<TranslationKey | null>(null)
   const clockNow = ref(Date.now())
   let timer: ReturnType<typeof setInterval> | null = null
   let evaluationSequence = 0
@@ -88,6 +90,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   }
 
   async function start(): Promise<boolean> {
+    evaluationError.value = null
     const breakUntil = getPomodoroBreakUntil()
     if (
       settings.smartConfig.duration === POMODORO_MINUTES
@@ -223,15 +226,21 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     if (!value || !card || !deck || value.phase !== 'asking' || value.isEvaluating) return
 
     const typedAnswer = value.typedAnswer.trim()
+    evaluationError.value = null
     if (!typedAnswer) {
       value.evaluation = localEvaluation('', card.back)
       value.phase = 'reviewing'
       return
     }
 
-    if (settings.smartConfig.evaluationMode !== 'openrouter' || !window.smartL3arn) {
+    const ai = getAiBridge()
+    if (settings.smartConfig.evaluationMode !== 'openrouter') {
       value.evaluation = localEvaluation(typedAnswer, card.back)
       value.phase = 'reviewing'
+      return
+    }
+    if (!ai) {
+      evaluationError.value = 'ai.unavailable'
       return
     }
 
@@ -242,7 +251,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
     let result
     try {
-      result = await window.smartL3arn.evaluateAnswer({
+      result = await ai.evaluateAnswer({
         deckName: deck.name,
         question: card.front,
         referenceAnswer: card.back,
@@ -272,16 +281,14 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       }
     } else {
       const reason = result.reason || 'unavailable'
-      value.evaluation = localEvaluation(
-        typedAnswer,
-        card.back,
-        fallbackMessages[reason] || fallbackMessages.unavailable,
-      )
+      evaluationError.value = fallbackMessages[reason] || fallbackMessages.unavailable
+      return
     }
     value.phase = 'reviewing'
   }
 
   function skip(): void {
+    evaluationError.value = null
     const value = session.value
     const card = currentCard.value
     if (!value || !card || value.phase !== 'asking' || value.isEvaluating) return
@@ -382,6 +389,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
   return {
     session,
+    evaluationError,
     clockNow,
     currentItem,
     currentDeck,

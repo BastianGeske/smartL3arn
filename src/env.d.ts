@@ -39,6 +39,7 @@ declare global {
         available: boolean
         configured: boolean
         credentialSource: 'environment' | 'bundled' | 'stored' | null
+        model?: string
       }>
       saveOpenRouterKey: (apiKey: string) => Promise<AiOperationResult>
       removeOpenRouterKey: () => Promise<AiOperationResult>

@@ -105,7 +105,7 @@ ipcMain.handle('ai:status', async () => {
   if (process.platform !== 'darwin') {
     return { available: false, configured: false, credentialSource: null };
   }
-  return { available: true, ...await getCredentialResolver().status() };
+  return { available: true, ...await getCredentialResolver().status(), model: getCredentialResolver().model };
 });
 
 ipcMain.handle('ai:save-key', async (_event, apiKey) => {

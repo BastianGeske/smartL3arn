@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { useI18n, type TranslationKey } from '../i18n'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { sumApiUsage, type ApiUsageReport } from '../domain/apiUsage'
 import { todayStr } from '../domain/dates'
 import { saveExport } from '../services/native'
+import { getAiBridge } from '../services/ai'
 
 const { t, locale, formatNumber, formatCurrency } = useI18n()
 
-const available = Boolean(window.smartL3arn?.getApiUsage)
-const diagnosticsAvailable = Boolean(window.smartL3arn?.getAiDiagnostics)
+const ai = getAiBridge()
+const available = Boolean(ai?.getApiUsage)
+const diagnosticsAvailable = Boolean(ai?.getAiDiagnostics)
+const aiStatus = ref<Awaited<ReturnType<NonNullable<typeof ai>['getAiStatus']>> | null>(null)
 const exportingLogs = ref(false)
 const diagnosticMessage = ref<TranslationKey | ''>('')
 const diagnosticError = ref(false)
@@ -39,11 +42,14 @@ const today = computed(() => sumApiUsage((report.value?.groups || []).filter((gr
 const averageCost = computed(() => totals.value.costRequests ? totals.value.costUsd / totals.value.costRequests : null)
 
 async function refresh() {
-  if (!available || !window.smartL3arn) return
+  if (!available || !ai || loading.value) return
   loading.value = true
   error.value = ''
   try {
-    report.value = await window.smartL3arn.getApiUsage()
+    const [usage, status] = await Promise.all([ai.getApiUsage(), ai.getAiStatus()])
+    report.value = usage
+    aiStatus.value = status
+    if (model.value !== 'all' && !usage.groups.some(group => group.model === model.value)) model.value = 'all'
   } catch {
     error.value = 'usage.loadError'
   } finally {
@@ -52,12 +58,12 @@ async function refresh() {
 }
 
 async function exportLogs() {
-  if (!window.smartL3arn?.getAiDiagnostics) return
+  if (!ai?.getAiDiagnostics) return
   exportingLogs.value = true
   diagnosticMessage.value = ''
   diagnosticError.value = false
   try {
-    const logs = await window.smartL3arn.getAiDiagnostics()
+    const logs = await ai.getAiDiagnostics()
     if (!logs.content) {
       diagnosticMessage.value = logs.persistenceError ? 'usage.logsIncomplete' : 'usage.logsEmpty'
       diagnosticError.value = logs.persistenceError
@@ -78,7 +84,9 @@ function dayLabel(day: string) {
   return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${day}T12:00:00`))
 }
 
-onMounted(refresh)
+function resume() { if (document.visibilityState === 'visible') void refresh() }
+onMounted(() => { void refresh(); document.addEventListener('visibilitychange', resume) })
+onUnmounted(() => document.removeEventListener('visibilitychange', resume))
 </script>
 
 <template>
@@ -107,7 +115,10 @@ onMounted(refresh)
       <p v-else-if="error" class="usage-notice" role="alert">{{ t(error) }}</p>
       <p v-if="loading && !report" role="status">{{ t('usage.loading') }}</p>
       <p v-if="diagnosticMessage" class="usage-notice" :role="diagnosticError ? 'alert' : 'status'">{{ t(diagnosticMessage) }}</p>
-      <p v-if="diagnosticsAvailable" class="usage-caption usage-log-note">{{ t('usage.logsPrivacy') }}</p>
+      <p v-if="aiStatus" class="usage-connection" role="status">
+        {{ aiStatus.configured ? t('ai.configured') : t('ai.notConfigured') }}
+        <span v-if="aiStatus.configured"> · {{ aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : aiStatus.credentialSource === 'environment' ? t('ai.environmentKey') : t('ai.storedKey') }}</span>
+      </p>
 
       <template v-if="report">
         <p v-if="report.persistenceError || report.unreadableEntries" class="usage-notice" role="alert">
@@ -179,11 +190,11 @@ onMounted(refresh)
             <table class="usage-table">
               <thead><tr><th scope="col">{{ t('usage.day') }}</th><th scope="col">{{ t('usage.model') }}</th><th scope="col">{{ t('usage.requests') }}</th><th scope="col">{{ t('usage.input') }}</th><th scope="col">{{ t('usage.output') }}</th><th scope="col">{{ t('usage.usd') }}</th></tr></thead>
               <tbody><tr v-for="group in filtered" :key="`${group.day}:${group.model}`">
-                <td>{{ dayLabel(group.day) }}</td><td class="usage-model-cell">{{ group.model }}</td>
-                <td>{{ formatNumber(group.requests) }}<small v-if="group.failures">{{ t('usage.failures', { count: group.failures }) }}</small></td>
-                <td>{{ group.tokenRequests ? formatNumber(group.inputTokens) : '—' }}</td>
-                <td>{{ group.tokenRequests ? formatNumber(group.outputTokens) : '—' }}</td>
-                <td>{{ group.costRequests ? formatCurrency(group.costUsd) : '—' }}<small v-if="group.costRequests < group.requests">{{ t('usage.coverage', { known: group.costRequests, total: group.requests }) }}</small></td>
+                <td :data-label="t('usage.day')">{{ dayLabel(group.day) }}</td><td class="usage-model-cell" :data-label="t('usage.model')">{{ group.model }}</td>
+                <td :data-label="t('usage.requests')">{{ formatNumber(group.requests) }}<small v-if="group.failures">{{ t('usage.failures', { count: group.failures }) }}</small></td>
+                <td :data-label="t('usage.input')">{{ group.tokenRequests ? formatNumber(group.inputTokens) : '—' }}</td>
+                <td :data-label="t('usage.output')">{{ group.tokenRequests ? formatNumber(group.outputTokens) : '—' }}</td>
+                <td :data-label="t('usage.usd')">{{ group.costRequests ? formatCurrency(group.costUsd) : '—' }}<small v-if="group.costRequests < group.requests">{{ t('usage.coverage', { known: group.costRequests, total: group.requests }) }}</small></td>
               </tr></tbody>
             </table>
           </div>
@@ -192,6 +203,8 @@ onMounted(refresh)
           </p>
         </section>
       </template>
+      <p v-if="available" class="usage-caption usage-device-note">{{ t('usage.deviceScope') }}</p>
+      <p v-if="diagnosticsAvailable" class="usage-caption usage-log-note">{{ t('usage.logsPrivacy') }}</p>
     </main>
   </div>
 </template>
@@ -199,6 +212,8 @@ onMounted(refresh)
 <style scoped>
 .usage-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .usage-log-note { margin: 0 0 20px; }
+.usage-device-note { margin: 0 0 12px; }
+.usage-connection { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
 .usage-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 20px; margin: 0 0 24px; }
 .usage-filters label { display: grid; gap: 8px; color: var(--text-muted); font-size: 13px; font-weight: 650; }
 .usage-filters select { min-width: 180px; max-width: 100%; }
@@ -224,6 +239,18 @@ onMounted(refresh)
 .usage-table td::before { display: none; }
 .usage-table td small { display: block; color: var(--text-muted); margin-top: 4px; font-size: 11px; }
 .usage-footnote { margin-top: 20px; }
+@media (max-width: 600px) {
+  .usage-actions { width: 100%; display: grid; grid-template-columns: 1fr; }
+  .usage-actions .btn { width: 100%; }
+  .usage-table-wrapper { border: 0; overflow: visible; background: transparent; }
+  .usage-table, .usage-table tbody { display: block; min-width: 0; }
+  .usage-table thead { display: none; }
+  .usage-table tr { display: grid; grid-template-columns: 1fr 1fr; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); gap: 14px; }
+  .usage-table td { display: block; min-width: 0; padding: 0; border: 0; }
+  .usage-table td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; max-width: none; }
+  .usage-table td::before { display: block; content: attr(data-label); margin-bottom: 5px; color: var(--text-muted); font-size: 11px; font-weight: 600; }
+  .usage-table td small { white-space: normal; }
+}
 .summary-item strong { font-size: 22px; overflow-wrap: anywhere; }
 @media (max-width: 800px) {
   .usage-details { grid-template-columns: 1fr; gap: 24px; }

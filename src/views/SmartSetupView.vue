@@ -11,6 +11,8 @@ import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
 import { useUiStore } from '../stores/ui'
+import { getAiBridge } from '../services/ai'
+import { Capacitor } from '@capacitor/core'
 
 const { t, formatNumber } = useI18n()
 
@@ -19,16 +21,19 @@ const library = useLibraryStore()
 const settings = useSettingsStore()
 const smart = useSmartStudyStore()
 const ui = useUiStore()
+const ai = getAiBridge()
 const aiStatus = ref<{
   available: boolean
   configured: boolean
   credentialSource: 'environment' | 'bundled' | 'stored' | null
-}>({ available: Boolean(window.smartL3arn), configured: false, credentialSource: null })
+  model?: string
+}>({ available: Boolean(ai), configured: false, credentialSource: null })
 const apiKey = ref('')
 const aiBusy = ref(false)
+const aiLoading = ref(Boolean(ai))
 const aiMessage = ref<TranslationKey | ''>('')
-const fixedKeyActive = computed(() => aiStatus.value.credentialSource === 'environment'
-  || aiStatus.value.credentialSource === 'bundled')
+const fixedKeyActive = computed(() => Capacitor.getPlatform() !== 'ios'
+  && (aiStatus.value.credentialSource === 'environment' || aiStatus.value.credentialSource === 'bundled'))
 
 const selectedDecks = computed(() => settings.smartConfig.deckIds
   .map((id) => library.deckById(id))
@@ -74,28 +79,33 @@ onMounted(async () => {
   settings.smartConfig.deckIds = settings.smartConfig.deckIds.filter(
     (id) => Boolean(library.deckById(id)),
   )
-  if (!window.smartL3arn) return
+  if (!ai) return
   try {
-    aiStatus.value = await window.smartL3arn.getAiStatus()
-    if (!aiStatus.value.configured) settings.smartConfig.evaluationMode = 'local'
+    aiStatus.value = await ai.getAiStatus()
+    if (Capacitor.getPlatform() === 'ios' && !localStorage.getItem('smartl3arn_ios_ai_mode_initialized')) {
+      settings.smartConfig.evaluationMode = 'openrouter'
+      localStorage.setItem('smartl3arn_ios_ai_mode_initialized', '1')
+    }
   } catch {
     aiStatus.value = { available: false, configured: false, credentialSource: null }
-    settings.smartConfig.evaluationMode = 'local'
+    aiMessage.value = 'ai.unavailable'
+  } finally {
+    aiLoading.value = false
   }
 })
 
 async function saveApiKey(): Promise<void> {
   const key = apiKey.value.trim()
-  if (!key || !window.smartL3arn) return
+  if (!key || !ai) return
   aiBusy.value = true
   aiMessage.value = 'ai.validating'
-  const result = await window.smartL3arn.saveOpenRouterKey(key).catch(
+  const result = await ai.saveOpenRouterKey(key).catch(
     () => ({ ok: false, reason: 'unavailable' }),
   )
   aiBusy.value = false
   if (result.ok) {
     apiKey.value = ''
-    aiStatus.value = await window.smartL3arn.getAiStatus()
+    aiStatus.value = await ai.getAiStatus()
     settings.smartConfig.evaluationMode = 'openrouter'
     aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.savedFallback'
@@ -106,14 +116,14 @@ async function saveApiKey(): Promise<void> {
 }
 
 async function removeApiKey(): Promise<void> {
-  if (!window.smartL3arn) return
+  if (!ai) return
   aiBusy.value = true
-  const result = await window.smartL3arn.removeOpenRouterKey().catch(
+  const result = await ai.removeOpenRouterKey().catch(
     () => ({ ok: false, reason: 'unavailable' }),
   )
   aiBusy.value = false
   if (result.ok) {
-    aiStatus.value = await window.smartL3arn.getAiStatus()
+    aiStatus.value = await ai.getAiStatus()
     if (!aiStatus.value.configured) settings.smartConfig.evaluationMode = 'local'
     aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.removedFallback'
@@ -135,6 +145,13 @@ function toggleDeck(deckId: string, checked: boolean): void {
 }
 
 async function start(): Promise<void> {
+  if (aiLoading.value) return
+  if (settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.value.configured) {
+    aiMessage.value = 'ai.notConfigured'
+    document.querySelector('#openrouter-key')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.querySelector<HTMLInputElement>('#openrouter-key')?.focus()
+    return
+  }
   if (await smart.start()) {
     await router.push({ name: 'smart-study' })
   } else {
@@ -249,7 +266,7 @@ async function start(): Promise<void> {
             </div>
           </section>
 
-          <section class="config-section" aria-labelledby="smart-ai-title">
+          <section class="config-section ai-config-section" aria-labelledby="smart-ai-title">
             <div class="config-heading">
               <div><span class="config-step">4</span><h2 id="smart-ai-title">{{ t('ai.evaluation') }}</h2></div>
               <span v-if="aiStatus.configured" class="ai-configured">{{ t('ai.configured') }}</span>
@@ -267,7 +284,6 @@ async function start(): Promise<void> {
                   class="segment-button"
                   :class="{ 'is-selected': settings.smartConfig.evaluationMode === 'openrouter' }"
                   type="button"
-                  :disabled="!aiStatus.configured"
                   :aria-pressed="settings.smartConfig.evaluationMode === 'openrouter'"
                   @click="settings.smartConfig.evaluationMode = 'openrouter'"
                 >{{ t('ai.openrouter') }}</button>
@@ -275,12 +291,15 @@ async function start(): Promise<void> {
               <p class="ai-privacy-note">
                 {{ t('ai.privacy') }}
               </p>
+              <p v-if="settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.configured" class="ai-status-message" role="status">{{ t('ai.notConfigured') }}</p>
               <p v-if="aiStatus.configured" class="ai-status-message">
                 {{ aiStatus.credentialSource === 'environment'
                   ? t('ai.environmentKey')
                   : aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : t('ai.storedKey') }}
               </p>
               <form class="ai-key-form" @submit.prevent="saveApiKey">
+                <p v-if="aiStatus.model" class="ai-status-message">{{ t('usage.configured') }} <strong>{{ aiStatus.model }}</strong></p>
+                <p v-if="Capacitor.getPlatform() === 'ios' && aiStatus.credentialSource === 'bundled'" class="ai-privacy-note">{{ t('ai.privateBuildHint') }}</p>
                 <label class="field-label" for="openrouter-key">
                   {{ fixedKeyActive ? t('ai.fallbackKey') : aiStatus.configured ? t('ai.replaceKey') : t('ai.key') }}
                 </label>
@@ -298,7 +317,7 @@ async function start(): Promise<void> {
                     {{ aiBusy ? t('common.wait') : t('ai.validateSave') }}
                   </button>
                   <button
-                    v-if="aiStatus.configured"
+                    v-if="aiStatus.configured && (Capacitor.getPlatform() !== 'ios' || aiStatus.credentialSource === 'stored')"
                     class="btn btn-quiet btn-sm"
                     type="button"
                     :disabled="aiBusy"
@@ -328,7 +347,7 @@ async function start(): Promise<void> {
               <div><dt>{{ t('common.due') }}</dt><dd>{{ formatNumber(selectedDue) }}</dd></div>
               <div><dt>{{ t('smart.planLength') }}</dt><dd>{{ settings.smartConfig.duration ? t('common.minutes', { count: settings.smartConfig.duration }) : t('common.noLimit') }}</dd></div>
             </dl>
-            <button class="btn btn-smart btn-lg" type="button" :disabled="!canStart" @click="start">
+            <button class="btn btn-smart btn-lg" type="button" :disabled="!canStart || aiLoading" @click="start">
               <AppIcon name="play" /><span>{{ t('smart.start') }}</span>
             </button>
             <p v-if="!canStart" class="smart-hint">{{ t('smart.selectHint') }}</p>
