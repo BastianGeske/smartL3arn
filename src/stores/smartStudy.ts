@@ -21,6 +21,7 @@ import {
 import { useLibraryStore } from './library'
 import { useSettingsStore } from './settings'
 import { getAiBridge } from '../services/ai'
+import { cardStatsFor } from '../domain/cardStats'
 
 const REQUEUE_LIMITS: Record<RatingKey, number> = {
   again: 2,
@@ -327,8 +328,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     const cardIndex = deck.cards.findIndex((entry) => entry.id === card.id)
     deck.cards[cardIndex] = scheduleCard(card, rating)
 
-    deck.cardStats ||= {}
-    const stats = deck.cardStats[card.id] || { reviews: 0, again: 0, hard: 0 }
+    const stats = cardStatsFor(deck, card.id)
     stats.reviews += 1
     if (rating === 0) stats.again += 1
     if (rating === 1) stats.hard += 1
@@ -348,7 +348,6 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     stats.smartLastReviewedSession = deck.smartSessionSeq || 0
     if (key === 'again' || key === 'hard') stats.smartNeedsPractice = true
     else delete stats.smartNeedsPractice
-    deck.cardStats[card.id] = stats
 
     if (requeueCount < REQUEUE_LIMITS[key]) {
       value.requeues[queueKey] = requeueCount + 1

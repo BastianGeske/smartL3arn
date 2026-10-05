@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
+import AppMenu from '../components/AppMenu.vue'
 import { calcStreak, isDue, todayStr } from '../domain/dates'
 import {
   deckFilename,
@@ -203,11 +204,11 @@ const sortFields: [SortColumn, TranslationKey][] = [
             </template>
           </select>
         </div>
-        <details class="menu">
-          <summary class="btn btn-secondary btn-sm" :aria-label="t('browse.actions')">
+        <AppMenu class="menu" trigger-class="btn btn-secondary btn-sm" :label="t('browse.actions')" wide>
+              <template #trigger>
             <AppIcon name="more-horizontal" :size="16" /><span class="deck-actions-label">{{ t('browse.actions') }}</span><AppIcon name="chevron-down" :size="14" />
-          </summary>
-          <div class="menu-popover menu-popover-right menu-popover-wide">
+          </template>
+
             <button class="menu-item" type="button" @click="importInput?.click()">
               <AppIcon name="upload" :size="16" /><span>{{ t('import.text') }}</span>
             </button>
@@ -225,8 +226,8 @@ const sortFields: [SortColumn, TranslationKey][] = [
             <button class="menu-item" type="button" @click="ui.editDeck(deck.id)">
               <AppIcon name="pencil" :size="16" /><span>{{ t('deck.rename') }}</span>
             </button>
-          </div>
-        </details>
+
+            </AppMenu>
         <input ref="importInput" class="file-input" type="file" accept=".txt,.csv,.tsv" @change="importCards">
       </div>
 

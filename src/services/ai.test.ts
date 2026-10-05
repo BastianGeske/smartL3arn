@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAiBridge } from './ai'
 
-const native = vi.hoisted(() => ({ request: vi.fn(), getAiStatus: vi.fn(),
+const native = vi.hoisted(() => ({ evaluateAnswer: vi.fn(), getAiStatus: vi.fn(),
   saveOpenRouterKey: vi.fn(), removeOpenRouterKey: vi.fn(), getApiUsage: vi.fn(), getAiDiagnostics: vi.fn() }))
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: () => 'ios' }, registerPlugin: () => native,
@@ -23,35 +23,33 @@ describe('iOS AI bridge', () => {
     expect(await getAiBridge()!.getAiDiagnostics()).toEqual(logs)
   })
   it('sends a structured evaluation through the native transport and accepts valid feedback', async () => {
-    native.request.mockResolvedValue({ ok: true, body: { model: 'provider/model', choices: [
+    native.evaluateAnswer.mockResolvedValue({ ok: true, body: { model: 'provider/model', choices: [
       { message: { content: JSON.stringify({ verdict: 'correct', feedback: 'Richtig.' }) } },
     ] } })
     const result = await getAiBridge()!.evaluateAnswer(input)
     expect(result).toEqual({ ok: true, result: {
       verdict: 'correct', feedback: 'Richtig.', model: 'provider/model',
     } })
-    const body = native.request.mock.calls[0][0].body
-    expect(body.messages[0].content).toContain('German')
-    expect(JSON.parse(body.messages[1].content).learner_answer).toBe(input.userAnswer)
-    expect(body.response_format.json_schema.strict).toBe(true)
-    expect(body).not.toHaveProperty('apiKey')
+    expect(native.evaluateAnswer).toHaveBeenCalledWith(input)
+    expect(native.evaluateAnswer.mock.calls[0][0]).not.toHaveProperty('body')
+    expect(native.evaluateAnswer.mock.calls[0][0]).not.toHaveProperty('apiKey')
   })
 
   it.each(['not json', '{"verdict":"invented","feedback":"OK"}',
     '{"verdict":"correct","feedback":""}'])('rejects invalid model output: %s', async content => {
-    native.request.mockResolvedValue({ ok: true, body: { choices: [{ message: { content } }] } })
+    native.evaluateAnswer.mockResolvedValue({ ok: true, body: { choices: [{ message: { content } }] } })
     expect(await getAiBridge()!.evaluateAnswer(input)).toEqual({ ok: false, reason: 'invalid-response' })
   })
 
   it('preserves authentication errors for the existing fallback UI', async () => {
-    native.request.mockResolvedValue({ ok: false, reason: 'auth' })
+    native.evaluateAnswer.mockResolvedValue({ ok: false, reason: 'auth' })
     expect(await getAiBridge()!.evaluateAnswer(input)).toEqual({ ok: false, reason: 'auth' })
   })
 
   it('does not send oversized card data', async () => {
     expect(await getAiBridge()!.evaluateAnswer({ ...input, question: 'x'.repeat(4001) }))
       .toEqual({ ok: false, reason: 'invalid-input' })
-    expect(native.request).not.toHaveBeenCalled()
+    expect(native.evaluateAnswer).not.toHaveBeenCalled()
   })
 
   it('validates and stores keys through the native plugin', async () => {

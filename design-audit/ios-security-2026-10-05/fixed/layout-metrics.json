@@ -1,0 +1,1244 @@
+[
+  {
+    "device": "small",
+    "screen": "home",
+    "filename": "small-home.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "home-bottom",
+    "filename": "small-home-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse",
+    "filename": "small-browse.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse-bottom",
+    "filename": "small-browse-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "study",
+    "filename": "small-study.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "study-bottom",
+    "filename": "small-study-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "smart",
+    "filename": "small-smart.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "smart-bottom",
+    "filename": "small-smart-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "smart-session",
+    "filename": "small-smart-session.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "smart-session-bottom",
+    "filename": "small-smart-session-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "preferences",
+    "filename": "small-preferences.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "preferences-bottom",
+    "filename": "small-preferences-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "usage",
+    "filename": "small-usage.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "usage-bottom",
+    "filename": "small-usage-bottom.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "transfer-menu",
+    "filename": "small-transfer-menu.png",
+    "menu": {
+      "x": 8,
+      "y": 312.9765625,
+      "w": 280,
+      "h": 156,
+      "right": 288,
+      "bottom": 468.9765625
+    },
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-menu",
+    "filename": "small-deck-menu.png",
+    "menu": {
+      "x": 99,
+      "y": 311.9765625,
+      "w": 188,
+      "h": 90,
+      "right": 287,
+      "bottom": 401.9765625
+    },
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-menu-bottom",
+    "filename": "small-deck-menu-bottom.png",
+    "menu": {
+      "x": 99,
+      "y": 311.9765625,
+      "w": 188,
+      "h": 90,
+      "right": 287,
+      "bottom": 401.9765625
+    },
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse-menu",
+    "filename": "small-browse-menu.png",
+    "menu": {
+      "x": 24,
+      "y": 31.03125,
+      "w": 280,
+      "h": 226,
+      "right": 304,
+      "bottom": 257.03125
+    },
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-editor",
+    "filename": "small-deck-editor.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 12,
+      "y": 149.5,
+      "w": 296,
+      "h": 269,
+      "right": 308,
+      "bottom": 418.5
+    },
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "small",
+    "screen": "card-editor",
+    "filename": "small-card-editor.png",
+    "menu": null,
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 12,
+      "y": 12,
+      "w": 296,
+      "h": 544,
+      "right": 308,
+      "bottom": 556
+    },
+    "nav": {
+      "x": 0,
+      "y": 495,
+      "w": 320,
+      "h": 73,
+      "right": 320,
+      "bottom": 568
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "home",
+    "filename": "phone-home.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "home-bottom",
+    "filename": "phone-home-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse",
+    "filename": "phone-browse.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse-bottom",
+    "filename": "phone-browse-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "study",
+    "filename": "phone-study.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "study-bottom",
+    "filename": "phone-study-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "smart",
+    "filename": "phone-smart.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "smart-bottom",
+    "filename": "phone-smart-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "smart-session",
+    "filename": "phone-smart-session.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "smart-session-bottom",
+    "filename": "phone-smart-session-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "preferences",
+    "filename": "phone-preferences.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "preferences-bottom",
+    "filename": "phone-preferences-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "usage",
+    "filename": "phone-usage.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "usage-bottom",
+    "filename": "phone-usage-bottom.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "transfer-menu",
+    "filename": "phone-transfer-menu.png",
+    "menu": {
+      "x": 8,
+      "y": 447.1953125,
+      "w": 280,
+      "h": 156,
+      "right": 288,
+      "bottom": 603.1953125
+    },
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-menu",
+    "filename": "phone-deck-menu.png",
+    "menu": {
+      "x": 172,
+      "y": 562.1953125,
+      "w": 188,
+      "h": 90,
+      "right": 360,
+      "bottom": 652.1953125
+    },
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-menu-bottom",
+    "filename": "phone-deck-menu-bottom.png",
+    "menu": {
+      "x": 172,
+      "y": 562.1953125,
+      "w": 188,
+      "h": 90,
+      "right": 360,
+      "bottom": 652.1953125
+    },
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse-menu",
+    "filename": "phone-browse-menu.png",
+    "menu": {
+      "x": 97,
+      "y": 455.140625,
+      "w": 280,
+      "h": 226,
+      "right": 377,
+      "bottom": 681.140625
+    },
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-editor",
+    "filename": "phone-deck-editor.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 12,
+      "y": 274.5,
+      "w": 369,
+      "h": 269,
+      "right": 381,
+      "bottom": 543.5
+    },
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "card-editor",
+    "filename": "phone-card-editor.png",
+    "menu": null,
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 12,
+      "y": 130.5,
+      "w": 369,
+      "h": 557,
+      "right": 381,
+      "bottom": 687.5
+    },
+    "nav": {
+      "x": 0,
+      "y": 751,
+      "w": 393,
+      "h": 101,
+      "right": 393,
+      "bottom": 852
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "home",
+    "filename": "landscape-home.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "home-bottom",
+    "filename": "landscape-home-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse",
+    "filename": "landscape-browse.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse-bottom",
+    "filename": "landscape-browse-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "study",
+    "filename": "landscape-study.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "study-bottom",
+    "filename": "landscape-study-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "smart",
+    "filename": "landscape-smart.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-bottom",
+    "filename": "landscape-smart-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-session",
+    "filename": "landscape-smart-session.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-session-bottom",
+    "filename": "landscape-smart-session-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "preferences",
+    "filename": "landscape-preferences.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "preferences-bottom",
+    "filename": "landscape-preferences-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "usage",
+    "filename": "landscape-usage.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "usage-bottom",
+    "filename": "landscape-usage-bottom.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "transfer-menu",
+    "filename": "landscape-transfer-menu.png",
+    "menu": {
+      "x": 481,
+      "y": 18.46875,
+      "w": 280,
+      "h": 156,
+      "right": 761,
+      "bottom": 174.46875
+    },
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-menu",
+    "filename": "landscape-deck-menu.png",
+    "menu": {
+      "x": 230.6640625,
+      "y": 175.1875,
+      "w": 188,
+      "h": 90,
+      "right": 418.6640625,
+      "bottom": 265.1875
+    },
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-menu-bottom",
+    "filename": "landscape-deck-menu-bottom.png",
+    "menu": {
+      "x": 230.6640625,
+      "y": 175.1875,
+      "w": 188,
+      "h": 90,
+      "right": 418.6640625,
+      "bottom": 265.1875
+    },
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse-menu",
+    "filename": "landscape-browse-menu.png",
+    "menu": {
+      "x": 481,
+      "y": 8,
+      "w": 280,
+      "h": 164.296875,
+      "right": 761,
+      "bottom": 172.296875
+    },
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-editor",
+    "filename": "landscape-deck-editor.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 206,
+      "y": 58.5,
+      "w": 440,
+      "h": 255,
+      "right": 646,
+      "bottom": 313.5
+    },
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "card-editor",
+    "filename": "landscape-card-editor.png",
+    "menu": null,
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 136,
+      "y": 12,
+      "w": 580,
+      "h": 348,
+      "right": 716,
+      "bottom": 360
+    },
+    "nav": {
+      "x": 74,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 233,
+      "bottom": 282
+    }
+  }
+]

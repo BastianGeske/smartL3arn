@@ -260,4 +260,10 @@ onUnmounted(() => document.removeEventListener('visibilitychange', resume))
   .summary-item { min-width: 0; }
   .summary-item strong { font-size: 18px; }
 }
+@media (max-width: 420px) {
+  .usage-filters { flex-direction: column; align-items: stretch; gap: 14px; }
+  .usage-filters label { flex: auto; width: 100%; }
+  .usage-filters select { padding-right: 32px; font-size: 16px; }
+  .usage-current-model { margin-left: 0; }
+}
 </style>

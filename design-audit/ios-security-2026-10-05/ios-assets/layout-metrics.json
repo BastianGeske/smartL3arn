@@ -1,0 +1,2107 @@
+[
+  {
+    "device": "small",
+    "screen": "home",
+    "filename": "small-home.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "home-bottom",
+    "filename": "small-home-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse",
+    "filename": "small-browse.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse-bottom",
+    "filename": "small-browse-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "study",
+    "filename": "small-study.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "study-bottom",
+    "filename": "small-study-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "smart",
+    "filename": "small-smart.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "smart-bottom",
+    "filename": "small-smart-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "smart-session",
+    "filename": "small-smart-session.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "smart-session-bottom",
+    "filename": "small-smart-session-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "small",
+    "screen": "preferences",
+    "filename": "small-preferences.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "preferences-bottom",
+    "filename": "small-preferences-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "usage",
+    "filename": "small-usage.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "usage-bottom",
+    "filename": "small-usage-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "transfer-menu",
+    "filename": "small-transfer-menu.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-menu",
+    "filename": "small-deck-menu.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-menu-bottom",
+    "filename": "small-deck-menu-bottom.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "browse-menu",
+    "filename": "small-browse-menu.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "deck-editor",
+    "filename": "small-deck-editor.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 18,
+      "y": 150.5,
+      "w": 284,
+      "h": 267,
+      "right": 302,
+      "bottom": 417.5
+    },
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "small",
+    "screen": "card-editor",
+    "filename": "small-card-editor.png",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 18,
+      "y": 25.0546875,
+      "w": 284,
+      "h": 517.890625,
+      "right": 302,
+      "bottom": 542.9453125
+    },
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 288,
+      "h": 70,
+      "right": 304,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "home",
+    "filename": "phone-home.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "home-bottom",
+    "filename": "phone-home-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse",
+    "filename": "phone-browse.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse-bottom",
+    "filename": "phone-browse-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "study",
+    "filename": "phone-study.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "study-bottom",
+    "filename": "phone-study-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "smart",
+    "filename": "phone-smart.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "smart-bottom",
+    "filename": "phone-smart-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "smart-session",
+    "filename": "phone-smart-session.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "smart-session-bottom",
+    "filename": "phone-smart-session-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "phone",
+    "screen": "preferences",
+    "filename": "phone-preferences.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "preferences-bottom",
+    "filename": "phone-preferences-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "usage",
+    "filename": "phone-usage.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "usage-bottom",
+    "filename": "phone-usage-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "transfer-menu",
+    "filename": "phone-transfer-menu.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-menu",
+    "filename": "phone-deck-menu.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-menu-bottom",
+    "filename": "phone-deck-menu-bottom.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "browse-menu",
+    "filename": "phone-browse-menu.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "deck-editor",
+    "filename": "phone-deck-editor.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 18,
+      "y": 292.5,
+      "w": 357,
+      "h": 267,
+      "right": 375,
+      "bottom": 559.5
+    },
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "phone",
+    "screen": "card-editor",
+    "filename": "phone-card-editor.png",
+    "width": 393,
+    "height": 852,
+    "scrollWidth": 393,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": {
+      "x": 18,
+      "y": 170,
+      "w": 357,
+      "h": 512,
+      "right": 375,
+      "bottom": 682
+    },
+    "nav": {
+      "x": 16,
+      "y": 64,
+      "w": 361,
+      "h": 70,
+      "right": 377,
+      "bottom": 134
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "home",
+    "filename": "landscape-home.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Neuer Stapel",
+        "x": 695.453125,
+        "y": 18.5,
+        "w": 124.546875,
+        "h": 34,
+        "right": 820,
+        "bottom": 52.5
+      },
+      {
+        "label": "JSON importieren",
+        "x": 607,
+        "y": 338.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 376.375
+      },
+      {
+        "label": "TXT / CSV importieren",
+        "x": 607,
+        "y": 376.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 414.375
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "home-bottom",
+    "filename": "landscape-home-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse",
+    "filename": "landscape-browse.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "1 lernen",
+        "x": 715.2578125,
+        "y": 175.3984375,
+        "w": 104.7421875,
+        "h": 40,
+        "right": 820,
+        "bottom": 215.3984375
+      },
+      {
+        "label": "Karte hinzufügen",
+        "x": 656.2734375,
+        "y": 225.3984375,
+        "w": 163.7265625,
+        "h": 40,
+        "right": 820,
+        "bottom": 265.3984375
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse-bottom",
+    "filename": "landscape-browse-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Karte hinzufügen",
+        "x": 656.2734375,
+        "y": -20.6015625,
+        "w": 163.7265625,
+        "h": 40,
+        "right": 820,
+        "bottom": 19.3984375
+      },
+      {
+        "label": "TXT / CSV importieren",
+        "x": 607,
+        "y": 211.7340087890625,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 249.7340087890625
+      },
+      {
+        "label": "JSON exportieren",
+        "x": 607,
+        "y": 260.7340087890625,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 298.7340087890625
+      },
+      {
+        "label": "CSV exportieren",
+        "x": 607,
+        "y": 298.7340087890625,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 336.7340087890625
+      },
+      {
+        "label": "TXT exportieren",
+        "x": 607,
+        "y": 336.7340087890625,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 374.7340087890625
+      },
+      {
+        "label": "Stapel umbenennen",
+        "x": 607,
+        "y": 385.7340087890625,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 423.7340087890625
+      },
+      {
+        "label": "Wie wandeln Pflanzen Sonnenlicht in nutzbare Energie um? löschen",
+        "x": 776,
+        "y": 280.390625,
+        "w": 28,
+        "h": 30,
+        "right": 804,
+        "bottom": 310.390625
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "study",
+    "filename": "landscape-study.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "Beenden",
+        "x": 49,
+        "y": 46,
+        "w": 182.5,
+        "h": 34,
+        "right": 231.5,
+        "bottom": 80
+      },
+      {
+        "label": "Zum dunklen Design wechseln",
+        "x": 767,
+        "y": 45,
+        "w": 36,
+        "h": 36,
+        "right": 803,
+        "bottom": 81
+      }
+    ],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "study-bottom",
+    "filename": "landscape-study-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "smart",
+    "filename": "landscape-smart.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-bottom",
+    "filename": "landscape-smart-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Sitzung starten",
+        "x": 603,
+        "y": 253.75,
+        "w": 194,
+        "h": 44,
+        "right": 797,
+        "bottom": 297.75
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-session",
+    "filename": "landscape-smart-session.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "smart-session-bottom",
+    "filename": "landscape-smart-session-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [],
+    "modal": null,
+    "nav": null
+  },
+  {
+    "device": "landscape",
+    "screen": "preferences",
+    "filename": "landscape-preferences.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "preferences-bottom",
+    "filename": "landscape-preferences-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "usage",
+    "filename": "landscape-usage.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Aktualisieren",
+        "x": 683.0859375,
+        "y": 134.6953125,
+        "w": 136.9140625,
+        "h": 40,
+        "right": 820,
+        "bottom": 174.6953125
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "usage-bottom",
+    "filename": "landscape-usage-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "transfer-menu",
+    "filename": "landscape-transfer-menu.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "JSON importieren",
+        "x": 607,
+        "y": 227.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 265.375
+      },
+      {
+        "label": "TXT / CSV importieren",
+        "x": 607,
+        "y": 265.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 303.375
+      },
+      {
+        "label": "Vollständige Sicherung exportieren",
+        "x": 607,
+        "y": 314.375,
+        "w": 206,
+        "h": 55,
+        "right": 813,
+        "bottom": 369.375
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-menu",
+    "filename": "landscape-deck-menu.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-menu-bottom",
+    "filename": "landscape-deck-menu-bottom.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "browse-menu",
+    "filename": "landscape-browse-menu.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Karte hinzufügen",
+        "x": 656.2734375,
+        "y": -7.1015625,
+        "w": 163.7265625,
+        "h": 40,
+        "right": 820,
+        "bottom": 32.8984375
+      },
+      {
+        "label": "TXT / CSV importieren",
+        "x": 607,
+        "y": 227.296875,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 265.296875
+      },
+      {
+        "label": "JSON exportieren",
+        "x": 607,
+        "y": 276.296875,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 314.296875
+      },
+      {
+        "label": "CSV exportieren",
+        "x": 607,
+        "y": 314.296875,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 352.296875
+      },
+      {
+        "label": "TXT exportieren",
+        "x": 607,
+        "y": 352.296875,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 390.296875
+      },
+      {
+        "label": "Wie wandeln Pflanzen Sonnenlicht in nutzbare Energie um? löschen",
+        "x": 776,
+        "y": 293.890625,
+        "w": 28,
+        "h": 30,
+        "right": 804,
+        "bottom": 323.890625
+      }
+    ],
+    "modal": null,
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "deck-editor",
+    "filename": "landscape-deck-editor.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "Neuer Stapel",
+        "x": 695.453125,
+        "y": 18.5,
+        "w": 124.546875,
+        "h": 34,
+        "right": 820,
+        "bottom": 52.5
+      },
+      {
+        "label": "JSON importieren",
+        "x": 607,
+        "y": 338.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 376.375
+      },
+      {
+        "label": "TXT / CSV importieren",
+        "x": 607,
+        "y": 376.375,
+        "w": 206,
+        "h": 38,
+        "right": 813,
+        "bottom": 414.375
+      }
+    ],
+    "modal": {
+      "x": 206,
+      "y": 69,
+      "w": 440,
+      "h": 255,
+      "right": 646,
+      "bottom": 324
+    },
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  },
+  {
+    "device": "landscape",
+    "screen": "card-editor",
+    "filename": "landscape-card-editor.png",
+    "width": 852,
+    "height": 393,
+    "scrollWidth": 852,
+    "overlaps": [],
+    "unsafeControls": [
+      {
+        "label": "smartL3arn",
+        "x": 15,
+        "y": 28,
+        "w": 134.6953125,
+        "h": 30,
+        "right": 149.6953125,
+        "bottom": 58
+      },
+      {
+        "label": "Bibliothek",
+        "x": 15,
+        "y": 90,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 132
+      },
+      {
+        "label": "Smart Study",
+        "x": 15,
+        "y": 140,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 182
+      },
+      {
+        "label": "API-Verbrauch",
+        "x": 15,
+        "y": 190,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 232
+      },
+      {
+        "label": "Einstellungen",
+        "x": 15,
+        "y": 240,
+        "w": 159,
+        "h": 42,
+        "right": 174,
+        "bottom": 282
+      },
+      {
+        "label": "1 lernen",
+        "x": 715.2578125,
+        "y": 175.3984375,
+        "w": 104.7421875,
+        "h": 40,
+        "right": 820,
+        "bottom": 215.3984375
+      },
+      {
+        "label": "Karte hinzufügen",
+        "x": 656.2734375,
+        "y": 225.3984375,
+        "w": 163.7265625,
+        "h": 40,
+        "right": 820,
+        "bottom": 265.3984375
+      }
+    ],
+    "modal": {
+      "x": 136,
+      "y": 18,
+      "w": 580,
+      "h": 357,
+      "right": 716,
+      "bottom": 375
+    },
+    "nav": {
+      "x": 15,
+      "y": 90,
+      "w": 159,
+      "h": 192,
+      "right": 174,
+      "bottom": 282
+    }
+  }
+]

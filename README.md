@@ -173,7 +173,7 @@ Each desktop release command (`build`, `build:win`, or `build:all`) automaticall
 
 The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. Build/signing prerequisites depend on the target platform. The desktop/browser artwork is `build/icon.png`; electron-builder converts it to platform icon formats. See [Prism UI and app icons](#prism-ui-and-app-icons) for native icon generation.
 
-Desktop packaging automatically includes `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). The packaging hook writes only these two values to `openrouter-build-config.json` in the app's resources. A build without a key still supports local study and keys entered in the app. **A configured key is extractable from the DMG or installer.** Rebuild after changing the project's key or model; existing packages retain their previous values.
+Desktop packaging includes only `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). Private API keys are never embedded in desktop packages, and legacy bundled keys are ignored. Users can enter a key in the app to store it with OS-backed encryption or configure a local runtime environment. Keys included in older installers remain extractable: replace those installers and revoke exposed keys with OpenRouter.
 
 Private iOS **Debug** builds also automatically include these two values from `.env` through an Xcode build phase, including when building directly in Xcode. The configuration lives in a native bundle resource, not in the WebView's JavaScript. A manually saved iOS Keychain key takes precedence; removing it restores the bundled key. Both the configured key and model update on the next build. Release/archive builds never embed this private configuration and remove any stale Debug copy. Keep `.env` out of Git and use a limited key: the bundled key is extractable from the app, so this is only intended for personal builds, not distribution.
 
@@ -258,7 +258,7 @@ OpenRouter compares the meaning of a typed answer with the current question and 
 1. Sign in to [OpenRouter](https://openrouter.ai/) and create a personal inference API key on the [API keys page](https://openrouter.ai/settings/keys). Use a regular API key, not a [management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys), which cannot call completion endpoints.
 2. Start the macOS desktop app with `npm start`, or open the installed macOS/iOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
 3. Open **Smart Study → Answer evaluation** (German: **Smart Study → Antwortbewertung**). Paste the key into **OpenRouter API key** and click **Validate and save** (**Prüfen und speichern**).
-4. Confirm **Configured** (**Eingerichtet**) and the configured model, then select **OpenRouter AI** (**OpenRouter-KI**). Private iOS Debug builds use the bundled key automatically. A manually saved iOS Keychain key overrides the bundled key; Electron uses saved keys as fallbacks behind environment/build credentials.
+4. Confirm **Configured** (**Eingerichtet**) and the configured model, then select **OpenRouter AI** (**OpenRouter-KI**). Private iOS Debug builds use the bundled key automatically. A manually saved iOS Keychain key overrides the bundled key; Electron uses saved keys as fallbacks behind local runtime environment credentials; packaged keys are ignored.
 5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. Errors keep your answer for retry and never silently grade it locally.
 6. Open [API Usage](#api-usage-overview) and click **Refresh** to inspect the recorded request, tokens, and reported cost. A successful key validation alone does not prove the chosen model can produce the required response format; the first answer check verifies that.
 
@@ -287,12 +287,11 @@ Keys are resolved in this order; empty or whitespace-only values fall through:
 |---|---|
 | 1 | `OPENROUTER_API_KEY` in the Electron process environment |
 | 2 | `OPENROUTER_API_KEY` in the applicable local `.env` file |
-| 3 | Key embedded from the build's `.env` or environment |
-| 4 | Encrypted key saved in Smart Study |
+| 3 | Encrypted key saved in Smart Study |
 
-The UI groups the first two sources as an **environment key**, identifies a **bundled key** separately, and otherwise uses the encrypted settings key. When an environment or bundled key is active, saving a key in the app stores an encrypted fallback; removing that stored key leaves the active key in place. A bundled key takes precedence over older encrypted settings keys. Override it through the local runtime `.env`, or rebuild with the updated project configuration.
+The UI groups the first two sources as an **environment key** and otherwise uses the encrypted settings key. Saving an in-app key stores an encrypted fallback when a local environment key is active. Desktop builds ignore all legacy bundled keys; the bundled source is used only for private iOS Debug builds.
 
-An `.env` file stores its key as plain text; the in-app method uses encrypted storage. Repository `.env` files are ignored by Git and the files themselves are excluded from packages, but desktop packaging copies the OpenRouter key and model into an app resource. Anyone with the package can extract that key. Credentials are resolved in Electron's main process: never give them a `VITE_` prefix, which would expose them to the web build.
+An `.env` file stores its key as plain text; the in-app method uses encrypted storage. Repository `.env` files are ignored by Git and the files themselves are excluded from packages, and desktop packaging copies only the model into an app resource. Private iOS Debug builds still embed their development key and must not be distributed. Credentials are resolved in Electron's main process: never give them a `VITE_` prefix, which would expose them to the web build.
 
 #### Choose a model
 
@@ -318,7 +317,7 @@ The desktop request timeout is **8 seconds**; native iOS uses **30 seconds**. Au
 | Request blocked | HTTP 403 indicates a permission, policy, or guardrail restriction. Check key/model/provider restrictions; it does not by itself mean the key is invalid. |
 | Credits or spending limit exhausted | HTTP 402 indicates insufficient credits or an exhausted key spending limit. Check the OpenRouter balance and key limit. |
 | No compatible model provider | HTTP 404 can mean that no provider supports all requested parameters. Check the model's supported parameters and structured-output support. The app keeps strict schema routing and avoids a fixed `temperature`, which some reasoning models do not support. |
-| The app keeps using an old key or model | Check the displayed key source. Runtime environment and local `.env` override the bundled configuration; the bundled key overrides encrypted storage. Restart after a runtime change, or rebuild after editing the project's `.env`. |
+| The app keeps using an old key or model | Check the displayed key source. Desktop runtime environment and local `.env` override encrypted storage; packaged keys are ignored. Private iOS Debug builds may still use a development bundle key. Restart after a runtime change, or rebuild after editing the project's `.env`. |
 | Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
 | OpenRouter unavailable | Export the connection logs and inspect the HTTP status, typed provider error, and network code. Check the connection and whether the configured model supports structured outputs. |
 | Invalid evaluation or repeated timeouts | Export the connection logs. Desktop uses an 8-second deadline; iOS uses 30 seconds. Unsupported JSON schemas or truncated responses can cause errors; retry or explicitly select local mode. |

@@ -27,19 +27,16 @@ function createCredentialResolver({ env = process.env, envPath, buildConfigPath,
     }
   }
   const environmentKey = nonEmpty(env.OPENROUTER_API_KEY) || nonEmpty(fileEnv.OPENROUTER_API_KEY)
-  const bundledKey = nonEmpty(buildEnv?.OPENROUTER_API_KEY)
   const model = nonEmpty(env.OPENROUTER_MODEL) || nonEmpty(fileEnv.OPENROUTER_MODEL)
     || nonEmpty(buildEnv?.OPENROUTER_MODEL) || 'openrouter/free'
 
   async function status() {
-    const credentialSource = environmentKey ? 'environment'
-      : bundledKey ? 'bundled'
-        : await store.has() ? 'stored' : null
+    const credentialSource = environmentKey ? 'environment' : await store.has() ? 'stored' : null
     return { configured: credentialSource !== null, credentialSource }
   }
 
   async function read() {
-    return environmentKey || bundledKey || await store.read()
+    return environmentKey || await store.read()
   }
 
   return { status, read, model }

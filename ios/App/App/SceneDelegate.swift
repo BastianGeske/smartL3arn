@@ -66,8 +66,11 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "removeOpenRouterKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getApiUsage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAiDiagnostics", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "request", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "evaluateAnswer", returnType: CAPPluginReturnPromise)
     ]
+
+    private let requestLock = NSLock()
+    private var activeRequests = 0
 
     private lazy var journal = NativeAiJournal(directory:
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -152,19 +155,20 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["ok": status == errSecSuccess || status == errSecItemNotFound])
     }
 
-    @objc func request(_ call: CAPPluginCall) {
+    @objc func evaluateAnswer(_ call: CAPPluginCall) {
         guard let key = readKey() ?? bundledKey else {
             call.resolve(["ok": false, "reason": "not-configured"])
             return
         }
-        guard var body = call.getObject("body"), JSONSerialization.isValidJSONObject(body) else {
-            call.resolve(["ok": false, "reason": "invalid-input"])
-            return
-        }
-        if let model = privateBuildConfig["OPENROUTER_MODEL"], !model.isEmpty {
-            body["model"] = model
-        }
-        guard let data = try? JSONSerialization.data(withJSONObject: body), data.count <= 64000 else {
+        let input: [String: Any] = [
+            "deckName": call.getString("deckName") as Any? ?? NSNull(),
+            "question": call.getString("question") as Any? ?? NSNull(),
+            "referenceAnswer": call.getString("referenceAnswer") as Any? ?? NSNull(),
+            "userAnswer": call.getString("userAnswer") as Any? ?? NSNull(),
+            "language": call.getString("language") ?? "en"
+        ]
+        guard let body = NativeAiEvaluationRequest.body(input: input, model: configuredModel),
+              let data = try? JSONSerialization.data(withJSONObject: body), data.count <= 64000 else {
             call.resolve(["ok": false, "reason": "invalid-input"])
             return
         }
@@ -176,6 +180,14 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func send(key: String, endpoint: String, body: Data?,
                       completion: @escaping ([String: Any]?, String?) -> Void) {
+        requestLock.lock()
+        guard activeRequests < 2 else {
+            requestLock.unlock()
+            completion(nil, "rate-limit")
+            return
+        }
+        activeRequests += 1
+        requestLock.unlock()
         var request = URLRequest(url: URL(string: "https://openrouter.ai/api/v1/" + endpoint)!)
         request.timeoutInterval = 30
         request.httpMethod = body == nil ? "GET" : "POST"
@@ -214,6 +226,9 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
             let resultReason = reason
             let status = (response as? HTTPURLResponse)?.statusCode
             let duration = Int(Date().timeIntervalSince(started) * 1000)
+            self.requestLock.lock()
+            self.activeRequests -= 1
+            self.requestLock.unlock()
             DispatchQueue.main.async {
                 self.journal.record(body: json, model: model, reason: resultReason, status: status,
                     durationMs: duration, operation: operation, credentialSource: source)

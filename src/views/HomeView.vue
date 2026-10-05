@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
+import AppMenu from '../components/AppMenu.vue'
 import { calcBestStreak, formatDateLabel, isDue, todayStr } from '../domain/dates'
 import type { Deck } from '../domain/types'
 import { importJsonFile, importTextFile } from '../services/importer'
@@ -156,11 +157,11 @@ async function exportAll(): Promise<void> {
         </div>
       </section>
       <div class="library-transfer">
-          <details class="menu">
-            <summary class="btn btn-secondary btn-sm">
+          <AppMenu class="menu" trigger-class="btn btn-secondary btn-sm" :label="t('import.menu')" wide>
+              <template #trigger>
               <AppIcon name="folder-open" :size="15" /><span>{{ t('import.menu') }}</span><AppIcon name="chevron-down" :size="14" />
-            </summary>
-            <div class="menu-popover menu-popover-right menu-popover-wide">
+            </template>
+
               <button class="menu-item" type="button" @click="jsonInput?.click()">
                 <AppIcon name="file-json" :size="16" /><span>{{ t('import.json') }}</span>
               </button>
@@ -173,8 +174,8 @@ async function exportAll(): Promise<void> {
                   <AppIcon name="archive" :size="16" /><span>{{ t('import.backup') }}</span>
                 </button>
               </template>
-            </div>
-          </details>
+
+            </AppMenu>
           <input ref="jsonInput" class="file-input" type="file" accept=".json" @change="handleJson">
           <input ref="textInput" class="file-input" type="file" accept=".txt,.csv,.tsv" @change="handleText">
       </div>
@@ -237,19 +238,19 @@ async function exportAll(): Promise<void> {
               <button class="btn btn-quiet btn-sm" type="button" @click="browse(deck.id)">
                 <AppIcon name="rows-3" :size="15" /><span>{{ t('study.browse') }}</span>
               </button>
-              <details class="menu deck-menu">
-                <summary class="btn-icon" :aria-label="t('library.moreActions', { name: deck.name })">
+              <AppMenu class="menu deck-menu" trigger-class="btn-icon" :label="t('library.moreActions', { name: deck.name })">
+              <template #trigger>
                   <AppIcon name="more-horizontal" />
-                </summary>
-                <div class="menu-popover menu-popover-right">
+                </template>
+
                   <button class="menu-item" type="button" @click="ui.editDeck(deck.id)">
                     <AppIcon name="pencil" :size="16" /><span>{{ t('deck.renameShort') }}</span>
                   </button>
                   <button class="menu-item is-danger" type="button" @click="removeDeck(deck)">
                     <AppIcon name="trash-2" :size="16" /><span>{{ t('deck.delete') }}</span>
                   </button>
-                </div>
-              </details>
+
+            </AppMenu>
             </div>
           </article>
         </div>

@@ -3,6 +3,9 @@ import { defineStore } from 'pinia'
 import { createCard, genId } from '../domain/importExport'
 import type { AppData, Card, Deck } from '../domain/types'
 import { getStorageRepository } from '../services/storage'
+import { normalizeAppData } from '../../shared/data-validation.mjs'
+import { todayStr } from '../domain/dates'
+import { t } from '../i18n'
 
 export const useLibraryStore = defineStore('library', () => {
   const data = ref<AppData>({ decks: [] })
@@ -10,19 +13,26 @@ export const useLibraryStore = defineStore('library', () => {
   const saveError = ref<string | null>(null)
   const repository = getStorageRepository()
   let pendingSave: Promise<void> = Promise.resolve()
+  let loadFailed = false
 
   const decks = computed(() => data.value.decks)
 
   async function hydrate(): Promise<void> {
-    data.value = await repository.load()
-    ready.value = true
+    try {
+      data.value = normalizeAppData(await repository.load(), todayStr())
+    } catch {
+      loadFailed = true
+      saveError.value = t('common.loadError')
+    } finally { ready.value = true }
   }
 
   function persist(): Promise<void> {
+    // Do not overwrite an unreadable original library with an empty/new one.
+    if (loadFailed) return Promise.reject(new Error(t('common.loadError')))
     const snapshot = JSON.parse(JSON.stringify(data.value)) as AppData
     pendingSave = pendingSave
       .catch(() => undefined)
-      .then(() => repository.save(snapshot))
+      .then(() => repository.save(normalizeAppData(snapshot, todayStr())))
       .then(() => {
         saveError.value = null
       })

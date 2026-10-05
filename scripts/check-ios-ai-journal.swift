@@ -11,6 +11,17 @@ struct CheckAiJournal {
             precondition(condition, message)
             checks += 1
         }
+        let input: [String: Any] = ["deckName": "Test", "question": "Question", "referenceAnswer": "Reference", "userAnswer": "Answer", "language": "de", "max_tokens": 999999, "model": "untrusted/model"]
+        let request = NativeAiEvaluationRequest.body(input: input, model: "trusted/model")!
+        expect(request["max_tokens"] as? Int == 160, "native token limit cannot be overridden")
+        expect(request["model"] as? String == "trusted/model", "native model cannot be overridden")
+        expect((request["messages"] as? [[String: String]])?.first?["content"]?.contains("German") == true, "native language selection")
+        expect(NativeAiEvaluationRequest.body(input: ["body": request], model: "trusted/model") == nil, "arbitrary API body rejected")
+        var oversized = input
+        oversized["question"] = String(repeating: "x", count: 4001)
+        expect(NativeAiEvaluationRequest.body(input: oversized, model: "trusted/model") == nil, "native field limit")
+        oversized["question"] = String(repeating: "😀", count: 2001)
+        expect(NativeAiEvaluationRequest.body(input: oversized, model: "trusted/model") == nil, "native UTF16 field limit matches JS")
         func record(_ body: [String: Any]?, reason: String? = nil, operation: String = "evaluate") {
             journal.record(body: body, model: "test/model", reason: reason, status: 200,
                 durationMs: 50, operation: operation, credentialSource: "bundled")

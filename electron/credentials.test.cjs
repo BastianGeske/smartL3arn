@@ -65,14 +65,14 @@ test('resolves model from process environment, then .env, then default', (contex
   }
 })
 
-test('a packaged key and model take precedence over an older stored key', async (context) => {
+test('ignores legacy packaged credentials and uses secure storage', async (context) => {
   const { resolver } = setup(context, undefined, {}, {
     OPENROUTER_API_KEY: ' bundled-key ',
     OPENROUTER_MODEL: ' bundled/model ',
   })
-  assert.equal(await resolver.read(), 'bundled-key')
+  assert.equal(await resolver.read(), 'encrypted-settings-key')
   assert.equal(resolver.model, 'bundled/model')
-  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'bundled' })
+  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'stored' })
 })
 
 test('runtime environment and local .env can override the packaged key and model', async (context) => {
@@ -89,11 +89,11 @@ test('runtime environment and local .env can override the packaged key and model
   }
 })
 
-test('removing encrypted storage leaves the packaged key available', async (context) => {
+test('removing encrypted storage cannot reactivate a legacy packaged key', async (context) => {
   const { resolver, store } = setup(context, undefined, {}, { OPENROUTER_API_KEY: 'bundled-key' })
   await store.remove()
-  assert.equal(await resolver.read(), 'bundled-key')
-  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'bundled' })
+  assert.equal(await resolver.read(), null)
+  assert.deepEqual(await resolver.status(), { configured: false, credentialSource: null })
 })
 
 test('a model-only build still uses the encrypted settings key', async (context) => {

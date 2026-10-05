@@ -3,6 +3,21 @@
 const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('node:url');
+const { isTrustedSender, configureWindowSecurity } = require('./electron/security.cjs');
+const validation = import('./shared/data-validation.mjs');
+const appUrl = pathToFileURL(path.join(__dirname, 'web-dist', 'index.html')).href;
+let mainWindow;
+function handle(channel, callback) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isTrustedSender(event, mainWindow?.webContents, appUrl)) throw new Error('Untrusted IPC request.');
+    return callback(event, ...args);
+  });
+}
+function localToday() {
+  const date = new Date();
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
 const { createCredentialResolver } = require('./electron/credentials.cjs');
 const { createUsageStore } = require('./electron/usage.cjs');
 const { createDiagnosticStore } = require('./electron/diagnostics.cjs');
@@ -33,23 +48,30 @@ async function migrateLegacyDataIfNeeded() {
 async function dbLoad() {
   await migrateLegacyDataIfNeeded();
   try {
+    const validator = await validation;
+    if ((await fs.promises.stat(getDbPath())).size > validator.MAX_FILE_BYTES) throw new Error('Library too large.');
     const raw = await fs.promises.readFile(getDbPath(), 'utf8');
-    return JSON.parse(raw);
-  } catch (_) {
-    return { decks: [] };
+    validator.checkDataSize(raw);
+    return validator.normalizeAppData(JSON.parse(raw), localToday());
+  } catch (error) {
+    if (error.code === 'ENOENT') return { decks: [] };
+    throw new Error('The saved library could not be read safely.');
   }
 }
 
 async function dbSave(data) {
+  const validator = await validation;
+  const raw = JSON.stringify(validator.normalizeAppData(data, localToday()));
+  validator.checkDataSize(raw);
   const target = getDbPath();
   const temporary = `${target}.tmp`;
   await fs.promises.mkdir(path.dirname(target), { recursive: true });
-  await fs.promises.writeFile(temporary, JSON.stringify(data), 'utf8');
+  await fs.promises.writeFile(temporary, raw, { encoding: 'utf8', mode: 0o600 });
   await fs.promises.rename(temporary, target);
 }
 
-ipcMain.handle('db:load', () => dbLoad());
-ipcMain.handle('db:save', async (_event, data) => {
+handle('db:load', () => dbLoad());
+handle('db:save', async (_event, data) => {
   await dbSave(data);
 });
 
@@ -101,14 +123,14 @@ function getCredentialResolver() {
   return credentialResolver;
 }
 
-ipcMain.handle('ai:status', async () => {
+handle('ai:status', async () => {
   if (process.platform !== 'darwin') {
     return { available: false, configured: false, credentialSource: null };
   }
   return { available: true, ...await getCredentialResolver().status(), model: getCredentialResolver().model };
 });
 
-ipcMain.handle('ai:save-key', async (_event, apiKey) => {
+handle('ai:save-key', async (_event, apiKey) => {
   try {
     await getOpenRouterClient().validateKey(apiKey, { credentialSource: 'provided' });
     await getCredentialStore().write(String(apiKey).trim());
@@ -123,7 +145,7 @@ ipcMain.handle('ai:save-key', async (_event, apiKey) => {
   }
 });
 
-ipcMain.handle('ai:remove-key', async () => {
+handle('ai:remove-key', async () => {
   try {
     await getCredentialStore().remove();
     return { ok: true };
@@ -140,14 +162,17 @@ function getUsageStore() {
   return usageStore;
 }
 
-ipcMain.handle('ai:usage', async () => ({
+handle('ai:usage', async () => ({
   ...await getUsageStore().report(),
   model: getCredentialResolver().model,
 }));
 
-ipcMain.handle('ai:diagnostics', () => getDiagnosticStore().snapshot());
+handle('ai:diagnostics', () => getDiagnosticStore().snapshot());
 
-ipcMain.handle('ai:evaluate', async (_event, input) => {
+let activeEvaluations = 0;
+handle('ai:evaluate', async (_event, input) => {
+  if (activeEvaluations >= 2) return { ok: false, reason: 'rate-limit' };
+  activeEvaluations += 1;
   let attempted = false;
   let responseMetadata;
   let outcome = 'failure';
@@ -174,6 +199,7 @@ ipcMain.handle('ai:evaluate', async (_event, input) => {
     }
     return publicError(error);
   } finally {
+    activeEvaluations -= 1;
     if (diagnosticStore) await diagnosticStore.flush();
     if (attempted) {
       await getUsageStore().record({
@@ -197,10 +223,13 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
       preload: path.join(__dirname, 'preload.js')
     }
   });
 
+  mainWindow = win;
+  configureWindowSecurity(win, appUrl);
   win.loadFile(path.join(__dirname, 'web-dist', 'index.html'));
   win.setMenuBarVisibility(false);
 }

@@ -36,6 +36,7 @@
       "main.js",
       "preload.js",
       "electron/**/*.cjs",
+      "shared/**/*.mjs",
       "!electron/**/*.test.cjs",
       "!.env",
       "!.env.*",

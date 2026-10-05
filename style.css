@@ -3182,3 +3182,35 @@ html[lang="de"] .deck-row-actions .btn-quiet .icon { display: none; }
   .modal-header, .modal-body, .modal-footer { padding-inline: 16px; }
   .toast-region { bottom: calc(84px + env(safe-area-inset-bottom)); }
 }
+
+/* Keep overlays inside the visible viewport, including the iOS keyboard and safe areas. */
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.safe-area-probe { position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.floating-menu { position: fixed; right: auto; min-width: 0; width: 188px; overflow-y: auto; overscroll-behavior: contain; z-index: 90; animation: none; }
+.floating-menu.menu-popover-wide { min-width: 0; width: 280px; }
+.menu.is-open > button { color: var(--text); background: var(--surface-2); border-color: var(--border-strong); }
+.deck-menu > button { width: 44px; height: 44px; }
+.menu-item { white-space: normal; text-align: left; }
+.menu-item span { min-width: 0; overflow-wrap: anywhere; }
+.menu-item .icon { flex-shrink: 0; }
+.browse-table th { white-space: normal; overflow-wrap: anywhere; }
+.modal-overlay { inset: auto; top: var(--visible-top, 0px); left: var(--visible-left, 0px); width: var(--visible-width, 100vw); height: var(--visible-height, 100dvh); padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); }
+.modal { max-height: 100%; }
+@media (min-width: 720px) {
+  .app-bar { left: env(safe-area-inset-left); }
+  .app-bar-inner { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .browse-table { min-width: 720px; }
+}
+@media (min-width: 720px) and (max-width: 1050px) {
+  .library-overview { flex-wrap: wrap; }
+  .library-overview .summary-strip { flex-basis: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .library-transfer { margin-left: auto; }
+}
+@media (max-width: 719px) {
+  .app-nav { padding-left: calc(8px + env(safe-area-inset-left)); padding-right: calc(8px + env(safe-area-inset-right)); }
+  .study-shell { padding-top: calc(12px + env(safe-area-inset-top)); }
+  .modal { max-height: 100%; }
+  .browse-toolbar > .menu > button { width: 44px; min-width: 44px; padding: 0; }
+  .browse-toolbar > .menu > button .deck-actions-label,
+  .browse-toolbar > .menu > button .icon:last-child { display: none; }
+}

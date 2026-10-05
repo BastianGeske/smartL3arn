@@ -6,8 +6,10 @@ import { useLibraryStore } from './stores/library'
 import { useSettingsStore } from './stores/settings'
 import { setupStatusBar } from './services/native'
 import '../style.css'
+import { setupVisualViewport } from './services/viewport'
 
 const app = createApp(App)
+setupVisualViewport()
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)

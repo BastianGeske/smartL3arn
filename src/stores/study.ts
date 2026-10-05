@@ -10,6 +10,7 @@ import {
 } from '../domain/types'
 import { todayStr } from '../domain/dates'
 import { useLibraryStore } from './library'
+import { cardStatsFor } from '../domain/cardStats'
 
 export const useStudyStore = defineStore('study', () => {
   const library = useLibraryStore()
@@ -62,12 +63,10 @@ export const useStudyStore = defineStore('study', () => {
     const cardIndex = currentDeck.cards.findIndex((item) => item.id === card.id)
     currentDeck.cards[cardIndex] = scheduleCard(card, rating)
 
-    currentDeck.cardStats ||= {}
-    const stats = currentDeck.cardStats[card.id] || { reviews: 0, again: 0, hard: 0 }
+    const stats = cardStatsFor(currentDeck, card.id)
     stats.reviews += 1
     if (rating === 0) stats.again += 1
     if (rating === 1) stats.hard += 1
-    currentDeck.cardStats[card.id] = stats
 
     if (rating === 0) learningQueue.value.push(card.id)
     index.value += 1

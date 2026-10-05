@@ -14,7 +14,6 @@ module.exports = async function embedOpenRouterConfig(context) {
     if (error.code !== 'ENOENT') throw error
   }
   const config = {
-    OPENROUTER_API_KEY: nonEmpty(process.env.OPENROUTER_API_KEY) || nonEmpty(fileEnv.OPENROUTER_API_KEY),
     OPENROUTER_MODEL: nonEmpty(process.env.OPENROUTER_MODEL) || nonEmpty(fileEnv.OPENROUTER_MODEL) || 'openrouter/free',
   }
   const resources = context.packager.getResourcesDir(context.appOutDir)

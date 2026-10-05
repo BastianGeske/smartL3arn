@@ -37,12 +37,12 @@ function setup(context, content, env = {}) {
   return { directory, buildConfigPath, packContext }
 }
 
-test('packages only the OpenRouter key and model from .env and loads them at runtime', async (context) => {
+test('packages only the model and never embeds private credentials', async (context) => {
   const { directory, buildConfigPath, packContext } = setup(context,
     'OPENROUTER_API_KEY=" file-key " # private build\nOPENROUTER_MODEL=" provider/model "\nUNRELATED_SECRET=not-for-the-app\n')
   await embedOpenRouterConfig(packContext)
   assert.deepEqual(JSON.parse(fs.readFileSync(buildConfigPath, 'utf8')), {
-    OPENROUTER_API_KEY: 'file-key', OPENROUTER_MODEL: 'provider/model',
+    OPENROUTER_MODEL: 'provider/model',
   })
   assert.equal(fs.existsSync(path.join(directory, 'web-dist')), false)
   const resolver = createCredentialResolver({
@@ -51,18 +51,18 @@ test('packages only the OpenRouter key and model from .env and loads them at run
     buildConfigPath,
     store: { has: async () => true, read: async () => 'old-settings-key' },
   })
-  assert.equal(await resolver.read(), 'file-key')
+  assert.equal(await resolver.read(), 'old-settings-key')
   assert.equal(resolver.model, 'provider/model')
-  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'bundled' })
+  assert.deepEqual(await resolver.status(), { configured: true, credentialSource: 'stored' })
 })
 
-test('build environment can override both values from .env', async (context) => {
+test('build environment can override the model without packaging either key', async (context) => {
   const { buildConfigPath, packContext } = setup(context,
     'OPENROUTER_API_KEY=file-key\nOPENROUTER_MODEL=file/model',
     { OPENROUTER_API_KEY: ' process-key ', OPENROUTER_MODEL: ' process/model ' })
   await embedOpenRouterConfig(packContext)
   assert.deepEqual(JSON.parse(fs.readFileSync(buildConfigPath, 'utf8')), {
-    OPENROUTER_API_KEY: 'process-key', OPENROUTER_MODEL: 'process/model',
+    OPENROUTER_MODEL: 'process/model',
   })
 })
 
@@ -70,7 +70,7 @@ test('a build without .env remains usable with local or stored credentials', asy
   const { buildConfigPath, packContext } = setup(context)
   await embedOpenRouterConfig(packContext)
   assert.deepEqual(JSON.parse(fs.readFileSync(buildConfigPath, 'utf8')), {
-    OPENROUTER_API_KEY: '', OPENROUTER_MODEL: 'openrouter/free',
+    OPENROUTER_MODEL: 'openrouter/free',
   })
 })
 
@@ -78,9 +78,10 @@ test('each build replaces the previous packaged key and model', async (context) 
   const { directory, buildConfigPath, packContext } = setup(context,
     'OPENROUTER_API_KEY=old-key\nOPENROUTER_MODEL=old/model')
   await embedOpenRouterConfig(packContext)
+  fs.writeFileSync(buildConfigPath, JSON.stringify({ OPENROUTER_API_KEY: 'legacy-secret', OPENROUTER_MODEL: 'old/model' }))
   fs.writeFileSync(path.join(directory, '.env'), 'OPENROUTER_API_KEY=new-key\nOPENROUTER_MODEL=new/model')
   await embedOpenRouterConfig(packContext)
   assert.deepEqual(JSON.parse(fs.readFileSync(buildConfigPath, 'utf8')), {
-    OPENROUTER_API_KEY: 'new-key', OPENROUTER_MODEL: 'new/model',
+    OPENROUTER_MODEL: 'new/model',
   })
 })

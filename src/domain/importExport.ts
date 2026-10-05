@@ -118,6 +118,10 @@ function parseCsvRecords(text: string, skipComments = false): string[][] {
 
 export function csvEscape(value: unknown): string {
   const text = String(value ?? '')
+  // Quoting alone does not prevent spreadsheet applications from evaluating formulas.
+  if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text)) {
+    return `"'${text.replace(/"/g, '""')}"`
+  }
   if (/[",\r\n]/.test(text) || /^\s*#/.test(text)) return `"${text.replace(/"/g, '""')}"`
   return text
 }
