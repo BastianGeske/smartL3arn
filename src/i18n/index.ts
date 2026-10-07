@@ -22,10 +22,11 @@ function detectSystemLanguage(): Language {
 }
 export const locale = computed<Language>(() => preference.value === 'system' ? systemLanguage.value : preference.value)
 export const languagePreference = computed(() => preference.value)
-export function setLanguage(value: LanguagePreference): void {
-  if (!['system', 'de', 'en'].includes(value)) return
+export function setLanguage(value: LanguagePreference): boolean {
+  if (!['system', 'de', 'en'].includes(value)) return false
   preference.value = value
-  try { localStorage.setItem(STORAGE_KEY, value) } catch { /* Session preference still applies. */ }
+  try { localStorage.setItem(STORAGE_KEY, value); return true }
+  catch { return false /* Session preference still applies. */ }
 }
 if (typeof window !== 'undefined') {
   window.addEventListener('languagechange', () => { systemLanguage.value = detectSystemLanguage() })

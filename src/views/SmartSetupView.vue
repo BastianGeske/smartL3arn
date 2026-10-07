@@ -82,11 +82,11 @@ onMounted(async () => {
   if (!ai) return
   try {
     aiStatus.value = await ai.getAiStatus()
-    if (Capacitor.getPlatform() === 'ios' && !localStorage.getItem('smartl3arn_ios_ai_mode_initialized')) {
-      settings.smartConfig.evaluationMode = 'openrouter'
-      localStorage.setItem('smartl3arn_ios_ai_mode_initialized', '1')
+    if (Capacitor.getPlatform() === 'ios') {
+      settings.initializeIosEvaluationMode(aiStatus.value.available && aiStatus.value.configured)
     }
   } catch {
+    if (Capacitor.getPlatform() === 'ios') settings.initializeIosEvaluationMode(false)
     aiStatus.value = { available: false, configured: false, credentialSource: null }
     aiMessage.value = 'ai.unavailable'
   } finally {
@@ -106,7 +106,7 @@ async function saveApiKey(): Promise<void> {
   if (result.ok) {
     apiKey.value = ''
     aiStatus.value = await ai.getAiStatus()
-    settings.smartConfig.evaluationMode = 'openrouter'
+    settings.setEvaluationMode('openrouter')
     aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.savedFallback'
       : aiStatus.value.credentialSource === 'bundled' ? 'ai.savedBundledFallback' : 'ai.saved'
@@ -124,7 +124,7 @@ async function removeApiKey(): Promise<void> {
   aiBusy.value = false
   if (result.ok) {
     aiStatus.value = await ai.getAiStatus()
-    if (!aiStatus.value.configured) settings.smartConfig.evaluationMode = 'local'
+    if (!aiStatus.value.configured) settings.setEvaluationMode('local')
     aiMessage.value = aiStatus.value.credentialSource === 'environment'
       ? 'ai.removedFallback'
       : aiStatus.value.credentialSource === 'bundled' ? 'ai.removedBundledFallback' : 'ai.removed'
@@ -278,14 +278,14 @@ async function start(): Promise<void> {
                   :class="{ 'is-selected': settings.smartConfig.evaluationMode === 'local' }"
                   type="button"
                   :aria-pressed="settings.smartConfig.evaluationMode === 'local'"
-                  @click="settings.smartConfig.evaluationMode = 'local'"
+                  @click="settings.setEvaluationMode('local')"
                 >{{ t('ai.local') }}</button>
                 <button
                   class="segment-button"
                   :class="{ 'is-selected': settings.smartConfig.evaluationMode === 'openrouter' }"
                   type="button"
                   :aria-pressed="settings.smartConfig.evaluationMode === 'openrouter'"
-                  @click="settings.smartConfig.evaluationMode = 'openrouter'"
+                  @click="settings.setEvaluationMode('openrouter')"
                 >{{ t('ai.openrouter') }}</button>
               </div>
               <p class="ai-privacy-note">

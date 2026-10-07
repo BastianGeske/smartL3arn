@@ -1,6 +1,15 @@
 import type { en } from './en'
 
 export const de = {
+  "notifications.region": "Meldungen",
+  "notifications.dismiss": "Meldung schließen",
+  "notifications.saveFailed": "Änderungen konnten nicht gespeichert werden. Prüfe den verfügbaren Speicherplatz.",
+  "notifications.importFailed": "Die Datei konnte nicht importiert werden. Prüfe Format, Inhalt und Dateigröße und versuche es erneut.",
+  "notifications.exportFailed": "Die Datei konnte nicht exportiert werden. Bitte versuche es erneut.",
+  "notifications.languageFailed": "Die Sprache gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.",
+  "notifications.appearanceFailed": "Das Design gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.",
+  "notifications.smartConfigFailed": "Die Lernkonfiguration gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.",
+  "card.saveFailed": "Die Karte konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten. Bitte versuche es erneut.",
   "nav.library": "Bibliothek",
   "nav.smart": "Smart Study",
   "nav.usage": "API-Verbrauch",
@@ -66,6 +75,12 @@ export const de = {
   "deck.new": "Neuer Stapel",
   "deck.create": "Stapel erstellen",
   "deck.rename": "Stapel umbenennen",
+  "deck.edit": "Stapel bearbeiten",
+  "deck.editShort": "Name & Bild ändern",
+  "deck.updated": "Stapel aktualisiert.",
+  "deck.cover": "Stapelbild",
+  "deck.coverHint": "Wähle ein Motiv für deinen Stapel.",
+  "deck.saveFailed": "Der Stapel konnte nicht gespeichert werden. Bitte versuche es erneut.",
   "deck.renameShort": "Umbenennen",
   "deck.delete": "Stapel löschen",
   "deck.deleteConfirm": "Stapel „{name}“ und alle enthaltenen Karten löschen?",

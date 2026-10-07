@@ -1,3 +1,4 @@
+import type { DeckCoverId } from '../../shared/deck-covers.mjs'
 export type Rating = 0 | 1 | 2 | 3
 export type RatingKey = 'again' | 'hard' | 'good' | 'easy'
 export type ConfidenceLevel = 'low' | 'medium' | 'high'
@@ -59,6 +60,7 @@ export interface Card {
 export interface Deck {
   id: string
   name: string
+  coverId?: DeckCoverId
   cards: Card[]
   sessions?: StudySession[]
   cardStats?: Record<string, CardStats>

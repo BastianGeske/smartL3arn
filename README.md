@@ -4,7 +4,7 @@ A flashcard app for long-term retention, with local deck storage, FSRS-5 spaced 
 
 Built with Vue 3, TypeScript, Pinia, Vue Router, and Vite. The same compiled web app runs in Electron, a browser, and native iOS/Android shells through Capacitor.
 
-The interface is available in German and English. OpenRouter answer evaluation is available in Electron and native iOS. Browser and Android study flows use local evaluation. Decks and local study work without an OpenRouter account. Selecting AI evaluation never silently falls back to local grading on API errors.
+The interface is available in German and English. OpenRouter answer evaluation is available in macOS Electron and native iOS. Browser, Windows and Android study flows use local evaluation. Decks and local study work without an OpenRouter account. Selecting AI evaluation never silently falls back to local grading on API errors. This project is maintained for private use; no store publication workflow is provided.
 
 ---
 
@@ -169,11 +169,28 @@ npm run build:all  # both
 npm run build:web  # web bundle only
 ```
 
-Each desktop release command (`build`, `build:win`, or `build:all`) automatically increments the patch version in `package.json` and `package-lock.json`, for example `1.0.0` → `1.0.1` → `1.0.2`. This creates no Git commit or tag. All targets in a single `build:all` run share the new version; `build:web` leaves the version unchanged.
+`package.json` is the shared source of the app version and `nativeBuildNumber` for Android and iOS (initial shared build number: 2). Each desktop release command (`build`, `build:win`, or `build:all`) runs `release:prepare` once: it increments the patch version and native build number, updates `package-lock.json`, and synchronizes Android and both iOS configurations. This creates no Git commit or tag. All targets in one `build:all` run share the same version and build number. Development starts, web builds and mobile copy/sync commands do not increment either value.
+
+```sh
+npm run version:sync     # copy current version/build number to Android and iOS; no increment
+npm run release:prepare  # explicitly prepare the next shared version for a private mobile build
+```
+
+For a desktop package, use its normal `build` command directly; running `release:prepare` separately immediately before it would prepare another version. For several platform packages at one already-prepared version, invoke electron-builder directly after `build:web`. The preparation script validates all inputs before writing and restores changed files if a write fails. It accepts stable `major.minor.patch` versions and native build numbers from 1 to 9999.
 
 The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. Build/signing prerequisites depend on the target platform. The desktop/browser artwork is `build/icon.png`; electron-builder converts it to platform icon formats. See [Prism UI and app icons](#prism-ui-and-app-icons) for native icon generation.
 
 Desktop packaging includes only `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). Private API keys are never embedded in desktop packages, and legacy bundled keys are ignored. Users can enter a key in the app to store it with OS-backed encryption or configure a local runtime environment. Keys included in older installers remain extractable: replace those installers and revoke exposed keys with OpenRouter.
+
+The old `release/1.0.3` app and DMG have been moved to `.artifact-quarantine/legacy-release-1.0.3`, excluded from Git and protected with owner-only directory access. They must not be reused as current packages. Moving them does not revoke their key: the account owner must revoke it in OpenRouter and replace any corresponding runtime or private Debug configuration. Updated private test packages are under `out/platform-fixes-2026-10-06/`.
+
+Check an unpacked desktop package without printing credentials:
+
+```sh
+npm run check:artifacts -- /path/to/smartL3arn.app/Contents/Resources /path/to/win-unpacked/resources
+```
+
+The check requires model-only build configuration, no environment files, all expected runtime modules and all 13 deck covers.
 
 Private iOS **Debug** builds also automatically include these two values from `.env` through an Xcode build phase, including when building directly in Xcode. The configuration lives in a native bundle resource, not in the WebView's JavaScript. A manually saved iOS Keychain key takes precedence; removing it restores the bundled key. Both the configured key and model update on the next build. Release/archive builds never embed this private configuration and remove any stale Debug copy. Keep `.env` out of Git and use a limited key: the bundled key is extractable from the app, so this is only intended for personal builds, not distribution.
 
@@ -200,13 +217,17 @@ npm run android    # copy web assets, sync, open the project in Android Studio
 Lower-level steps if you only need part of the pipeline:
 
 ```bash
-npm run cap:copy            # Vite build + cap copy ios
+npm run cap:copy            # version sync + Vite build + cap copy ios
 npm run cap:sync            # cap:copy + cap sync ios
-npm run cap:copy:android    # Vite build + cap copy android
+npm run cap:copy:android    # version sync + Vite build + cap copy android
 npm run cap:sync:android    # cap:copy:android + cap sync android
 ```
 
 Native projects live in `ios/` and `android/`; Capacitor config is `capacitor.config.json` (appId `com.smartl3arn.app`, webDir `web-dist`).
+
+Both mobile preparation commands synchronize the existing app version and build number. Always run the full Capacitor sync after changing plugins; a direct native build cannot generate Capacitor's missing plugin registration files. The iOS target includes `PrivacyInfo.xcprivacy` for Filesystem's file-timestamp API reason (`C617.1`).
+
+Android's device test starts `MainActivity`, checks the package ID and native Filesystem/Share/StatusBar registration, and waits for the Vue library to render. After `npm run cap:sync:android`, run `./gradlew :app:assembleDebug :app:lintDebug :app:assembleDebugAndroidTest` from `android/`; with a device or emulator connected, run `./gradlew :app:connectedDebugAndroidTest`. Android icons include a monochrome card fan; the launch screen uses one XML background and centered icon across densities.
 
 **Status bar / safe area.** The native status bar is handled through `src/services/native.ts`, which disables WebView overlay and synchronizes its color/style with the active theme. The same code path applies on Android.
 
@@ -247,7 +268,7 @@ When the reference answer is a pure integer or decimal, the learner answer must 
 | `3` | `-3` | Incorrect, 0% |
 | `9007199254740992` | `9007199254740993` | Incorrect, 0% |
 
-Pure numeric answers use exact equality; text uses the four similarity bands described above. This is not a mathematical expression evaluator: fractions, scientific notation, expressions, and grouped thousands are outside the exact-number comparison. AI mode uses the provider's semantic verdict instead of a local percentage; the same local comparison is used if AI falls back.
+Pure numeric answers use exact equality; text uses the four similarity bands described above. This is not a mathematical expression evaluator: fractions, scientific notation, expressions, and grouped thousands are outside the exact-number comparison. AI mode uses the provider's semantic verdict instead of a local percentage. API failures preserve the answer for retry and do not switch to local grading.
 
 ### OpenRouter answer evaluation
 
@@ -279,7 +300,9 @@ OPENROUTER_API_KEY=sk-or-v1-PASTE_YOUR_PERSONAL_KEY_HERE
 OPENROUTER_MODEL=openrouter/free
 ```
 
-Fully quit and restart Electron after changing `.env` or the model, then select **OpenRouter AI** in Smart Study. Closing the window alone may leave Electron running on macOS. Desktop builds also embed the project's key and model automatically, so the installed app works with that configuration without copying `.env` separately. To override an existing installed build locally, place `.env` at `~/Library/Application Support/smartl3arn/.env` and restart.
+Fully quit and restart Electron after changing `.env` or the model, then select **OpenRouter AI** in Smart Study. Closing the window alone may leave Electron running on macOS. Desktop builds embed only the model. Configure an installed macOS app through encrypted in-app key storage, or place a local runtime `.env` at `~/Library/Application Support/smartl3arn/.env` and restart.
+
+On a fresh iOS installation, Smart Study selects AI only if the native bridge reports a configured key; otherwise it starts locally. Existing local/AI decisions and the older initialization marker are retained. A status lookup failure leaves a new installation usable locally and never silently changes an existing AI decision.
 
 Keys are resolved in this order; empty or whitespace-only values fall through:
 
@@ -676,6 +699,15 @@ The library, card browser, Smart Study setup, both study modes, completion and
 Pomodoro screens, API usage and editor dialogs share a violet theme, macOS system
 typography and coordinated light/dark surfaces. Deck covers use local artwork in
 `build/design/`; they require no network requests. Existing decks need no migration.
+
+The deck menu offers **Change name & image** with 13 local cover designs (the three
+originals plus ten matching additions). Selected covers persist across restarts
+and JSON backup exports/imports. **Delete deck** asks for confirmation. See
+[deck cover notes and generation prompts](docs/deck-covers.md).
+
+Action failures share a dismissible notification stack. Unresolved library saving
+or loading failures remain visible; field and AI errors stay beside their existing
+recovery controls. See [notification behavior and verification](docs/notifications.md).
 
 The Kartenfächer logo uses a transparent navigation mark and matching desktop, browser, iOS, and Android artwork. Asset notes are in [build/design/brand-kartenfaecher.md](build/design/brand-kartenfaecher.md). On macOS, regenerate the native launcher images after changing their source artwork with:
 

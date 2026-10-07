@@ -20,6 +20,7 @@ import {
 } from '../services/settings'
 import { useLibraryStore } from './library'
 import { useSettingsStore } from './settings'
+import { useUiStore } from './ui'
 import { getAiBridge } from '../services/ai'
 import { cardStatsFor } from '../domain/cardStats'
 
@@ -48,11 +49,17 @@ const fallbackMessages: Record<string, TranslationKey> = {
 export const useSmartStudyStore = defineStore('smart-study', () => {
   const library = useLibraryStore()
   const settings = useSettingsStore()
+  const ui = useUiStore()
   const session = ref<SmartSessionState | null>(null)
   const evaluationError = ref<TranslationKey | null>(null)
   const clockNow = ref(Date.now())
   let timer: ReturnType<typeof setInterval> | null = null
   let evaluationSequence = 0
+
+  function saveBreak(timestamp: number): void {
+    try { setPomodoroBreakUntil(timestamp) }
+    catch { ui.showError('notifications.smartConfigFailed') }
+  }
 
   const currentItem = computed(() => session.value?.queue[session.value.index])
   const currentDeck = computed(() => {
@@ -139,14 +146,14 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
     const result = buildSmartStudyQueue(decks, settings.smartConfig)
     if (!result.queue.length) {
-      if (changed) await library.persist()
+      if (changed) await library.persist().catch(() => undefined)
       return false
     }
 
     decks.forEach((deck) => {
       deck.smartSessionSeq = (deck.smartSessionSeq || 0) + 1
     })
-    await library.persist()
+    await library.persist().catch(() => undefined)
 
     session.value = {
       queue: result.queue,
@@ -182,7 +189,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       if (value.breakStartTime) {
         if (breakRemainingMs.value <= 0) {
           value.breakDone = true
-          setPomodoroBreakUntil(0)
+          saveBreak(0)
           stopTimer()
         }
         return
@@ -209,7 +216,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       value.breakStartTime = Date.now()
       value.breakDurationMs = BREAK_MINUTES * 60_000
       value.breakDone = false
-      setPomodoroBreakUntil(value.breakStartTime + value.breakDurationMs)
+      saveBreak(value.breakStartTime + value.breakDurationMs)
       startTimer()
     } else {
       stopTimer()
@@ -366,7 +373,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       await saveSessions()
       stopTimer()
     } else {
-      await library.persist()
+      await library.persist().catch(() => undefined)
     }
   }
 
@@ -381,7 +388,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90)
     })
     value.sessionSaved = true
-    await library.persist()
+    // Sessions remain in memory for the next save; do not append them twice on retry.
+    await library.persist().catch(() => undefined)
   }
 
   onScopeDispose(stopTimer)

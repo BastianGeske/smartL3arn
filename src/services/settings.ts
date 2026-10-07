@@ -16,12 +16,12 @@ export const defaultSmartConfig = (): SmartConfig => ({
   evaluationMode: 'local',
 })
 
-export function loadSmartConfig(): SmartConfig {
+export function loadSmartConfigState(): { config: SmartConfig; hasStoredEvaluationMode: boolean } {
   try {
     const raw = localStorage.getItem(SMART_CONFIG_KEY)
-    if (!raw) return defaultSmartConfig()
+    if (!raw) return { config: defaultSmartConfig(), hasStoredEvaluationMode: false }
     const parsed = JSON.parse(raw) as Partial<SmartConfig>
-    return {
+    return { hasStoredEvaluationMode: parsed.evaluationMode === 'local' || parsed.evaluationMode === 'openrouter', config: {
       deckIds: Array.isArray(parsed.deckIds) ? parsed.deckIds : [],
       techniques: {
         typeRecall: parsed.techniques?.typeRecall ?? true,
@@ -31,10 +31,23 @@ export function loadSmartConfig(): SmartConfig {
       },
       duration: typeof parsed.duration === 'number' ? parsed.duration : 25,
       evaluationMode: parsed.evaluationMode === 'openrouter' ? 'openrouter' : 'local',
-    }
+    } }
   } catch {
-    return defaultSmartConfig()
+    return { config: defaultSmartConfig(), hasStoredEvaluationMode: true }
   }
+}
+
+export function loadSmartConfig(): SmartConfig {
+  return loadSmartConfigState().config
+}
+
+export function wasIosEvaluationModeInitialized(): boolean {
+  try { return Boolean(localStorage.getItem('smartl3arn_ios_ai_mode_initialized')) }
+  catch { return true }
+}
+
+export function markIosEvaluationModeInitialized(): void {
+  localStorage.setItem('smartl3arn_ios_ai_mode_initialized', '1')
 }
 
 export function saveSmartConfig(config: SmartConfig): void {
@@ -42,7 +55,8 @@ export function saveSmartConfig(config: SmartConfig): void {
 }
 
 export function loadDarkMode(): boolean {
-  return localStorage.getItem(DARK_MODE_KEY) === '1'
+  try { return localStorage.getItem(DARK_MODE_KEY) === '1' }
+  catch { return false }
 }
 
 export function saveDarkMode(dark: boolean): void {
@@ -50,7 +64,8 @@ export function saveDarkMode(dark: boolean): void {
 }
 
 export function getPomodoroBreakUntil(): number {
-  return Number.parseInt(localStorage.getItem(POMODORO_BREAK_UNTIL_KEY) || '', 10) || 0
+  try { return Number.parseInt(localStorage.getItem(POMODORO_BREAK_UNTIL_KEY) || '', 10) || 0 }
+  catch { return 0 }
 }
 
 export function setPomodoroBreakUntil(timestamp: number): void {

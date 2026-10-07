@@ -7,7 +7,8 @@ import AppIcon from '../components/AppIcon.vue'
 import AppMenu from '../components/AppMenu.vue'
 import { calcBestStreak, formatDateLabel, isDue, todayStr } from '../domain/dates'
 import type { Deck } from '../domain/types'
-import { importJsonFile, importTextFile } from '../services/importer'
+import { coverFor, coverUrl } from '../domain/deckCovers'
+import { importErrorKey, importJsonFile, importTextFile } from '../services/importer'
 import { saveExport } from '../services/native'
 import { useLibraryStore } from '../stores/library'
 import { useStudyStore } from '../stores/study'
@@ -41,11 +42,6 @@ const sortedDecks = computed(() => [...library.decks].sort((left, right) => {
   return dueDifference || left.name.localeCompare(right.name, locale.value)
 }))
 
-function deckCover(deck: Deck): string {
-  const colors = ['violet', 'teal', 'apricot']
-  return `${import.meta.env.BASE_URL}design/deck-${colors[library.decks.findIndex((item) => item.id === deck.id) % 3]}.png`
-}
-
 function deckDue(deck: Deck): number {
   return deck.cards.filter((card) => isDue(card)).length
 }
@@ -69,8 +65,8 @@ function start(deck: Deck): void {
 
 async function removeDeck(deck: Deck): Promise<void> {
   if (!window.confirm(t('deck.deleteConfirm', { name: deck.name }))) return
-  await library.deleteDeck(deck.id)
-  ui.showToast('deck.deleted')
+  try { await library.deleteDeck(deck.id); ui.showToast('deck.deleted') }
+  catch { /* The persistent library notice reports failed saving. */ }
 }
 
 async function handleJson(event: Event): Promise<void> {
@@ -78,11 +74,12 @@ async function handleJson(event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file) return
   try {
-    const decks = await importJsonFile(file)
-    await library.addDecks(decks)
+    let decks: Deck[]
+    try { decks = await importJsonFile(file) }
+    catch (error) { ui.showError(importErrorKey(error)); return }
+    try { await library.addDecks(decks) }
+    catch { return }
     ui.showToast('import.decks', { count: decks.length })
-  } catch (error) {
-    window.alert(t('common.importError', { error: error instanceof Error ? error.message : String(error) }))
   } finally {
     input.value = ''
   }
@@ -93,11 +90,12 @@ async function handleText(event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file) return
   try {
-    const deck = await importTextFile(file)
-    await library.addDeck(deck)
+    let deck: Deck
+    try { deck = await importTextFile(file) }
+    catch (error) { ui.showError(importErrorKey(error)); return }
+    try { await library.addDeck(deck) }
+    catch { return }
     ui.showToast('import.created', { name: deck.name, count: deck.cards.length })
-  } catch (error) {
-    window.alert(t('common.importError', { error: error instanceof Error ? error.message : String(error) }))
   } finally {
     input.value = ''
   }
@@ -105,11 +103,11 @@ async function handleText(event: Event): Promise<void> {
 
 async function exportAll(): Promise<void> {
   if (!library.decks.length) return
-  await saveExport(
+  try { await saveExport(
     `smartL3arn_backup_${todayStr()}.json`,
     JSON.stringify(library.data, null, 2),
     'application/json',
-  )
+  ) } catch { ui.showError('notifications.exportFailed') }
 }
 </script>
 
@@ -201,7 +199,7 @@ async function exportAll(): Promise<void> {
 
         <div v-else class="deck-list">
           <article v-for="deck in sortedDecks" :key="deck.id" class="deck-row">
-            <button class="deck-cover" type="button" :aria-label="t('library.browseDeck', { name: deck.name })" @click="browse(deck.id)"><img :src="deckCover(deck)" alt=""><AppIcon :name="['book-open', 'sprout', 'lightbulb'][library.decks.findIndex((item) => item.id === deck.id) % 3]" :size="58" /></button>
+            <button class="deck-cover" type="button" :aria-label="t('library.browseDeck', { name: deck.name })" @click="browse(deck.id)"><img :src="coverUrl(coverFor(deck).id)" alt=""><AppIcon :name="coverFor(deck).icon" :size="58" /></button>
             <div class="deck-row-main">
               <h3 class="deck-name" :title="deck.name">{{ deck.name }}</h3>
               <div class="deck-meta">
@@ -244,7 +242,7 @@ async function exportAll(): Promise<void> {
                 </template>
 
                   <button class="menu-item" type="button" @click="ui.editDeck(deck.id)">
-                    <AppIcon name="pencil" :size="16" /><span>{{ t('deck.renameShort') }}</span>
+                    <AppIcon name="pencil" :size="16" /><span>{{ t('deck.editShort') }}</span>
                   </button>
                   <button class="menu-item is-danger" type="button" @click="removeDeck(deck)">
                     <AppIcon name="trash-2" :size="16" /><span>{{ t('deck.delete') }}</span>

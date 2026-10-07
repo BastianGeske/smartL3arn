@@ -7,10 +7,12 @@ import { sumApiUsage, type ApiUsageReport } from '../domain/apiUsage'
 import { todayStr } from '../domain/dates'
 import { saveExport } from '../services/native'
 import { getAiBridge } from '../services/ai'
+import { useUiStore } from '../stores/ui'
 
 const { t, locale, formatNumber, formatCurrency } = useI18n()
 
 const ai = getAiBridge()
+const ui = useUiStore()
 const available = Boolean(ai?.getApiUsage)
 const diagnosticsAvailable = Boolean(ai?.getAiDiagnostics)
 const aiStatus = ref<Awaited<ReturnType<NonNullable<typeof ai>['getAiStatus']>> | null>(null)
@@ -69,12 +71,11 @@ async function exportLogs() {
       diagnosticError.value = logs.persistenceError
       return
     }
-    await saveExport(logs.filename, logs.content, 'application/x-ndjson')
+    if (await saveExport(logs.filename, logs.content, 'application/x-ndjson') === 'cancelled') return
     diagnosticMessage.value = logs.persistenceError ? 'usage.logsIncomplete' : 'usage.logsExported'
     diagnosticError.value = logs.persistenceError
   } catch {
-    diagnosticMessage.value = 'usage.logsError'
-    diagnosticError.value = true
+    ui.showError('usage.logsError')
   } finally {
     exportingLogs.value = false
   }

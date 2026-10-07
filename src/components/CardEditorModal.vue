@@ -13,6 +13,8 @@ const ui = useUiStore()
 const front = ref('')
 const back = ref('')
 const error = ref(false)
+const saving = ref(false)
+const saveError = ref(false)
 const frontInput = ref<HTMLTextAreaElement>()
 
 const editor = computed(() => ui.cardEditor)
@@ -29,34 +31,41 @@ watch(editor, async (value) => {
   front.value = existingCard.value?.front || ''
   back.value = existingCard.value?.back || ''
   error.value = false
+  saveError.value = false
   await nextTick()
   frontInput.value?.focus()
 }, { deep: true })
 
 function close(): void {
+  if (saving.value) return
   ui.closeCardEditor()
 }
 
 async function save(): Promise<void> {
   const value = editor.value
-  if (!value) return
+  if (!value || saving.value) return
   const nextFront = front.value.trim()
   const nextBack = back.value.trim()
   if (!nextFront || !nextBack) {
     error.value = true
     return
   }
-  if (value.cardId) {
-    await library.updateCard(value.deckId, value.cardId, {
-      front: nextFront,
-      back: nextBack,
-    })
-    ui.showToast('card.updated')
-  } else {
-    await library.addCard(value.deckId, nextFront, nextBack)
-    ui.showToast('card.added')
-  }
-  close()
+  saving.value = true
+  saveError.value = false
+  try {
+    if (value.cardId) {
+      await library.updateCard(value.deckId, value.cardId, {
+        front: nextFront,
+        back: nextBack,
+      })
+      ui.showToast('card.updated')
+    } else {
+      await library.addCard(value.deckId, nextFront, nextBack)
+      ui.showToast('card.added')
+    }
+    ui.closeCardEditor()
+  } catch { saveError.value = true }
+  finally { saving.value = false }
 }
 </script>
 
@@ -70,10 +79,10 @@ async function save(): Promise<void> {
     @click.self="close"
     @keydown.esc="close"
   >
-    <div class="modal" tabindex="-1">
+    <div class="modal" tabindex="-1" :aria-busy="saving">
       <div class="modal-header">
         <h2 id="card-modal-title">{{ existingCard ? t('card.edit') : t('card.add') }}</h2>
-        <button class="btn-icon" type="button" :aria-label="t('card.closeEditor')" @click="close">
+        <button class="btn-icon" type="button" :disabled="saving" :aria-label="t('card.closeEditor')" @click="close">
           <AppIcon name="x" />
         </button>
       </div>
@@ -86,6 +95,7 @@ async function save(): Promise<void> {
           class="textarea"
           rows="5"
           maxlength="20000"
+          :disabled="saving"
           :placeholder="t('card.frontPlaceholder')"
           :aria-invalid="error && !front.trim()"
           @input="error = false"
@@ -97,6 +107,7 @@ async function save(): Promise<void> {
           class="textarea"
           rows="5"
           maxlength="20000"
+          :disabled="saving"
           :placeholder="t('card.backPlaceholder')"
           :aria-invalid="error && !back.trim()"
           @input="error = false"
@@ -104,10 +115,11 @@ async function save(): Promise<void> {
         <p v-if="error" class="form-error" aria-live="polite">
           {{ t('card.required') }}
         </p>
+        <p v-if="saveError" class="form-error" role="alert">{{ t('card.saveFailed') }}</p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" @click="close">{{ t('common.cancel') }}</button>
-        <button class="btn btn-primary" type="button" @click="save">
+        <button class="btn btn-secondary" type="button" :disabled="saving" @click="close">{{ t('common.cancel') }}</button>
+        <button class="btn btn-primary" type="button" :disabled="saving" @click="save">
           {{ existingCard ? t('common.save') : t('card.add') }}
         </button>
       </div>

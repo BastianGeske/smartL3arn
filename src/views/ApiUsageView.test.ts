@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import ApiUsageView from './ApiUsageView.vue'
 import { setLanguage } from '../i18n'
+import { createPinia, setActivePinia } from 'pinia'
+import { useUiStore } from '../stores/ui'
 
 const ai = vi.hoisted(() => ({ getApiUsage: vi.fn(), getAiStatus: vi.fn(), getAiDiagnostics: vi.fn() }))
 const saveExport = vi.hoisted(() => vi.fn())
@@ -14,6 +16,7 @@ const report = { model: 'configured/model', persistenceError: false, unreadableE
   tokenRequests: 1, costRequests: 2, costUsd: 0.003,
 }] }
 beforeEach(() => {
+  setActivePinia(createPinia())
   vi.clearAllMocks()
   setLanguage('en')
   ai.getApiUsage.mockResolvedValue(report)
@@ -23,6 +26,26 @@ beforeEach(() => {
 })
 
 describe('API usage through the shared native/desktop bridge', () => {
+  it('does not report success or failure when sharing is cancelled', async () => {
+    saveExport.mockResolvedValue('cancelled')
+    const view = shallowMount(ApiUsageView)
+    await flushPromises()
+    await view.findAll('button')[0]!.trigger('click')
+    await flushPromises()
+    expect(useUiStore().notifications).toHaveLength(0)
+    expect(view.text()).not.toContain('Connection logs exported.')
+    view.unmount()
+  })
+  it('reports log export failures as an action notification', async () => {
+    saveExport.mockRejectedValue(new Error('PRIVATE_PROVIDER_ERROR'))
+    const view = shallowMount(ApiUsageView)
+    await flushPromises()
+    await view.findAll('button')[0]!.trigger('click')
+    await flushPromises()
+    expect(useUiStore().notifications).toMatchObject([{ kind: 'error', key: 'usage.logsError' }])
+    expect(view.text()).not.toContain('PRIVATE_PROVIDER_ERROR')
+    view.unmount()
+  })
   it('shows native usage, actual model, credential source and device-only scope', async () => {
     const view = shallowMount(ApiUsageView)
     await flushPromises()

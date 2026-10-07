@@ -12,7 +12,7 @@ import {
   deckToCsv,
 } from '../domain/importExport'
 import type { Card } from '../domain/types'
-import { cardsFromTextFile } from '../services/importer'
+import { importErrorKey, cardsFromTextFile } from '../services/importer'
 import { saveExport } from '../services/native'
 import { useLibraryStore } from '../stores/library'
 import { useStudyStore } from '../stores/study'
@@ -94,16 +94,16 @@ async function inlineEdit(card: Card, field: 'front' | 'back', event: FocusEvent
     element.textContent = card[field]
     return
   }
-  await library.updateCard(deckId.value, card.id, {
+  try { await library.updateCard(deckId.value, card.id, {
     front: field === 'front' ? value : card.front,
     back: field === 'back' ? value : card.back,
-  })
+  }) } catch { element.textContent = card[field] }
 }
 
 async function removeCard(card: Card): Promise<void> {
   if (!window.confirm(t('card.deleteConfirm'))) return
-  await library.deleteCard(deckId.value, card.id)
-  ui.showToast('card.deleted')
+  try { await library.deleteCard(deckId.value, card.id); ui.showToast('card.deleted') }
+  catch { /* The persistent library notice reports failed saving. */ }
 }
 
 function startStudy(): void {
@@ -117,12 +117,12 @@ async function importCards(event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file || !deck.value) return
   try {
-    const imported = await cardsFromTextFile(file)
-    deck.value.cards.push(...imported)
-    await library.persist()
+    let imported: Card[]
+    try { imported = await cardsFromTextFile(file) }
+    catch (error) { ui.showError(importErrorKey(error)); return }
+    try { await library.addCards(deckId.value, imported) }
+    catch { return }
     ui.showToast('import.cards', { count: imported.length })
-  } catch (error) {
-    window.alert(t('common.importError', { error: error instanceof Error ? error.message : String(error) }))
   } finally {
     input.value = ''
   }
@@ -132,13 +132,15 @@ async function exportDeck(format: 'json' | 'csv' | 'txt'): Promise<void> {
   const value = deck.value
   if (!value) return
   const base = deckFilename(value.name)
-  if (format === 'json') {
-    await saveExport(`${base}.json`, JSON.stringify(value, null, 2), 'application/json')
-  } else if (format === 'csv') {
-    await saveExport(`${base}.csv`, deckToCsv(value), 'text/csv')
-  } else {
-    await saveExport(`${base}.txt`, deckToAnkiText(value), 'text/plain')
-  }
+  try {
+    if (format === 'json') {
+      await saveExport(`${base}.json`, JSON.stringify(value, null, 2), 'application/json')
+    } else if (format === 'csv') {
+      await saveExport(`${base}.csv`, deckToCsv(value), 'text/csv')
+    } else {
+      await saveExport(`${base}.txt`, deckToAnkiText(value), 'text/plain')
+    }
+  } catch { ui.showError('notifications.exportFailed') }
 }
 
 const sortFields: [SortColumn, TranslationKey][] = [

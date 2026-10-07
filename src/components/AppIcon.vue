@@ -2,6 +2,7 @@
 import { computed, type Component } from 'vue'
 import {
   Archive,
+  AlertCircle,
   ArrowLeft,
   BookOpen,
   CalendarDays,
@@ -47,6 +48,7 @@ import {
 const props = withDefaults(defineProps<{ name: string; size?: number }>(), { size: 18 })
 
 const icons: Record<string, Component> = {
+  'alert-circle': AlertCircle,
   archive: Archive,
   'arrow-left': ArrowLeft,
   'book-open': BookOpen,

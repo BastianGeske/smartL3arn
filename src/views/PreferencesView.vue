@@ -3,12 +3,14 @@ import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import { useI18n, type LanguagePreference } from '../i18n'
 import { useSettingsStore } from '../stores/settings'
+import { useUiStore } from '../stores/ui'
 
 const { t, locale, languagePreference, setLanguage } = useI18n()
 
 const settings = useSettingsStore()
+const ui = useUiStore()
 function changeLanguage(event: Event): void {
-  setLanguage((event.target as HTMLSelectElement).value as LanguagePreference)
+  if (!setLanguage((event.target as HTMLSelectElement).value as LanguagePreference)) ui.showError('notifications.languageFailed')
 }
 </script>
 

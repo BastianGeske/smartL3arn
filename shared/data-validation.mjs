@@ -1,3 +1,4 @@
+import { isDeckCoverId } from './deck-covers.mjs'
 export const MAX_FILE_BYTES = 10 * 1024 * 1024
 export const MAX_CARDS = 100_000
 const forbidden = new Set(['__proto__', 'constructor', 'prototype'])
@@ -37,6 +38,7 @@ export function normalizeDeck(value, { today, name = 'Imported deck', newDeckId 
     return card
   })
   const deck = { id: !newDeckId && id(value.id) ? value.id : freshId(), name: text(value.name, 120, name), cards }
+  if (isDeckCoverId(value.coverId)) deck.coverId = value.coverId
   if (value.smartSessionSeq !== undefined) deck.smartSessionSeq = number(value.smartSessionSeq, 0, 100_000_000, true)
   if (value.sessions !== undefined) {
     if (!Array.isArray(value.sessions) || value.sessions.length > 1000) invalid()

@@ -6,12 +6,16 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
   const trap = (event: KeyboardEvent) => {
     if (event.key !== 'Tab') return
     const dialog = document.querySelector<HTMLElement>('.modal-overlay .modal')
-    const controls = Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]') || [])
+    const controls = [
+      ...Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]') || []),
+      ...document.querySelectorAll<HTMLElement>('.notification-stack button'),
+    ]
     const first = controls[0]
     const last = controls.at(-1)
-    if (event.shiftKey && (document.activeElement === first || !dialog?.contains(document.activeElement))) {
+    const inside = controls.includes(document.activeElement as HTMLElement)
+    if (event.shiftKey && (document.activeElement === first || !inside)) {
       event.preventDefault(); last?.focus()
-    } else if (!event.shiftKey && (document.activeElement === last || !dialog?.contains(document.activeElement))) {
+    } else if (!event.shiftKey && (document.activeElement === last || !inside)) {
       event.preventDefault(); first?.focus()
     }
   }

@@ -8,7 +8,7 @@ export async function saveExport(
   filename: string,
   content: string,
   mimeType: string,
-): Promise<void> {
+): Promise<'exported' | 'cancelled'> {
   if (Capacitor.isNativePlatform()) {
     try {
       await Filesystem.writeFile({
@@ -26,8 +26,9 @@ export async function saveExport(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       if (!/cancel/i.test(message)) throw error
+      return 'cancelled'
     }
-    return
+    return 'exported'
   }
 
   const url = URL.createObjectURL(new Blob([content], { type: mimeType }))
@@ -36,6 +37,7 @@ export async function saveExport(
   anchor.download = filename
   anchor.click()
   URL.revokeObjectURL(url)
+  return 'exported'
 }
 
 export async function setupStatusBar(dark: boolean): Promise<void> {

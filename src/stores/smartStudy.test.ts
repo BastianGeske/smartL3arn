@@ -6,7 +6,7 @@ import { useSmartStudyStore } from './smartStudy'
 
 const bridge = vi.hoisted(() => ({ available: true, evaluateAnswer: vi.fn() }))
 vi.mock('../services/ai', () => ({ getAiBridge: () => bridge.available ? bridge : undefined }))
-vi.mock('../services/native', () => ({ syncStatusBar: vi.fn() }))
+vi.mock('../services/native', () => ({ syncStatusBar: vi.fn(async () => undefined) }))
 
 let smart: ReturnType<typeof useSmartStudyStore>
 beforeEach(async () => {

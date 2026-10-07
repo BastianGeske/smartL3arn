@@ -89,7 +89,8 @@ export const useStudyStore = defineStore('study', () => {
     }
 
     flipped.value = false
-    await library.persist()
+    // Keep unsaved progress in memory; the global persistence notice stays visible.
+    await library.persist().catch(() => undefined)
   }
 
   return {
