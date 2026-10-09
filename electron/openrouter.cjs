@@ -4,7 +4,8 @@ const { randomUUID } = require('node:crypto')
 const { sanitizeDiagnostic } = require('./diagnostics.cjs')
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
-const DEFAULT_TIMEOUT_MS = 8000
+const DEFAULT_TIMEOUT_MS = 60000
+const MAX_OUTPUT_TOKENS = 4096
 const MAX_FIELD_LENGTH = 4000
 const VERDICTS = new Set([
   'correct',
@@ -225,7 +226,7 @@ function createOpenRouterClient({
       },
       body: JSON.stringify({
         model,
-        max_tokens: 160,
+        max_tokens: MAX_OUTPUT_TOKENS,
         provider: { require_parameters: true },
         messages: [
           {

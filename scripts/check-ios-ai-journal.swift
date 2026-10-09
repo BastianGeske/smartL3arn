@@ -13,7 +13,7 @@ struct CheckAiJournal {
         }
         let input: [String: Any] = ["deckName": "Test", "question": "Question", "referenceAnswer": "Reference", "userAnswer": "Answer", "language": "de", "max_tokens": 999999, "model": "untrusted/model"]
         let request = NativeAiEvaluationRequest.body(input: input, model: "trusted/model")!
-        expect(request["max_tokens"] as? Int == 160, "native token limit cannot be overridden")
+        expect(request["max_tokens"] as? Int == 4096, "native token limit cannot be overridden")
         expect(request["model"] as? String == "trusted/model", "native model cannot be overridden")
         expect((request["messages"] as? [[String: String]])?.first?["content"]?.contains("German") == true, "native language selection")
         expect(NativeAiEvaluationRequest.body(input: ["body": request], model: "trusted/model") == nil, "arbitrary API body rejected")

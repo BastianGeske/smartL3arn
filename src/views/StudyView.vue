@@ -98,6 +98,8 @@ function adjustFlashcardHeight(): void {
       :title="study.deck.name"
       :progress="study.complete ? 100 : progress"
       :label="study.complete ? t('study.reviewed', { count: study.sessionStats.reviewed }) : progressLabel"
+      :compact="!study.complete"
+      :session-stats="study.complete ? undefined : study.sessionStats"
       @exit="router.push('/')"
     />
 
@@ -158,7 +160,6 @@ function adjustFlashcardHeight(): void {
             </div>
           </div>
         </div>
-        <SessionStats :stats="study.sessionStats" />
       </main>
       <div class="study-actions">
         <div v-if="study.flipped" class="rating-buttons" role="group" :aria-label="t('study.rateAnswer')">

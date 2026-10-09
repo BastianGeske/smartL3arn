@@ -189,7 +189,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         activeRequests += 1
         requestLock.unlock()
         var request = URLRequest(url: URL(string: "https://openrouter.ai/api/v1/" + endpoint)!)
-        request.timeoutInterval = 30
+        request.timeoutInterval = 60
         request.httpMethod = body == nil ? "GET" : "POST"
         request.httpBody = body
         request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")

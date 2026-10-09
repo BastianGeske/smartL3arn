@@ -1,5 +1,6 @@
 import { isDue, todayStr } from '../dates'
 import type { Card, Deck, SmartConfig, SmartQueueItem } from '../types'
+import { shuffleInPlace } from './standardQueue'
 
 export function isSmartNeedsPracticeCard(deck: Deck, cardId: string): boolean {
   return deck.cardStats?.[cardId]?.smartNeedsPractice === true
@@ -15,10 +16,15 @@ function smartWeaknessScore(deck: Deck, card: Card): number {
   return focusBonus + againRate + hardRate * 0.5 + difficulty * 0.25
 }
 
-function sortSmartCards(deck: Deck, cards: Card[], random = Math.random): Card[] {
+function shuffleSmartCards(deck: Deck, cards: Card[], random = Math.random): Card[] {
+  // Weighted sampling without replacement: weaker cards tend to appear earlier,
+  // but different scores never force the same order in every session.
   return cards
-    .map((card) => ({ card, score: smartWeaknessScore(deck, card), tie: random() }))
-    .sort((left, right) => (right.score - left.score) || (left.tie - right.tie))
+    .map((card) => ({
+      card,
+      priority: -Math.log1p(-random()) / (1 + smartWeaknessScore(deck, card)),
+    }))
+    .sort((left, right) => left.priority - right.priority)
     .map((item) => item.card)
 }
 
@@ -39,9 +45,9 @@ export function smartCoreCardsForDeck(
   })
 
   return [
-    ...sortSmartCards(deck, overdue, random),
-    ...sortSmartCards(deck, focus, random),
-    ...sortSmartCards(deck, dueToday, random),
+    ...shuffleSmartCards(deck, overdue, random),
+    ...shuffleSmartCards(deck, focus, random),
+    ...shuffleSmartCards(deck, dueToday, random),
   ]
 }
 
@@ -94,12 +100,12 @@ export function buildSmartStudyQueue(
     : selectedDecks
       .map((deck) => ({
         deckId: deck.id,
-        cards: sortSmartCards(deck, [...deck.cards], random),
+        cards: shuffleSmartCards(deck, [...deck.cards], random),
       }))
       .filter((bucket) => bucket.cards.length > 0)
 
   return {
-    queue: buildSmartQueueFromBuckets(buckets, config.techniques.interleaving),
+    queue: buildSmartQueueFromBuckets(shuffleInPlace(buckets, random), config.techniques.interleaving),
     mode: hasCore ? 'core' : 'practice',
     hasCore,
   }

@@ -3195,3 +3195,68 @@ body.modal-open .modal-overlay { padding-bottom: max(calc(12px + env(safe-area-i
   .browse-toolbar > .menu > button .deck-actions-label,
   .browse-toolbar > .menu > button .icon:last-child { display: none; }
 }
+
+/* Compact active study sessions; completion and break screens keep their layout. */
+.study-header-compact { padding: 10px 16px 12px; }
+.study-header-compact .study-header-top { min-height: 36px; }
+.study-header-compact .study-header-top > .btn { justify-self: start; }
+.study-header-compact .study-progress-row { margin-top: 8px; }
+.session-stats.session-stats-compact {
+  width: 100%; min-height: 0; margin: 8px 0 0; padding-top: 8px;
+  border-top: 1px solid var(--border); gap: 8px;
+}
+.session-stats-compact .sstat {
+  padding: 0; border: 0; flex-direction: row; justify-content: center; gap: 6px;
+}
+.session-stats-compact .sstat strong { font-size: 13px; line-height: 1.4; }
+.session-stats-compact .sstat span { font-size: 12px; line-height: 1.4; }
+.smart-study-shell .smart-study-main { width: 100%; padding-top: 16px; }
+.smart-study-shell .smart-body { flex: 0 0 auto; gap: 12px; }
+.smart-study-shell .smart-card-block { min-height: 0; padding: 22px; }
+.smart-card-meta { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 16px; }
+.smart-card-meta .smart-deck-tag {
+  max-width: 100%; min-width: 0; flex: 0 1 auto; align-items: flex-start;
+  padding: 4px 8px; font-size: 12px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere;
+}
+.smart-card-meta .smart-deck-tag .icon { flex-shrink: 0; margin-top: 2px; }
+.smart-card-meta-status { min-width: 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 10px; }
+.smart-card-meta .evaluation-mode-badge { padding: 4px 8px; font-size: 12px; }
+.smart-card-mode { color: var(--text-muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.smart-study-shell .smart-card-front:not(.compact) .card-content {
+  flex: 0 0 auto; min-height: 140px; padding: 16px 0;
+  font-size: 25px; line-height: 1.45;
+}
+.smart-study-shell .smart-card-front .smart-confidence {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+  margin-top: 12px; padding: 12px 0 0; border: 0; border-top: 1px solid var(--border);
+  border-radius: 0; background: transparent;
+}
+.smart-study-shell .smart-confidence .smart-prompt { margin: 0; font-size: 12px; }
+.smart-study-shell .smart-conf-buttons { min-width: 0; flex: 1 1 280px; }
+.smart-study-shell .smart-conf-buttons .segment-button { font-size: 12px; min-height: 36px; }
+.smart-study-shell .smart-answer-area { padding: 14px; }
+.smart-study-shell .smart-answer-input { padding: 12px; }
+.smart-study-shell .smart-card-front.compact .smart-card-meta { margin-bottom: 12px; }
+.smart-study-shell .smart-card-front.compact .card-content { font-size: 15px; }
+@media (max-width: 719px) {
+  .study-header-compact { padding: 10px 12px; }
+  .study-header-compact .study-header-top { min-height: 44px; }
+  .study-header-compact .study-context strong {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    white-space: normal; overflow-wrap: break-word;
+  }
+  .session-stats.session-stats-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
+  .session-stats-compact .sstat { justify-content: flex-start; }
+  .smart-study-shell .smart-study-main { padding-top: 12px; }
+  .smart-study-shell .smart-card-block { padding: 18px; }
+  .smart-card-meta { margin-bottom: 12px; }
+  .smart-card-meta .smart-deck-tag { flex-basis: 100%; }
+  .smart-card-meta-status { justify-content: flex-start; }
+  .smart-study-shell .smart-card-front:not(.compact) .card-content { min-height: 120px; font-size: clamp(20px, 5.5vw, 25px); padding: 14px 0; }
+  .smart-study-shell .smart-card-pair .smart-card-front.compact { align-items: stretch; flex-direction: column; gap: 0; }
+  .smart-study-shell .smart-card-front.compact .card-content { flex: 0 0 auto; padding-top: 8px; }
+  .smart-study-shell .smart-card-front .smart-confidence { gap: 8px; }
+  .smart-study-shell .smart-conf-buttons { flex-basis: 100%; }
+  .smart-study-shell .smart-conf-buttons .segment-button { min-height: 44px; }
+  .smart-study-shell .smart-answer-input { min-height: 96px; font-size: 16px; }
+}

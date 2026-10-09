@@ -100,6 +100,7 @@ Typical use cases:
 - Four-button Smart Study queue control: Good/Easy leave the session and rely on FSRS spacing; Hard is re-queued once, Again is re-queued up to two retries
 - Again/Hard cards are marked for extra practice and stay eligible across Smart Study sessions until later rated Good/Easy
 - Queue priority within each deck: overdue cards first, then extra-practice Again/Hard cards, then today's due/new cards; if nothing is due or flagged, Smart Study offers a voluntary practice round across the selected decks
+- Each session randomizes cards within these priority groups (with a bias toward weaker cards) and the starting deck order; interleaving still alternates decks. The same queue logic runs on every platform.
 - Session stats logged per deck (streak compatible)
 
 **Import and export**
@@ -121,6 +122,7 @@ Typical use cases:
 
 **UI**
 
+- Active study sessions share a compact header with progress, timer and labeled rating counts. Smart Study groups deck/evaluation metadata and confidence selection inside the question card, with responsive layouts for narrow screens.
 - Light and dark theme (persisted)
 - Keyboard shortcuts for study (space to flip, 1-4 to rate)
 - Responsive layout
@@ -182,7 +184,7 @@ The web bundle goes to `web-dist/`; packaged desktop releases go to `release/`. 
 
 Desktop packaging includes only `OPENROUTER_MODEL` from the project's `.env` (build-process environment variables take precedence). Private API keys are never embedded in desktop packages, and legacy bundled keys are ignored. Users can enter a key in the app to store it with OS-backed encryption or configure a local runtime environment. Keys included in older installers remain extractable: replace those installers and revoke exposed keys with OpenRouter.
 
-The old `release/1.0.3` app and DMG have been moved to `.artifact-quarantine/legacy-release-1.0.3`, excluded from Git and protected with owner-only directory access. They must not be reused as current packages. Moving them does not revoke their key: the account owner must revoke it in OpenRouter and replace any corresponding runtime or private Debug configuration. Updated private test packages are under `out/platform-fixes-2026-10-06/`.
+The old `release/1.0.3` app was moved to `.artifact-quarantine/legacy-release-1.0.3`, excluded from Git and protected with owner-only directory access. Its plaintext key has been removed from the configuration, and the old DMG containing that key has been deleted. The old app must not be reused as a current package. Local removal does not revoke a key: the account owner must revoke it in OpenRouter if still active. Updated private test packages are under `out/platform-fixes-2026-10-06/`.
 
 Check an unpacked desktop package without printing credentials:
 
@@ -343,7 +345,7 @@ The desktop request timeout is **8 seconds**; native iOS uses **30 seconds**. Au
 | The app keeps using an old key or model | Check the displayed key source. Desktop runtime environment and local `.env` override encrypted storage; packaged keys are ignored. Private iOS Debug builds may still use a development bundle key. Restart after a runtime change, or rebuild after editing the project's `.env`. |
 | Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
 | OpenRouter unavailable | Export the connection logs and inspect the HTTP status, typed provider error, and network code. Check the connection and whether the configured model supports structured outputs. |
-| Invalid evaluation or repeated timeouts | Export the connection logs. Desktop uses an 8-second deadline; iOS uses 30 seconds. Unsupported JSON schemas or truncated responses can cause errors; retry or explicitly select local mode. |
+| Invalid evaluation or repeated timeouts | Export the connection logs. Desktop and iOS allow 4,096 output tokens and a 60-second deadline, leaving room for reasoning and the final JSON evaluation. Unsupported JSON schemas or truncated responses can still cause errors; retry or explicitly select local mode. |
 | Card too long | Deck name, question, reference answer, and typed answer are each limited to 4,000 characters after trimming. Shorten the affected field. |
 | Secure key storage unavailable | Check the OS secure-storage availability, or use the local `.env` configuration described above. |
 | Usage shows `—` | The provider did not supply that information; it means unknown, not free. Refresh after the request finishes. |
@@ -358,7 +360,7 @@ Desktop requests have a `requestId` linking their request phases; entries includ
 
 | Log evidence | Meaning |
 |---|---|
-| `reason: "timeout"`, `durationMs` near 8000, `phase: "connect"` | The app's deadline expired before response headers arrived. |
+| `reason: "timeout"`, `durationMs` near 60000, `phase: "connect"` | The app's deadline expired before response headers arrived. |
 | `reason: "timeout"`, `phase: "read-body"`, HTTP status present | Headers arrived, but the complete response body did not arrive before the deadline. |
 | `networkCode: "ENOTFOUND"` or `"EAI_AGAIN"` | DNS resolution failed. |
 | `networkCode: "ECONNRESET"` or `"UND_ERR_SOCKET"` | The connection was interrupted. |

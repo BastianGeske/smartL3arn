@@ -4,7 +4,7 @@ import type { SessionStats } from '../domain/types'
 
 const { t, formatNumber } = useI18n()
 
-defineProps<{ stats: SessionStats; extraClass?: string }>()
+defineProps<{ stats: SessionStats; extraClass?: string; compact?: boolean }>()
 
 const items = [
   ['again', 'rating.again'],
@@ -15,8 +15,8 @@ const items = [
 </script>
 
 <template>
-  <div class="session-stats" :class="extraClass" :aria-label="t('study.ratings')">
-    <span class="session-stats-label">{{ t('study.ratings') }}</span>
+  <div class="session-stats" :class="[extraClass, { 'session-stats-compact': compact }]" role="group" :aria-label="t('study.ratings')">
+    <span v-if="!compact" class="session-stats-label">{{ t('study.ratings') }}</span>
     <div
       v-for="[key, label] in items"
       :key="key"

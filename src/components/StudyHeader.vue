@@ -2,6 +2,8 @@
 import { useI18n } from '../i18n'
 import AppIcon from './AppIcon.vue'
 import ThemeButton from './ThemeButton.vue'
+import SessionStats from './SessionStats.vue'
+import type { SessionStats as SessionStatsData } from '../domain/types'
 
 const { t } = useI18n()
 
@@ -10,18 +12,20 @@ defineProps<{
   progress: number
   label: string
   smartTimer?: string
+  compact?: boolean
+  sessionStats?: SessionStatsData
 }>()
 defineEmits<{ exit: [] }>()
 </script>
 
 <template>
-  <header class="study-header">
+  <header class="study-header" :class="{ 'study-header-compact': compact }">
     <div class="study-header-top">
       <button class="btn btn-quiet btn-sm" type="button" @click="$emit('exit')">
         <AppIcon name="x" :size="16" /><span>{{ t('study.exit') }}</span>
       </button>
       <div class="study-context">
-        <span class="study-context-label">{{ t('study.session') }}</span>
+        <span v-if="!compact" class="study-context-label">{{ t('study.session') }}</span>
         <strong :title="title">{{ title }}</strong>
       </div>
       <ThemeButton />
@@ -44,5 +48,6 @@ defineEmits<{ exit: [] }>()
         </span>
       </span>
     </div>
+    <SessionStats v-if="sessionStats" :stats="sessionStats" compact />
   </header>
 </template>

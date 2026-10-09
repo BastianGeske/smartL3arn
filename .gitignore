@@ -32,7 +32,8 @@ design-qa.md
 
 # Local env
 .env
-.env.local
+.env.*
+!.env.example
 
 # Local design screenshots
 design-evidence/

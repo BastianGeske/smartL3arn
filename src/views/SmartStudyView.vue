@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import SessionStats from '../components/SessionStats.vue'
 import StudyHeader from '../components/StudyHeader.vue'
+import SmartCardMeta from '../components/SmartCardMeta.vue'
 import {
   calibrationMatch,
   evaluationBand,
@@ -129,6 +130,8 @@ async function exit(): Promise<void> {
       :progress="smart.isDone || smart.isBreak ? 100 : progress"
       :label="smart.isBreak ? t('smart.focusComplete') : (smart.isDone ? t('study.reviewed', { count: smart.session.sessionStats.reviewed }) : t('common.of', { current: smart.session.index + 1, total: smart.session.queue.length }))"
       :smart-timer="timerLabel"
+      :compact="!smart.isDone && !smart.isBreak"
+      :session-stats="smart.isDone || smart.isBreak ? undefined : smart.session.sessionStats"
       @exit="exit"
     />
 
@@ -199,19 +202,6 @@ async function exit(): Promise<void> {
 
     <main v-else-if="smart.currentCard && smart.currentDeck" class="smart-study-main">
       <div class="smart-body">
-        <div class="evaluation-mode-badge" :class="{ 'is-ai': settings.smartConfig.evaluationMode === 'openrouter' }">
-          <AppIcon :name="settings.smartConfig.evaluationMode === 'openrouter' ? 'sparkles' : 'check'" :size="14" />
-          {{ t(settings.smartConfig.evaluationMode === 'openrouter' ? 'ai.openrouter' : 'ai.local') }}
-        </div>
-        <div class="smart-session-meta">
-          <span class="smart-deck-tag">
-            <AppIcon name="book-open" :size="13" />{{ smart.currentDeck.name }}
-          </span>
-          <span>{{ smart.session.phase === 'asking'
-            ? (smart.session.mode === 'practice' ? t('study.practice') : t('smart.scheduled'))
-            : t('smart.reviewAnswer') }}</span>
-        </div>
-
         <template v-if="smart.session.phase === 'asking'">
           <section
             class="smart-card-block smart-card-front"
@@ -219,31 +209,36 @@ async function exit(): Promise<void> {
             aria-labelledby="smart-question-label"
             aria-describedby="smart-question-content"
           >
+            <SmartCardMeta
+              :deck-name="smart.currentDeck.name"
+              :ai="settings.smartConfig.evaluationMode === 'openrouter'"
+              :mode-label="t(smart.session.mode === 'practice' ? 'study.practice' : 'smart.scheduled')"
+            />
             <div id="smart-question-label" class="card-side-label">{{ t('study.question') }}</div>
             <div id="smart-question-content" class="card-content">{{ smart.currentCard.front }}</div>
-          </section>
 
-          <div
-            v-if="settings.smartConfig.techniques.confidenceCheck"
-            class="smart-confidence"
-            role="group"
-            aria-labelledby="smart-confidence-label"
-          >
-            <p id="smart-confidence-label" class="smart-prompt">{{ t('smart.confidence') }}</p>
-            <div class="smart-conf-buttons">
-              <button
-                v-for="confidence in confidences"
-                :key="confidence.value"
-                class="segment-button"
-                :class="{ 'is-selected': smart.session.confidenceLevel === confidence.value }"
-                type="button"
-                :aria-pressed="smart.session.confidenceLevel === confidence.value"
-                @click="smart.setConfidence(confidence.value)"
-              >
-                {{ t(confidence.label) }}
-              </button>
+            <div
+              v-if="settings.smartConfig.techniques.confidenceCheck"
+              class="smart-confidence"
+              role="group"
+              aria-labelledby="smart-confidence-label"
+            >
+              <p id="smart-confidence-label" class="smart-prompt">{{ t('smart.confidence') }}</p>
+              <div class="smart-conf-buttons">
+                <button
+                  v-for="confidence in confidences"
+                  :key="confidence.value"
+                  class="segment-button"
+                  :class="{ 'is-selected': smart.session.confidenceLevel === confidence.value }"
+                  type="button"
+                  :aria-pressed="smart.session.confidenceLevel === confidence.value"
+                  @click="smart.setConfidence(confidence.value)"
+                >
+                  {{ t(confidence.label) }}
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
 
           <div v-if="settings.smartConfig.techniques.typeRecall" class="smart-answer-area">
             <label class="field-label" for="smart-answer-input">{{ t('smart.yourAnswer') }}</label>
@@ -292,6 +287,11 @@ async function exit(): Promise<void> {
         <template v-else>
           <div class="smart-card-pair">
             <section class="smart-card-block smart-card-front compact" tabindex="-1" :aria-label="t('study.question')">
+              <SmartCardMeta
+                :deck-name="smart.currentDeck.name"
+                :ai="settings.smartConfig.evaluationMode === 'openrouter'"
+                :mode-label="t('smart.reviewAnswer')"
+              />
               <div class="card-side-label">{{ t('study.question') }}</div>
               <div class="card-content">{{ smart.currentCard.front }}</div>
             </section>
@@ -376,7 +376,6 @@ async function exit(): Promise<void> {
           </div>
         </template>
       </div>
-      <SessionStats :stats="smart.session.sessionStats" />
     </main>
   </div>
 </template>

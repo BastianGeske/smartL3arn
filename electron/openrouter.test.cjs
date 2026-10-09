@@ -54,9 +54,11 @@ test('sends only the current card context and requests a strict schema', async (
     question: 'Capital of Germany?',
     referenceAnswer: 'Berlin',
     userAnswer: 'The capital is Berlin.',
+    max_tokens: 999999,
   })
 
   assert.equal(request.model, 'openrouter/free')
+  assert.equal(request.max_tokens, 4096)
   assert.equal(request.response_format.json_schema.strict, true)
   assert.deepEqual(JSON.parse(request.messages[1].content), {
     deck: 'Geography',
@@ -227,7 +229,7 @@ test('uses documented endpoints and emits correlated diagnostics without private
     assert.equal(new Set(events.map((entry) => entry.requestId)).size, 1)
     assert.ok(events.every((entry) => Number.isInteger(entry.durationMs) && entry.durationMs >= 0))
     assert.equal(events.at(-1).status, 200)
-    assert.equal(events.at(-1).timeoutMs, 8000)
+    assert.equal(events.at(-1).timeoutMs, 60000)
   }
   assert.equal(diagnostics.at(-1).generationId, 'gen-test123')
   assert.equal(diagnostics.at(-1).credentialSource, 'bundled')
