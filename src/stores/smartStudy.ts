@@ -8,11 +8,14 @@ import {
   emptySessionStats,
   ratingKey,
   type ConfidenceLevel,
+  type Card,
   type Deck,
   type Rating,
   type RatingKey,
   type SmartSessionState,
+  type StudyResponse,
 } from '../domain/types'
+import { AI_TEXT_LIMIT, initialResponse, evaluateResponse, responseError, responseText, workingText, taskReferenceAnswer } from '../domain/tasks'
 import { todayStr } from '../domain/dates'
 import {
   getPomodoroBreakUntil,
@@ -33,6 +36,11 @@ const REQUEUE_LIMITS: Record<RatingKey, number> = {
 const POMODORO_MINUTES = 25
 const BREAK_MINUTES = 7
 
+function unansweredEvaluation(card: Card) {
+  return (card.task && !['short_text', 'long_text'].includes(card.task.kind) ? evaluateResponse(card, { kind: 'text', value: '' }) : null)
+    ?? { ...localEvaluation('', card.back), verdict: 'incorrect' as const, localSimilarity: 0 }
+}
+
 const fallbackMessages: Record<string, TranslationKey> = {
   'not-configured': 'ai.notConfigured',
   auth: 'ai.auth',
@@ -52,6 +60,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   const ui = useUiStore()
   const session = ref<SmartSessionState | null>(null)
   const evaluationError = ref<TranslationKey | null>(null)
+  const inputError = ref<TranslationKey | null>(null)
   const clockNow = ref(Date.now())
   let timer: ReturnType<typeof setInterval> | null = null
   let evaluationSequence = 0
@@ -110,6 +119,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
         index: 0,
         phase: 'break',
         typedAnswer: '',
+        response: null, working: [], workingEvaluation: null, selfAssessment: false,
         evaluation: null,
         isEvaluating: false,
         confidenceLevel: null,
@@ -161,6 +171,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       index: 0,
       phase: 'asking',
       typedAnswer: '',
+      response: null, working: [], workingEvaluation: null, selfAssessment: false,
       evaluation: null,
       isEvaluating: false,
       confidenceLevel: null,
@@ -175,6 +186,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       requeues: {},
       sessionSaved: false,
     }
+    session.value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
+    inputError.value = null
     startTimer()
     return true
   }
@@ -226,6 +239,13 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   function setConfidence(level: ConfidenceLevel): void {
     if (session.value) session.value.confidenceLevel = level
   }
+  function setResponse(response: StudyResponse): void {
+    const value = session.value
+    if (!value || value.phase !== 'asking' || value.isEvaluating) return
+    value.response = response
+    value.typedAnswer = responseText(response, currentCard.value?.task)
+    inputError.value = null
+  }
 
   async function checkAnswer(): Promise<void> {
     const value = session.value
@@ -233,20 +253,44 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     const deck = currentDeck.value
     if (!value || !card || !deck || value.phase !== 'asking' || value.isEvaluating) return
 
-    const typedAnswer = value.typedAnswer.trim()
+    const response = card.task ? value.response ?? initialResponse(card.task) : { kind: 'text' as const, value: value.typedAnswer }
+    inputError.value = responseError(card.task, response)
+    if (inputError.value) return
+    const typedAnswer = responseText(response, card.task).trim()
+    value.typedAnswer = typedAnswer
     evaluationError.value = null
+    value.workingEvaluation = null
+    value.selfAssessment = false
     if (!typedAnswer) {
-      value.evaluation = localEvaluation('', card.back)
+      value.evaluation = unansweredEvaluation(card)
       value.phase = 'reviewing'
       return
     }
 
-    const ai = getAiBridge()
+    const working = card.task?.kind === 'calculation' ? workingText(value.working) : ''
+    const deterministic = Boolean(card.task && !['short_text', 'long_text'].includes(card.task.kind) && !(card.task.kind === 'calculation' && card.task.answer.kind === 'formula'))
     if (settings.smartConfig.evaluationMode !== 'openrouter') {
-      value.evaluation = localEvaluation(typedAnswer, card.back)
+      const local = evaluateResponse(card, response)
+      value.evaluation = local
+      value.selfAssessment = local === null
       value.phase = 'reviewing'
       return
     }
+    if (deterministic) value.evaluation = evaluateResponse(card, response)
+    if (deterministic && !working) { value.phase = 'reviewing'; return }
+    const referenceAnswer = taskReferenceAnswer(card)
+    const referenceWorking = working && card.task?.kind === 'calculation' ? workingText(card.task.solutionSteps || []) : ''
+    const fields: [string, TranslationKey][] = [
+      [deck.name, 'task.aiDeckTooLong'],
+      [card.front, 'task.aiQuestionTooLong'],
+      [referenceAnswer, 'task.aiReferenceTooLong'],
+      [typedAnswer, 'task.aiAnswerTooLong'],
+      [referenceWorking, 'task.aiReferenceWorkingTooLong'],
+      [working, 'task.aiWorkingTooLong'],
+    ]
+    inputError.value = fields.find(([text]) => text.length > AI_TEXT_LIMIT)?.[1] ?? null
+    if (inputError.value) return
+    const ai = getAiBridge()
     if (!ai) {
       evaluationError.value = 'ai.unavailable'
       return
@@ -262,9 +306,14 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       result = await ai.evaluateAnswer({
         deckName: deck.name,
         question: card.front,
-        referenceAnswer: card.back,
+        referenceAnswer,
         userAnswer: typedAnswer,
         language: locale.value,
+        ...(working ? {
+          evaluationScope: deterministic ? 'working' as const : 'answer_and_working' as const,
+          referenceWorking,
+          userWorking: working,
+        } : {}),
       })
     } catch {
       result = { ok: false, reason: 'unavailable' }
@@ -280,15 +329,20 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     ) return
 
     value.isEvaluating = false
-    if (result.ok && result.result) {
-      value.evaluation = {
+    if (result.ok && result.result && (!working || deterministic || result.result.working)) {
+      const evaluated = {
         source: 'openrouter',
         verdict: result.result.verdict,
         feedback: result.result.feedback,
         ...(result.result.model ? { model: result.result.model } : {}),
+      } as const
+      if (deterministic && working) value.workingEvaluation = evaluated
+      else {
+        value.evaluation = evaluated
+        if (working && result.result.working) value.workingEvaluation = { source: 'openrouter', ...result.result.working }
       }
     } else {
-      const reason = result.reason || 'unavailable'
+      const reason = result.ok ? 'invalid-response' : result.reason || 'unavailable'
       evaluationError.value = fallbackMessages[reason] || fallbackMessages.unavailable
       return
     }
@@ -301,7 +355,11 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     const card = currentCard.value
     if (!value || !card || value.phase !== 'asking' || value.isEvaluating) return
     value.typedAnswer = ''
-    value.evaluation = localEvaluation('', card.back)
+    value.response = null
+    value.workingEvaluation = null
+    value.selfAssessment = false
+    inputError.value = null
+    value.evaluation = unansweredEvaluation(card)
     value.phase = 'reviewing'
   }
 
@@ -309,6 +367,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     const value = session.value
     if (!value || value.phase !== 'asking' || value.isEvaluating) return
     value.evaluation = null
+    value.workingEvaluation = null
+    value.selfAssessment = false
     value.phase = 'reviewing'
   }
 
@@ -363,6 +423,12 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
     value.index += 1
     value.typedAnswer = ''
+    value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
+    value.working = []
+    value.workingEvaluation = null
+    value.selfAssessment = false
+    inputError.value = null
+    evaluationError.value = null
     value.evaluation = null
     value.isEvaluating = false
     value.confidenceLevel = null
@@ -397,6 +463,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   return {
     session,
     evaluationError,
+    inputError,
     clockNow,
     currentItem,
     currentDeck,
@@ -410,6 +477,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     startTimer,
     stopTimer,
     setConfidence,
+    setResponse,
     checkAnswer,
     skip,
     reveal,

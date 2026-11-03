@@ -291,6 +291,8 @@ async function start(): Promise<void> {
               <p class="ai-privacy-note">
                 {{ t('ai.privacy') }}
               </p>
+              <p class="ai-privacy-note">{{ t('task.aiPrivacy') }}</p>
+              <p class="ai-privacy-note">{{ t('task.structuredLocal') }}</p>
               <p v-if="settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.configured" class="ai-status-message" role="status">{{ t('ai.notConfigured') }}</p>
               <p v-if="aiStatus.configured" class="ai-status-message">
                 {{ aiStatus.credentialSource === 'environment'
@@ -329,6 +331,7 @@ async function start(): Promise<void> {
             </div>
             <p v-else class="ai-privacy-note">
               {{ t('ai.desktopOnly') }}
+              {{ t('task.structuredLocal') }}
             </p>
           </section>
         </div>

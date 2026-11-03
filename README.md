@@ -58,6 +58,8 @@ Typical use cases:
 - Inline cell editing in the browse view
 - Sortable browse table (front, back, due date, interval, difficulty), with a displayed fail percentage
 - Search filter
+- Typed tasks: short answers, explanations, calculations, single/multiple choice, true/false, blanks, matching, and ordering. Smart Study adapts its answer controls to each card; standard study displays the structured question and solution.
+- Calculations support exact numbers and fractions, explicitly accepted value–unit pairs, and formulas with a visual symbol keyboard plus LaTeX input. AI can check working independently from the result. See [task types and JSON examples](docs/task-types.md).
 
 **Scheduling**
 
@@ -90,7 +92,7 @@ Typical use cases:
 - Live countdown timer in the header
 - When a 25-minute Pomodoro timer expires, a 7-minute break is shown before the next Pomodoro round; completing the queue earlier finishes the session directly
 - Typed-answer comparison with a similarity score (Levenshtein based, diacritics stripped, punctuation ignored)
-- Pure integer and decimal answers are compared exactly, including their sign; decimal comma and point are equivalent, and large values retain full precision. This does not evaluate fractions, expressions, scientific notation, or thousands separators.
+- For text cards, pure integer and decimal answers are compared exactly, including their sign; decimal comma and point are equivalent, and large values retain full precision. This text comparison does not evaluate fractions, expressions, scientific notation, or thousands separators. Typed calculations additionally support exact fractions, scientific notation, tolerances, and declared value–unit pairs.
 - Optional semantic answer evaluation through OpenRouter in macOS Electron and native iOS
 - Secure local API-key storage through Electron or the iOS Keychain; AI errors preserve the answer for retry without local grading
 - Color-coded feedback band: perfect (>=97%), close (>=82%), partial (>=50%), wrong (<50%)
@@ -453,9 +455,9 @@ REGELN FÜR DIE KARTEN:
 1. Prüfe zuerst, welche Inhalte wirklich prüfungs- und lernrelevant sind.
 2. Jede Karte testet genau einen klar abgegrenzten Sachverhalt.
 3. Formuliere die Vorderseite als eindeutige Frage mit genügend Kontext.
-4. Die Antwort muss kurz, präzise und leicht eintippbar sein.
+4. Wähle ein passendes Antwortformat: kurze Antwort, Erklärung, Zahl, Bruch, Wert mit Einheit oder Formel.
 5. Verwende konkrete Fragen statt „Erkläre alles über …“.
-6. Vermeide Ja/Nein-Fragen, triviale Fragen und reine Wiedererkennung.
+6. Verwende Auswahl- und Wahr/Falsch-Aufgaben nur, wenn sie einen sinnvollen Unterschied prüfen; vermeide triviale Fragen und offensichtliche falsche Antworten.
 7. Teile Listen oder komplexe Zusammenhänge in mehrere Karten auf.
 8. Erstelle bei wichtigen Konzepten unterschiedliche Abrufarten:
    - Definition oder Bedeutung
@@ -475,7 +477,8 @@ AUSGABEFORMAT:
 
 Gib ausschließlich valides JSON aus – ohne Markdown-Codeblock, Einleitung, Kommentare oder nachfolgenden Text.
 
-Verwende exakt diese Struktur:
+Verwende diese Grundstruktur. Für strukturierte Aufgaben ergänze pro Karte ein
+"task"-Objekt nach der folgenden Typübersicht; "front" und "back" bleiben erforderlich.
 
 {
   "name": "[Kurzer, sinnvoller Name des Kartendecks]",
@@ -487,6 +490,27 @@ Verwende exakt diese Struktur:
   ]
 }
 
+TYPÜBERSICHT:
+- Kurzantwort: "task": {"kind":"short_text"}; Musterantwort in "back".
+- Erklärung: "task": {"kind":"long_text"}; Musterantwort in "back".
+- Zahl: "task": {"kind":"calculation","answer":{"kind":"number","value":"4"}}.
+- Bruch: "task": {"kind":"calculation","answer":{"kind":"fraction","numerator":"1","denominator":"2"}}.
+- Einheit: "task": {"kind":"calculation","answer":{"kind":"quantity","pairs":[{"value":"5","unit":"m"},{"value":"500","unit":"cm"}]}}.
+- Formel: "task": {"kind":"calculation","answer":{"kind":"formula","value":"A=\\pi r^2"}}.
+- Einfach-/Mehrfachauswahl: "task": {"kind":"single_choice" oder "multiple_choice","options":[{"id":"a","text":"..."},{"id":"b","text":"..."}],"correctIds":["a"]}.
+- Wahr/Falsch: "task": {"kind":"true_false","correct":true}.
+- Lücken: "front" enthält {{gap1}}; "task": {"kind":"cloze","gaps":[{"id":"gap1","kind":"text" oder "number","answer":"..."}]}.
+- Zuordnung: "task": {"kind":"matching","pairs":[{"id":"a","left":"...","right":"..."},{"id":"b","left":"...","right":"..."}]}.
+- Reihenfolge: "task": {"kind":"ordering","items":[{"id":"a","text":"..."},{"id":"b","text":"..."}],"correctOrder":["a","b"]}.
+
+Wähle jeweils einen tatsächlichen "kind"-Wert, ohne das Wort "oder" im JSON.
+Alle IDs sind pro Aufgabe eindeutig. Zahlen werden als Zeichenketten gespeichert.
+Bruchnenner dürfen nicht null sein. Hinterlege alle gültigen Wert-Einheit-Paare.
+Rechenaufgaben dürfen "solutionSteps":[{"kind":"text" oder "math","value":"..."}]
+und strukturierte Aufgaben "explanation":"..." für eine Erläuterung enthalten.
+LaTeX in "front"/"back" steht zwischen \\( und \\) oder \\[ und \\].
+Escape jeden LaTeX-Backslash im JSON als doppelten Backslash.
+
 QUALITÄTSPRÜFUNG VOR DER AUSGABE:
 
 Kontrolliere intern jede Karte:
@@ -494,6 +518,7 @@ Kontrolliere intern jede Karte:
 - Prüft sie nur einen Sachverhalt?
 - Erfordert sie aktives Erinnern?
 - Ist die erwartete Antwort präzise?
+- Passen Aufgabenart, Antwortformat und Lösung zusammen? Sind alle referenzierten IDs und Lücken vorhanden?
 - Ist sie inhaltlich durch den Lernstoff belegt?
 - Überschneidet sie sich unnötig mit einer anderen Karte?
 

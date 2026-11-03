@@ -1,4 +1,5 @@
 import { isDeckCoverId } from './deck-covers.mjs'
+import { normalizeTask, taskSolution } from './tasks.mjs'
 export const MAX_FILE_BYTES = 10 * 1024 * 1024
 export const MAX_CARDS = 100_000
 const forbidden = new Set(['__proto__', 'constructor', 'prototype'])
@@ -33,6 +34,10 @@ export function normalizeDeck(value, { today, name = 'Imported deck', newDeckId 
     const card = { id: cardId, front: text(v.front, 20_000), back: text(v.back, 20_000),
       interval: number(v.interval, 0, 365_000), repetitions: number(v.repetitions, 0, 100_000_000, true),
       easeFactor: number(v.easeFactor, 2.5, 10), dueDate: date(v.dueDate, today) }
+    if (v.task !== undefined) {
+      card.task = normalizeTask(v.task, card.front)
+      card.back = taskSolution(card.task, card.front) ?? card.back
+    }
     for (const field of ['stability', 'difficulty']) if (v[field] !== undefined) card[field] = number(v[field], 0, field === 'difficulty' ? 10 : 365_000)
     if (v.lastReview !== undefined) card.lastReview = date(v.lastReview)
     return card

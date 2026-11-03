@@ -24,14 +24,21 @@ const iosAi: AiBridge = {
     if (!input || typeof input.deckName !== 'string' || input.deckName.length > 4000 || [input.question, input.referenceAnswer, input.userAnswer].some(
       value => typeof value !== 'string' || !value.trim() || value.length > 4000,
     )) return { ok: false, reason: 'invalid-input' }
+    const scope = input.evaluationScope ?? 'answer'
+    if (!['answer', 'working', 'answer_and_working'].includes(scope)) return { ok: false, reason: 'invalid-input' }
+    if (scope !== 'answer' && (typeof input.referenceWorking !== 'string' || input.referenceWorking.length > 4000
+      || typeof input.userWorking !== 'string' || !input.userWorking.trim() || input.userWorking.length > 4000)) return { ok: false, reason: 'invalid-input' }
     const response = await nativeAi.evaluateAnswer(input)
     if (!response.ok) return { ok: false, reason: response.reason || 'unavailable' }
     try {
       const parsed = JSON.parse(response.body?.choices?.[0]?.message?.content)
       if (!verdicts.includes(parsed?.verdict) || typeof parsed.feedback !== 'string'
         || !parsed.feedback.trim()) return { ok: false, reason: 'invalid-response' }
+      if (scope === 'answer_and_working' && (!verdicts.includes(parsed?.working?.verdict)
+        || typeof parsed?.working?.feedback !== 'string' || !parsed.working.feedback.trim())) return { ok: false, reason: 'invalid-response' }
       return { ok: true, result: { verdict: parsed.verdict,
-        feedback: parsed.feedback.trim().slice(0, 240), model: response.body?.model } }
+        feedback: parsed.feedback.trim().slice(0, 240), model: response.body?.model,
+        ...(scope === 'answer_and_working' ? { working: { verdict: parsed.working.verdict, feedback: parsed.working.feedback.trim().slice(0, 240) } } : {}) } }
     } catch { return { ok: false, reason: 'invalid-response' } }
   },
 }

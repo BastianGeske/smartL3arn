@@ -34,6 +34,30 @@ function evaluationBody() {
   }
 }
 
+test('evaluates formula results and working independently with one strict request', async () => {
+  let request, calls = 0
+  const client = createOpenRouterClient({ fetchImpl: async (_url, options) => {
+    calls++; request = JSON.parse(options.body)
+    return jsonResponse({ choices: [{ message: { content: JSON.stringify({ verdict: 'correct', feedback: 'Result correct.', working: { verdict: 'incorrect', feedback: 'Invalid step.' } }) } }] })
+  } })
+  const result = await client.evaluate('secret', { ...evaluationInput, evaluationScope: 'answer_and_working', referenceWorking: '', userWorking: '2+2=5=4' })
+  assert.equal(calls, 1)
+  assert.equal(result.verdict, 'correct')
+  assert.equal(result.working.verdict, 'incorrect')
+  assert.deepEqual(request.response_format.json_schema.schema.required, ['verdict', 'feedback', 'working'])
+  assert.equal(JSON.parse(request.messages[1].content).learner_working, '2+2=5=4')
+  assert.match(request.messages[0].content, /independently/)
+})
+test('rejects missing working output and invalid or oversized scoped input', async () => {
+  let calls = 0
+  const client = createOpenRouterClient({ fetchImpl: async () => { calls++; return jsonResponse(evaluationBody()) } })
+  const input = { ...evaluationInput, evaluationScope: 'answer_and_working', referenceWorking: '', userWorking: 'Working' }
+  await assert.rejects(client.evaluate('secret', input), error => error.code === 'invalid-response')
+  await assert.rejects(client.evaluate('secret', { ...input, userWorking: 'x'.repeat(4001) }), error => error.code === 'invalid-input')
+  await assert.rejects(client.evaluate('secret', { ...input, evaluationScope: 'invented' }), error => error.code === 'invalid-input')
+  assert.equal(calls, 1)
+})
+
 test('sends only the current card context and requests a strict schema', async () => {
   let request
   const client = createOpenRouterClient({

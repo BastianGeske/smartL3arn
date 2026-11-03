@@ -1,0 +1,67 @@
+[
+  {
+    "file": "01-library-menu.png",
+    "source": "design-evidence/design-review/after/phone-02-library-menu.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "02-task-editor.png",
+    "source": "design-evidence/task-types/390-number-editor.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "03-fraction-response.png",
+    "source": "design-evidence/task-types/390-fraction-question.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "04-cloze-response.png",
+    "source": "design-evidence/task-types/390-cloze-question.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "05-smart-feedback.png",
+    "source": "design-evidence/design-review/after/desktop-13-smart-feedback-top.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "06-study-question.png",
+    "source": "design-evidence/design-review/after/small-09-study-question-top.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "07-keyboard-light.png",
+    "source": "design-evidence/task-types/390-formula-keyboard.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "08-keyboard-dark-notice.png",
+    "source": "design-evidence/design-review/after/phone-20-editor-keyboard-notice.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "09-low-height.png",
+    "source": "design-evidence/design-review/after/landscape-20-editor-keyboard-notice.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "10-zoom400.png",
+    "source": "design-evidence/design-review/after/zoom400-20-editor-keyboard-notice.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "11-api-usage.png",
+    "source": "design-evidence/design-review/after/tablet-06-usage-top.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "12-preferences.png",
+    "source": "design-evidence/design-review/after/phone-05-preferences-top.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  },
+  {
+    "file": "13-smart-setup.png",
+    "source": "design-evidence/design-review/after/desktop-04-smart-setup-top.png",
+    "accepted": "Original unverändert; visuell geprüft im aktuellen Review."
+  }
+]

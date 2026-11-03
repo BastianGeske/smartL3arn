@@ -29,6 +29,18 @@ struct CheckAiJournal {
         let valid: [String: Any] = ["choices": [["message": ["content": "{\"verdict\":\"correct\",\"feedback\":\"Richtig\"}"]]]]
         expect(NativeAiJournal.evaluationIsValid(valid), "valid evaluation")
         expect(!NativeAiJournal.evaluationIsValid(["choices": []]), "missing evaluation rejected")
+        var workingInput = input
+        workingInput["evaluationScope"] = "answer_and_working"
+        workingInput["referenceWorking"] = ""
+        workingInput["userWorking"] = "2 + 2 = 4"
+        let workingRequest = NativeAiEvaluationRequest.body(input: workingInput, model: "trusted/model")!
+        let schema = ((workingRequest["response_format"] as! [String: Any])["json_schema"] as! [String: Any])["schema"] as! [String: Any]
+        expect((schema["required"] as! [String]).contains("working"), "separate working feedback is required")
+        expect(!NativeAiJournal.evaluationIsValid(valid, requiresWorking: true), "missing working output rejected")
+        let combined: [String: Any] = ["choices": [["message": ["content": "{\"verdict\":\"correct\",\"feedback\":\"Result\",\"working\":{\"verdict\":\"incorrect\",\"feedback\":\"Step\"}}"]]]]
+        expect(NativeAiJournal.evaluationIsValid(combined, requiresWorking: true), "independent working output accepted")
+        workingInput["userWorking"] = String(repeating: "x", count: 4001)
+        expect(NativeAiEvaluationRequest.body(input: workingInput, model: "trusted/model") == nil, "working input is bounded natively")
         expect(!NativeAiJournal.evaluationIsValid(["choices": [["message": ["content": "{\"verdict\":\"correct\",\"feedback\":\" \"}"]]]]), "empty feedback rejected")
         record(["model": "test/model", "apiKey": "SECRET", "choices": "PRIVATE ANSWER",
             "usage": ["prompt_tokens": 100, "completion_tokens": 20, "cost": 0.002,

@@ -88,6 +88,7 @@ function diffLevel(difficulty: number): string {
 }
 
 async function inlineEdit(card: Card, field: 'front' | 'back', event: FocusEvent): Promise<void> {
+  if (structured(card)) return
   const element = event.currentTarget as HTMLElement
   const value = element.textContent?.trim() || ''
   if (!value) {
@@ -99,6 +100,7 @@ async function inlineEdit(card: Card, field: 'front' | 'back', event: FocusEvent
     back: field === 'back' ? value : card.back,
   }) } catch { element.textContent = card[field] }
 }
+function structured(card: Card): boolean { return Boolean(card.task && !['short_text', 'long_text'].includes(card.task.kind)) }
 
 async function removeCard(card: Card): Promise<void> {
   if (!window.confirm(t('card.deleteConfirm'))) return
@@ -234,6 +236,7 @@ const sortFields: [SortColumn, TranslationKey][] = [
       </div>
 
       <div class="table-wrapper">
+        <p v-if="deck.cards.some(structured)" class="task-export-note">{{ t('task.exportText') }}</p>
         <table class="browse-table" :aria-label="t('browse.table', { name: deck.name })">
           <thead>
             <tr>
@@ -260,21 +263,23 @@ const sortFields: [SortColumn, TranslationKey][] = [
               <td class="td-front" :data-label="t('common.front')">
                 <span
                   class="cell-edit"
-                  contenteditable="true"
-                  role="textbox"
+                  :contenteditable="!structured(card)"
+                  :role="structured(card) ? undefined : 'textbox'"
                   :aria-label="t('browse.editFront')"
                   :title="card.front"
                   @blur="inlineEdit(card, 'front', $event)"
+                  @dblclick="structured(card) && ui.editCard(deckId, card.id)"
                 >{{ card.front }}</span>
               </td>
               <td class="td-back" :data-label="t('common.back')">
                 <span
                   class="cell-edit"
-                  contenteditable="true"
-                  role="textbox"
+                  :contenteditable="!structured(card)"
+                  :role="structured(card) ? undefined : 'textbox'"
                   :aria-label="t('browse.editBack')"
                   :title="card.back"
                   @blur="inlineEdit(card, 'back', $event)"
+                  @dblclick="structured(card) && ui.editCard(deckId, card.id)"
                 >{{ card.back }}</span>
               </td>
               <td class="td-meta" :data-label="t('common.due')">

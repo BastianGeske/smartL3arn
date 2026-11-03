@@ -7,9 +7,16 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
     if (event.key !== 'Tab') return
     const dialog = document.querySelector<HTMLElement>('.modal-overlay .modal')
     const controls = [
-      ...Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]') || []),
+      ...Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, math-field:not([readonly]), [tabindex="0"]') || []),
       ...document.querySelectorAll<HTMLElement>('.notification-stack button'),
-    ]
+    ].filter(element => {
+      if (element.tabIndex < 0 || element.closest('[inert]')) return false
+      const closed = element.closest('details:not([open])')
+      if (closed && !closed.querySelector('summary')?.contains(element)) return false
+      const style = getComputedStyle(element)
+      return element.getClientRects().length > 0 && style.visibility !== 'hidden' && style.display !== 'none' && style.opacity !== '0'
+    })
+    controls.sort((left, right) => left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
     const first = controls[0]
     const last = controls.at(-1)
     const inside = controls.includes(document.activeElement as HTMLElement)

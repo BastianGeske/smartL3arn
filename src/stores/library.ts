@@ -1,7 +1,8 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { createCard, genId } from '../domain/importExport'
-import type { AppData, Card, Deck } from '../domain/types'
+import type { AppData, Card, Deck, TaskDefinition } from '../domain/types'
+import { cardContent } from '../domain/tasks'
 import { getStorageRepository } from '../services/storage'
 import { normalizeAppData } from '../../shared/data-validation.mjs'
 import { todayStr } from '../domain/dates'
@@ -94,10 +95,10 @@ export const useLibraryStore = defineStore('library', () => {
     catch (error) { data.value.decks.splice(index, 0, deck); throw error }
   }
 
-  async function addCard(deckId: string, front: string, back: string): Promise<Card | undefined> {
+  async function addCard(deckId: string, front: string, back: string, task?: TaskDefinition): Promise<Card | undefined> {
     const deck = deckById(deckId)
     if (!deck) return undefined
-    const card = createCard(front, back)
+    const card = createCard(front, back, task)
     deck.cards.push(card)
     try { await persist() }
     catch (error) { deck.cards = deck.cards.filter(item => item.id !== card.id); throw error }
@@ -107,12 +108,14 @@ export const useLibraryStore = defineStore('library', () => {
   async function updateCard(
     deckId: string,
     cardId: string,
-    updates: Pick<Card, 'front' | 'back'>,
+    updates: Pick<Card, 'front' | 'back'> & { task?: TaskDefinition },
   ): Promise<void> {
     const card = deckById(deckId)?.cards.find((item) => item.id === cardId)
     if (!card) return
-    const previous = { front: card.front, back: card.back }
-    Object.assign(card, updates)
+    const previous = { front: card.front, back: card.back, task: card.task }
+    const next = cardContent(updates.front, updates.back, 'task' in updates ? updates.task : card.task)
+    Object.assign(card, next)
+    if ('task' in updates && !updates.task) delete card.task
     try { await persist() }
     catch (error) { Object.assign(card, previous); throw error }
   }

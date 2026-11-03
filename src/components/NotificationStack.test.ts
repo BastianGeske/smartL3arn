@@ -72,3 +72,15 @@ test('action messages announce errors and support dismissal without moving focus
   expect(ui.notifications).toHaveLength(0)
   input.remove()
 })
+
+test('updates reserved notification space when the math keyboard moves notices upward', async () => {
+  wrapper = mount(NotificationStack, { attachTo: document.body })
+  const root = wrapper.element as HTMLElement
+  vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 380, height: 60 } as DOMRect)
+  const changed = vi.fn()
+  window.addEventListener('notification-geometrychange', changed)
+  window.dispatchEvent(new Event('math-keyboard-geometrychange'))
+  expect(document.documentElement.style.getPropertyValue('--notification-space')).toBe(`${innerHeight - 380 + 12}px`)
+  expect(changed).toHaveBeenCalledOnce()
+  window.removeEventListener('notification-geometrychange', changed)
+})

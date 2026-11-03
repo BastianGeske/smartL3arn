@@ -3,7 +3,9 @@ import { useI18n, type TranslationKey } from '../i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
-import SessionStats from '../components/SessionStats.vue'
+import StudyCardBody from '../components/StudyCardBody.vue'
+import StudyRatingButtons from '../components/StudyRatingButtons.vue'
+import StudyCompletion from '../components/StudyCompletion.vue'
 import StudyHeader from '../components/StudyHeader.vue'
 import SmartCardMeta from '../components/SmartCardMeta.vue'
 import {
@@ -14,6 +16,10 @@ import type { ConfidenceLevel, Rating } from '../domain/types'
 import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
 import { Capacitor } from '@capacitor/core'
+import TaskResponse from '../components/TaskResponse.vue'
+import WorkingSteps from '../components/WorkingSteps.vue'
+import MathContent from '../components/MathContent.vue'
+import { workingText } from '../domain/tasks'
 
 const { t } = useI18n()
 
@@ -21,12 +27,6 @@ const router = useRouter()
 const settings = useSettingsStore()
 const smart = useSmartStudyStore()
 
-const ratings: { value: Rating; key: string; label: TranslationKey }[] = [
-  { value: 0, key: 'again', label: 'rating.again' },
-  { value: 1, key: 'hard', label: 'rating.hard' },
-  { value: 2, key: 'good', label: 'rating.good' },
-  { value: 3, key: 'easy', label: 'rating.easy' },
-]
 const confidences: { value: ConfidenceLevel; label: TranslationKey }[] = [
   { value: 'low', label: 'confidence.low' },
   { value: 'medium', label: 'confidence.medium' },
@@ -56,6 +56,14 @@ const breakProgress = computed(() => {
   return duration ? Math.min(1, Math.max(0, 1 - smart.breakRemainingMs / duration)) : 1
 })
 const nextAvailability = computed(() => smart.availableQueue())
+const hasWorking = computed(() => Boolean(workingText(smart.session?.working || [])))
+const workingBand = computed(() => smart.session?.workingEvaluation ? evaluationBand(smart.session.workingEvaluation) : null)
+const usesAI = computed(() => {
+  if (settings.smartConfig.evaluationMode !== 'openrouter') return false
+  const task = smart.currentCard?.task
+  return !task || ['short_text', 'long_text'].includes(task.kind) || (task.kind === 'calculation' && (task.answer.kind === 'formula' || hasWorking.value))
+})
+const answerDisplay = computed(() => smart.currentCard?.task?.kind === 'calculation' && smart.currentCard.task.answer.kind === 'formula' && smart.session?.typedAnswer ? `\\(${smart.session.typedAnswer}\\)` : smart.session?.typedAnswer || '')
 
 onMounted(async () => {
   if (!smart.session && !(await smart.start())) {
@@ -76,15 +84,15 @@ function handleKeydown(event: KeyboardEvent): void {
   const session = smart.session
   if (!session || smart.isDone || smart.isBreak) return
   const target = event.target as HTMLElement
-  if (session.phase === 'asking' && event.key === 'Enter' && !event.shiftKey) {
-    if (target.id === 'smart-answer-input') {
+  if (session.phase === 'asking' && event.key === 'Enter' && !event.isComposing && (event.ctrlKey || event.metaKey)) {
+    if (target.closest('.smart-answer-area')) {
       event.preventDefault()
       void smart.checkAnswer()
     }
     return
   }
   if (session.phase === 'reviewing' && ['1', '2', '3', '4'].includes(event.key)) {
-    if (target.closest('textarea, input')) return
+    if (target.closest('textarea, input, select, math-field, [contenteditable="true"]')) return
     event.preventDefault()
     void rate((Number(event.key) - 1) as Rating)
   }
@@ -100,7 +108,7 @@ function formatMs(milliseconds: number): string {
 function focusCurrentInput(): void {
   if (Capacitor.isNativePlatform() || window.matchMedia('(pointer: coarse)').matches) return
   if (settings.smartConfig.techniques.typeRecall) {
-    document.querySelector<HTMLTextAreaElement>('#smart-answer-input')?.focus()
+    document.querySelector<HTMLElement>('.task-response input, .task-response textarea, .task-response math-field, .task-response select')?.focus()
   } else {
     document.querySelector<HTMLElement>('.smart-card-front')?.focus()
   }
@@ -171,18 +179,14 @@ async function exit(): Promise<void> {
       </div>
     </main>
 
-    <main v-else-if="smart.isDone" class="study-done" tabindex="-1">
-      <div class="completion-mark"><AppIcon name="sparkles" :size="23" /></div>
-      <p class="completion-kicker">{{ t('smart.complete') }}</p>
-      <h1 class="completion-title" tabindex="-1">
-        {{ t('study.cardReviewed', { count: smart.session.sessionStats.reviewed }) }}
-      </h1>
-      <p class="completion-note">
-        {{ smart.session.timeUp
-          ? t('smart.timeUp', { count: settings.smartConfig.duration })
-          : t('smart.allCards', { count: smart.session.queue.length }) }}
-      </p>
-      <SessionStats :stats="smart.session.sessionStats" extra-class="session-stats-done" />
+    <StudyCompletion
+      v-else-if="smart.isDone"
+      icon="sparkles"
+      :kicker="t('smart.complete')"
+      :title="t('study.cardReviewed', { count: smart.session.sessionStats.reviewed })"
+      :note="smart.session.timeUp ? t('smart.timeUp', { count: settings.smartConfig.duration }) : t('smart.allCards', { count: smart.session.queue.length })"
+      :stats="smart.session.sessionStats"
+    >
       <div class="smart-done-actions">
         <button
           v-if="nextAvailability.queue.length"
@@ -198,7 +202,7 @@ async function exit(): Promise<void> {
         </button>
         <button class="btn btn-quiet" type="button" @click="router.push('/')">{{ t('study.backLibrary') }}</button>
       </div>
-    </main>
+    </StudyCompletion>
 
     <main v-else-if="smart.currentCard && smart.currentDeck" class="smart-study-main">
       <div class="smart-body">
@@ -211,11 +215,14 @@ async function exit(): Promise<void> {
           >
             <SmartCardMeta
               :deck-name="smart.currentDeck.name"
-              :ai="settings.smartConfig.evaluationMode === 'openrouter'"
+              :ai="usesAI"
               :mode-label="t(smart.session.mode === 'practice' ? 'study.practice' : 'smart.scheduled')"
             />
-            <div id="smart-question-label" class="card-side-label">{{ t('study.question') }}</div>
-            <div id="smart-question-content" class="card-content">{{ smart.currentCard.front }}</div>
+            <StudyCardBody :key="`${smart.currentCard.id}:${smart.session.index}`" :card="smart.currentCard" side="question" :interactive="settings.smartConfig.techniques.typeRecall" label-id="smart-question-label" content-id="smart-question-content">
+              <template v-if="smart.currentCard.task?.kind === 'cloze' && settings.smartConfig.techniques.typeRecall" #content>
+                <TaskResponse :task="smart.currentCard.task" :front="smart.currentCard.front" :model-value="smart.session.response || { kind: 'fields', values: {} }" :disabled="smart.session.isEvaluating" @update:model-value="smart.setResponse" @submit="smart.checkAnswer" />
+              </template>
+            </StudyCardBody>
 
             <div
               v-if="settings.smartConfig.techniques.confidenceCheck"
@@ -241,15 +248,19 @@ async function exit(): Promise<void> {
           </section>
 
           <div v-if="settings.smartConfig.techniques.typeRecall" class="smart-answer-area">
-            <label class="field-label" for="smart-answer-input">{{ t('smart.yourAnswer') }}</label>
-            <textarea
-              id="smart-answer-input"
-              v-model="smart.session.typedAnswer"
-              class="textarea smart-answer-input"
-              rows="3"
-              :placeholder="t('smart.answerPlaceholder')"
+            <TaskResponse
+              v-if="smart.currentCard.task?.kind !== 'cloze'"
+              :key="`${smart.currentCard.id}:${smart.session.index}`"
+              input-id="smart-answer-input"
+              :task="smart.currentCard.task"
+              :front="smart.currentCard.front"
+              :model-value="smart.session.response || { kind: 'text', value: smart.session.typedAnswer }"
               :disabled="smart.session.isEvaluating"
+              @update:model-value="smart.setResponse"
+              @submit="smart.checkAnswer"
             />
+            <p v-if="smart.inputError" class="form-error" role="alert">{{ t(smart.inputError) }}</p>
+            <details v-if="smart.currentCard.task?.kind === 'calculation'" class="task-details"><summary>{{ t('task.working') }} <span class="muted">{{ t('common.optional') }}</span></summary><p class="field-hint">{{ t(settings.smartConfig.evaluationMode === 'openrouter' ? 'task.workingHint' : 'task.workingLocal') }}</p><WorkingSteps v-model="smart.session.working" :disabled="smart.session.isEvaluating" :label="t('task.working')" @submit="smart.checkAnswer" /></details>
             <div class="smart-answer-actions">
               <button
                 class="btn btn-primary"
@@ -273,7 +284,8 @@ async function exit(): Promise<void> {
             <div v-if="smart.evaluationError" class="ai-request-error" role="alert">
               <strong>{{ t('ai.requestFailed') }}</strong>
               <p>{{ t(smart.evaluationError) }}</p>
-              <p>{{ t('ai.noLocalFallback') }}</p>
+              <p v-if="smart.session.evaluation">{{ t('task.workingRetry') }} · {{ t(`verdict.${smart.session.evaluation.verdict}`) }}</p>
+              <p v-else>{{ t('ai.noLocalFallback') }}</p>
               <button class="btn btn-secondary" type="button" @click="router.push('/smart')">{{ t('smart.adjust') }}</button>
             </div>
           </div>
@@ -289,15 +301,13 @@ async function exit(): Promise<void> {
             <section class="smart-card-block smart-card-front compact" tabindex="-1" :aria-label="t('study.question')">
               <SmartCardMeta
                 :deck-name="smart.currentDeck.name"
-                :ai="settings.smartConfig.evaluationMode === 'openrouter'"
+                :ai="usesAI"
                 :mode-label="t('smart.reviewAnswer')"
               />
-              <div class="card-side-label">{{ t('study.question') }}</div>
-              <div class="card-content">{{ smart.currentCard.front }}</div>
+              <StudyCardBody :card="smart.currentCard" side="question" />
             </section>
             <section class="smart-card-block smart-card-back" tabindex="-1" :aria-label="t('study.answer')">
-              <div class="card-side-label">{{ t('study.answer') }}</div>
-              <div class="card-content">{{ smart.currentCard.back }}</div>
+              <StudyCardBody :card="smart.currentCard" side="answer" :label="t('smart.correctAnswer')" />
             </section>
           </div>
 
@@ -308,10 +318,10 @@ async function exit(): Promise<void> {
           >
             <div class="smart-feedback-score">
               <span>{{ t(`verdict.${feedbackBand.verdict}`) }}</span>
-              <strong v-if="smart.session.evaluation.source === 'local'">
+              <strong v-if="smart.session.evaluation.source === 'local' && smart.session.evaluation.localSimilarity !== undefined">
                 {{ t('smart.localMatch', { value: Math.round((smart.session.evaluation.localSimilarity || 0) * 100) }) }}
               </strong>
-              <strong v-else>{{ t('smart.aiReview') }}</strong>
+              <strong v-else>{{ t(smart.session.evaluation.source === 'local' ? 'task.localChecked' : 'smart.aiReview') }}</strong>
             </div>
             <p v-if="smart.session.evaluation.fallbackReason" class="smart-feedback-fallback">
               {{ t('smart.localFallback', { reason: t(smart.session.evaluation.fallbackReason as TranslationKey) }) }}
@@ -323,15 +333,14 @@ async function exit(): Promise<void> {
             <div class="smart-feedback-row">
               <span class="smart-feedback-label">{{ t('smart.youWrote') }}</span>
               <span class="smart-feedback-text">
-                <template v-if="smart.session.typedAnswer">{{ smart.session.typedAnswer }}</template>
+                <MathContent v-if="smart.session.typedAnswer" :text="answerDisplay" />
                 <em v-else class="muted">{{ t('smart.skipped') }}</em>
               </span>
             </div>
-            <div class="smart-feedback-row">
-              <span class="smart-feedback-label">{{ t('smart.correctAnswer') }}</span>
-              <span class="smart-feedback-text smart-feedback-correct">{{ smart.currentCard.back }}</span>
-            </div>
+            <template v-if="smart.session.evaluation.parts?.length"><p>{{ smart.session.evaluation.feedback }}</p><ul class="task-part-feedback"><li v-for="(part, i) in smart.session.evaluation.parts" :key="i" :class="part.correct ? 'is-correct' : 'is-incorrect'"><span>{{ part.correct ? '✓' : '✗' }} <MathContent :text="part.label" /></span><span>{{ t('task.received') }}: <MathContent :text="part.actual || '—'" /><template v-if="!part.correct"> · {{ t('task.expected') }}: <MathContent :text="part.expected" /></template></span></li></ul></template>
           </div>
+          <section v-if="settings.smartConfig.techniques.typeRecall && smart.session.selfAssessment" class="smart-feedback task-self-assessment"><strong>{{ t('task.selfAssessment') }}</strong><p>{{ t('task.formulaLocal') }}</p><div class="smart-feedback-row"><span class="smart-feedback-label">{{ t('smart.youWrote') }}</span><MathContent :text="answerDisplay" /></div></section>
+          <section v-if="settings.smartConfig.techniques.typeRecall && hasWorking && smart.currentCard.task?.kind === 'calculation'" class="smart-feedback" :class="workingBand ? `smart-feedback-${workingBand.band}` : 'task-self-assessment'"><strong>{{ t('task.workingFeedback') }}<template v-if="workingBand"> · {{ workingBand.label }}</template></strong><MathContent :text="workingText(smart.session.working)" /><p v-if="smart.session.workingEvaluation">{{ smart.session.workingEvaluation.feedback }}</p><p v-else>{{ t('task.workingLocal') }}</p></section>
 
           <div
             v-if="settings.smartConfig.techniques.confidenceCheck && smart.session.confidenceLevel"
@@ -360,20 +369,7 @@ async function exit(): Promise<void> {
             />
           </div>
 
-          <div class="rating-buttons smart-rating-buttons" role="group" :aria-label="t('study.rateAnswer')">
-            <button
-              v-for="rating in ratings"
-              :key="rating.value"
-              class="rating-button"
-              :class="`rating-${rating.key}`"
-              type="button"
-              :aria-keyshortcuts="String(rating.value + 1)"
-              @click="rate(rating.value)"
-            >
-              <span>{{ t(rating.label) }} <kbd>{{ rating.value + 1 }}</kbd></span>
-              <strong>{{ t('rating.rate') }}</strong>
-            </button>
-          </div>
+          <StudyRatingButtons class="smart-rating-buttons" @rate="rate" />
         </template>
       </div>
     </main>

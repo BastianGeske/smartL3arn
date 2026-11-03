@@ -1,5 +1,8 @@
 import { todayStr } from './dates'
-import type { Card, Deck } from './types'
+import type { Card, Deck, TaskDefinition } from './types'
+import { normalizeTask, taskSolution } from '../../shared/tasks.mjs'
+import { taskQuestion } from './tasks'
+import { t } from '../i18n'
 
 export interface ParsedCard {
   front: string
@@ -10,11 +13,13 @@ export function genId(): string {
   return Math.random().toString(36).slice(2, 9) + Date.now().toString(36)
 }
 
-export function createCard(front: string, back: string): Card {
+export function createCard(front: string, back: string, task?: TaskDefinition): Card {
+  const normalized = task ? normalizeTask(task, front) : undefined
   return {
     id: genId(),
     front,
-    back,
+    back: normalized ? taskSolution(normalized, front) ?? back : back,
+    ...(normalized ? { task: normalized } : {}),
     interval: 0,
     repetitions: 0,
     easeFactor: 2.5,
@@ -133,7 +138,7 @@ export function deckFilename(name: string): string {
 export function deckToCsv(deck: Deck): string {
   return [
     ['front', 'back'],
-    ...deck.cards.map((card) => [csvEscape(card.front), csvEscape(card.back)]),
+    ...deck.cards.map((card) => [csvEscape(taskQuestion(card)), csvEscape(card.task?.kind === 'true_false' ? t(card.task.correct ? 'task.true' : 'task.false') + (card.task.explanation ? '\n\n' + card.task.explanation : '') : card.back)]),
   ].map((row) => row.join(',')).join('\n')
 }
 
@@ -144,5 +149,5 @@ export function deckToAnkiText(deck: Deck): string {
     .replace(/>/g, '&gt;')
     .replace(/\t/g, ' ')
     .replace(/\r\n|\r|\n/g, '<br>')
-  return deck.cards.map((card) => `${field(card.front)}\t${field(card.back)}`).join('\n')
+  return deck.cards.map((card) => `${field(taskQuestion(card))}\t${field(card.task?.kind === 'true_false' ? t(card.task.correct ? 'task.true' : 'task.false') + (card.task.explanation ? '\n\n' + card.task.explanation : '') : card.back)}`).join('\n')
 }

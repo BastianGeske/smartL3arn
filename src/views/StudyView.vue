@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { useI18n, type TranslationKey } from '../i18n'
+import { useI18n } from '../i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
-import SessionStats from '../components/SessionStats.vue'
 import StudyHeader from '../components/StudyHeader.vue'
 import { formatDateLabel, isDue } from '../domain/dates'
 import { previewIntervals } from '../domain/scheduling/fsrs'
 import type { Rating } from '../domain/types'
 import { useStudyStore } from '../stores/study'
+import StudyCardBody from '../components/StudyCardBody.vue'
+import StudyRatingButtons from '../components/StudyRatingButtons.vue'
+import StudyCompletion from '../components/StudyCompletion.vue'
 
-const { t, formatStudyInterval, formatNumber } = useI18n()
+const { t, formatNumber } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -103,17 +105,11 @@ function adjustFlashcardHeight(): void {
       @exit="router.push('/')"
     />
 
-    <main v-if="study.complete" class="study-done" tabindex="-1">
-      <div class="completion-mark"><AppIcon name="check" :size="24" /></div>
-      <p class="completion-kicker">{{ t('study.complete') }}</p>
-      <h1 class="completion-title" tabindex="-1">
-        {{ t('study.cardReviewed', { count: study.sessionStats.reviewed }) }}
-      </h1>
-      <p v-if="upcomingDate" class="completion-note">
+    <StudyCompletion v-if="study.complete" :kicker="t('study.complete')" :title="t('study.cardReviewed', { count: study.sessionStats.reviewed })" :stats="study.sessionStats">
+      <template v-if="upcomingDate" #note>
         <AppIcon name="calendar-days" :size="16" />
         {{ t('study.nextReview', { date: formatDateLabel(upcomingDate, undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }) }}
-      </p>
-      <SessionStats :stats="study.sessionStats" extra-class="session-stats-done" />
+      </template>
       <div class="study-done-actions">
         <button v-if="study.deck.cards.length" class="btn btn-primary" type="button" @click="study.start(study.deck.id)">
           <AppIcon name="rotate-ccw" :size="17" />
@@ -123,7 +119,7 @@ function adjustFlashcardHeight(): void {
           <AppIcon name="library" :size="17" /><span>{{ t('study.backLibrary') }}</span>
         </button>
       </div>
-    </main>
+    </StudyCompletion>
 
     <template v-else-if="study.currentCard">
       <main class="study-main">
@@ -138,8 +134,7 @@ function adjustFlashcardHeight(): void {
                 aria-labelledby="study-front-label"
                 aria-describedby="study-front-content"
               >
-                <span id="study-front-label" class="card-side-label">{{ t('study.question') }}</span>
-                <span id="study-front-content" class="card-content">{{ study.currentCard.front }}</span>
+                <StudyCardBody :card="study.currentCard" side="question" label-id="study-front-label" content-id="study-front-content" />
               </section>
               <section
                 class="flashcard-face flashcard-back"
@@ -149,33 +144,20 @@ function adjustFlashcardHeight(): void {
                 aria-labelledby="study-back-label"
                 aria-describedby="study-back-content"
               >
-                <span class="card-side-row">
-                  <span id="study-back-label" class="card-side-label">{{ t('study.answer') }}</span>
+                <StudyCardBody :card="study.currentCard" side="answer" label-id="study-back-label" content-id="study-back-content">
+                  <template #actions>
                   <button class="btn-icon card-return-button" type="button" :aria-label="t('study.returnQuestion')" @click="study.flip">
                     <AppIcon name="rotate-ccw" :size="16" />
                   </button>
-                </span>
-                <span id="study-back-content" class="card-content">{{ study.currentCard.back }}</span>
+                  </template>
+                </StudyCardBody>
               </section>
             </div>
           </div>
         </div>
       </main>
       <div class="study-actions">
-        <div v-if="study.flipped" class="rating-buttons" role="group" :aria-label="t('study.rateAnswer')">
-          <button
-            v-for="(label, rating) in ['again', 'hard', 'good', 'easy']"
-            :key="label"
-            class="rating-button"
-            :class="`rating-${label.toLowerCase()}`"
-            type="button"
-            :aria-keyshortcuts="String(rating + 1)"
-            @click="study.rate(rating as Rating)"
-          >
-            <span>{{ t(`rating.${label}` as TranslationKey) }} <kbd>{{ rating + 1 }}</kbd></span>
-            <strong>{{ formatStudyInterval(intervals[rating] || '') }}</strong>
-          </button>
-        </div>
+        <StudyRatingButtons v-if="study.flipped" :intervals="intervals" @rate="study.rate" />
         <div v-else class="show-answer-wrap">
           <button class="btn btn-primary btn-lg" type="button" @click="study.flip">
             <AppIcon name="eye" /><span>{{ t('study.reveal') }}</span><kbd>{{ t('common.space') }}</kbd>

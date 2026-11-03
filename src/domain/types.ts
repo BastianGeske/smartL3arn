@@ -1,4 +1,15 @@
 import type { DeckCoverId } from '../../shared/deck-covers.mjs'
+import type { TaskDefinition, WorkingStep } from '../../shared/tasks.mjs'
+export type { TaskDefinition, TaskKind, CalculationAnswer, WorkingStep, TaskItem } from '../../shared/tasks.mjs'
+export type StudyResponse =
+  | { kind: 'text'; value: string }
+  | { kind: 'fraction'; numerator: string; denominator: string }
+  | { kind: 'quantity'; value: string; unit: string }
+  | { kind: 'selection'; ids: string[] }
+  | { kind: 'boolean'; value: boolean | null }
+  | { kind: 'fields'; values: Record<string, string> }
+  | { kind: 'order'; ids: string[] }
+export interface ResponsePart { label: string; correct: boolean; expected: string; actual: string }
 export type Rating = 0 | 1 | 2 | 3
 export type RatingKey = 'again' | 'hard' | 'good' | 'easy'
 export type ConfidenceLevel = 'low' | 'medium' | 'high'
@@ -12,6 +23,7 @@ export interface AnswerEvaluation {
   model?: string
   fallbackReason?: string
   localSimilarity?: number
+  parts?: ResponsePart[]
 }
 
 export interface SessionStats {
@@ -48,6 +60,7 @@ export interface Card {
   id: string
   front: string
   back: string
+  task?: TaskDefinition
   interval: number
   repetitions: number
   easeFactor: number
@@ -98,6 +111,10 @@ export interface SmartSessionState {
   index: number
   phase: 'asking' | 'reviewing' | 'break'
   typedAnswer: string
+  response: StudyResponse | null
+  working: WorkingStep[]
+  workingEvaluation: AnswerEvaluation | null
+  selfAssessment: boolean
   evaluation: AnswerEvaluation | null
   isEvaluating: boolean
   confidenceLevel: ConfidenceLevel | null

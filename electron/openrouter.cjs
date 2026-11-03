@@ -156,7 +156,7 @@ async function readJsonResponse(response) {
   }
 }
 
-function parseEvaluation(body) {
+function parseEvaluation(body, withWorking = false) {
   const content = body?.choices?.[0]?.message?.content
   if (typeof content !== 'string') {
     throw new OpenRouterError('invalid-response', 'OpenRouter returned no evaluation.')
@@ -177,10 +177,18 @@ function parseEvaluation(body) {
   if (!feedback) {
     throw new OpenRouterError('invalid-response', 'OpenRouter returned empty feedback.')
   }
+  let working
+  if (withWorking) {
+    if (!VERDICTS.has(parsed?.working?.verdict) || typeof parsed?.working?.feedback !== 'string' || !parsed.working.feedback.trim()) {
+      throw new OpenRouterError('invalid-response', 'OpenRouter returned no working evaluation.')
+    }
+    working = { verdict: parsed.working.verdict, feedback: parsed.working.feedback.trim().slice(0, 240) }
+  }
 
   return {
     verdict: parsed.verdict,
     feedback,
+    ...(working ? { working } : {}),
     ...(typeof body.model === 'string' ? { model: body.model } : {}),
   }
 }
@@ -216,6 +224,16 @@ function createOpenRouterClient({
       reference_answer: boundedString(input?.referenceAnswer, 'Reference answer'),
       learner_answer: boundedString(input?.userAnswer, 'User answer'),
     }
+    const scope = input?.evaluationScope ?? 'answer'
+    if (!['answer', 'working', 'answer_and_working'].includes(scope)) throw new OpenRouterError('invalid-input', 'Invalid evaluation scope.')
+    if (scope !== 'answer') {
+      context.reference_working = boundedString(input?.referenceWorking, 'Reference working', true)
+      context.learner_working = boundedString(input?.userWorking, 'Learner working')
+    }
+    const workingSchema = { type: 'object', properties: {
+      verdict: { type: 'string', enum: [...VERDICTS] },
+      feedback: { type: 'string', maxLength: 240 },
+    }, required: ['verdict', 'feedback'], additionalProperties: false }
 
     return requestWithTimeout(fetchImpl, `${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
@@ -237,6 +255,8 @@ function createOpenRouterClient({
               'Judge the learner answer only against the question and reference answer.',
               'Accept correct synonyms and paraphrases. Ignore stylistic differences.',
               'Penalize factual errors and missing essential information.',
+              ...(scope === 'working' ? ['Evaluate only the learner working, independently of whether the final answer is correct. Return its verdict and feedback. Accept other mathematically valid solution methods. If no reference working is supplied, judge the reasoning using the question and reference answer.']
+                : scope === 'answer_and_working' ? ['Evaluate the final answer independently of the working. Also return a separate working object with its own verdict and feedback. Accept other mathematically valid solution methods. If no reference working is supplied, judge the reasoning using the question and reference answer.'] : []),
               input?.language === 'de'
                 ? 'Write concise feedback in German, at most 240 characters.'
                 : input?.language === 'en'
@@ -254,6 +274,7 @@ function createOpenRouterClient({
             schema: {
               type: 'object',
               properties: {
+                ...(scope === 'answer_and_working' ? { working: workingSchema } : {}),
                 verdict: {
                   type: 'string',
                   enum: [...VERDICTS],
@@ -265,7 +286,7 @@ function createOpenRouterClient({
                   description: 'Brief explanation of the verdict.',
                 },
               },
-              required: ['verdict', 'feedback'],
+              required: scope === 'answer_and_working' ? ['verdict', 'feedback', 'working'] : ['verdict', 'feedback'],
               additionalProperties: false,
             },
           },
@@ -276,7 +297,7 @@ function createOpenRouterClient({
       receivedBody(body)
       onResponse(body)
       assertResponseOk(response, body)
-      return parseEvaluation(body)
+      return parseEvaluation(body, scope === 'answer_and_working')
     }, onDiagnostic, {
       operation: 'evaluate', model, credentialSource: diagnosticContext.credentialSource,
     })

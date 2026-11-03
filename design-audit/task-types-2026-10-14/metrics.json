@@ -1,0 +1,3043 @@
+{
+  "stage": "after",
+  "profiles": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900,
+      "zoom": 1
+    },
+    {
+      "name": "tablet",
+      "width": 900,
+      "height": 1000,
+      "zoom": 1
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "zoom": 1
+    },
+    {
+      "name": "small",
+      "width": 320,
+      "height": 700,
+      "zoom": 1
+    },
+    {
+      "name": "landscape",
+      "width": 844,
+      "height": 390,
+      "zoom": 1
+    },
+    {
+      "name": "zoom200",
+      "width": 1280,
+      "height": 900,
+      "zoom": 2
+    },
+    {
+      "name": "zoom400",
+      "width": 1280,
+      "height": 960,
+      "zoom": 4
+    }
+  ],
+  "metrics": [
+    {
+      "profile": "desktop",
+      "state": "01-library-top",
+      "filename": "desktop-01-library-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "01-library-bottom",
+      "filename": "desktop-01-library-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "02-library-menu",
+      "filename": "desktop-02-library-menu.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "03-browse-top",
+      "filename": "desktop-03-browse-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "03-browse-bottom",
+      "filename": "desktop-03-browse-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "04-smart-setup-top",
+      "filename": "desktop-04-smart-setup-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "04-smart-setup-bottom",
+      "filename": "desktop-04-smart-setup-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "05-preferences-top",
+      "filename": "desktop-05-preferences-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "05-preferences-bottom",
+      "filename": "desktop-05-preferences-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "06-usage-top",
+      "filename": "desktop-06-usage-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "06-usage-bottom",
+      "filename": "desktop-06-usage-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "07-card-editor-top",
+      "filename": "desktop-07-card-editor-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "07-card-editor-bottom",
+      "filename": "desktop-07-card-editor-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "08-deck-editor",
+      "filename": "desktop-08-deck-editor.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "09-study-question-top",
+      "filename": "desktop-09-study-question-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "09-study-question-bottom",
+      "filename": "desktop-09-study-question-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "10-study-solution",
+      "filename": "desktop-10-study-solution.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "11-study-complete",
+      "filename": "desktop-11-study-complete.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "12-smart-question",
+      "filename": "desktop-12-smart-question.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "13-smart-feedback-top",
+      "filename": "desktop-13-smart-feedback-top.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "13-smart-feedback-bottom",
+      "filename": "desktop-13-smart-feedback-bottom.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "14-smart-complete",
+      "filename": "desktop-14-smart-complete.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "15-ai-error",
+      "filename": "desktop-15-ai-error.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "16-pomodoro-break",
+      "filename": "desktop-16-pomodoro-break.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "17-empty-library",
+      "filename": "desktop-17-empty-library.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "desktop",
+      "state": "18-keyboard-light",
+      "filename": "desktop-18-keyboard-light.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 587,
+        "height": 314,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "desktop",
+      "state": "19-keyboard-dark",
+      "filename": "desktop-19-keyboard-dark.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 587,
+        "height": 314,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "desktop",
+      "state": "20-editor-keyboard-notice",
+      "filename": "desktop-20-editor-keyboard-notice.png",
+      "viewport": [
+        1280,
+        900
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": {
+        "top": 587,
+        "height": 314,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "tablet",
+      "state": "01-library-top",
+      "filename": "tablet-01-library-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "01-library-bottom",
+      "filename": "tablet-01-library-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "02-library-menu",
+      "filename": "tablet-02-library-menu.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "03-browse-top",
+      "filename": "tablet-03-browse-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "03-browse-bottom",
+      "filename": "tablet-03-browse-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "04-smart-setup-top",
+      "filename": "tablet-04-smart-setup-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "04-smart-setup-bottom",
+      "filename": "tablet-04-smart-setup-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "05-preferences-top",
+      "filename": "tablet-05-preferences-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "05-preferences-bottom",
+      "filename": "tablet-05-preferences-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "06-usage-top",
+      "filename": "tablet-06-usage-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "06-usage-bottom",
+      "filename": "tablet-06-usage-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "07-card-editor-top",
+      "filename": "tablet-07-card-editor-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "07-card-editor-bottom",
+      "filename": "tablet-07-card-editor-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "08-deck-editor",
+      "filename": "tablet-08-deck-editor.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "09-study-question-top",
+      "filename": "tablet-09-study-question-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "09-study-question-bottom",
+      "filename": "tablet-09-study-question-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "10-study-solution",
+      "filename": "tablet-10-study-solution.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "11-study-complete",
+      "filename": "tablet-11-study-complete.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "12-smart-question",
+      "filename": "tablet-12-smart-question.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "13-smart-feedback-top",
+      "filename": "tablet-13-smart-feedback-top.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "13-smart-feedback-bottom",
+      "filename": "tablet-13-smart-feedback-bottom.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "14-smart-complete",
+      "filename": "tablet-14-smart-complete.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "15-ai-error",
+      "filename": "tablet-15-ai-error.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "16-pomodoro-break",
+      "filename": "tablet-16-pomodoro-break.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "17-empty-library",
+      "filename": "tablet-17-empty-library.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "tablet",
+      "state": "18-keyboard-light",
+      "filename": "tablet-18-keyboard-light.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "layer-switch MLK__tooltip MLK__tex-math",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 687,
+        "height": 314,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "tablet",
+      "state": "19-keyboard-dark",
+      "filename": "tablet-19-keyboard-dark.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "layer-switch MLK__tooltip MLK__tex-math",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 687,
+        "height": 314,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "tablet",
+      "state": "20-editor-keyboard-notice",
+      "filename": "tablet-20-editor-keyboard-notice.png",
+      "viewport": [
+        900,
+        1000
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": {
+        "top": 687,
+        "height": 314,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "phone",
+      "state": "01-library-top",
+      "filename": "phone-01-library-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "01-library-bottom",
+      "filename": "phone-01-library-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Neuer Stapel",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "02-library-menu",
+      "filename": "phone-02-library-menu.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "03-browse-top",
+      "filename": "phone-03-browse-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "03-browse-bottom",
+      "filename": "phone-03-browse-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "04-smart-setup-top",
+      "filename": "phone-04-smart-setup-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "04-smart-setup-bottom",
+      "filename": "phone-04-smart-setup-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "05-preferences-top",
+      "filename": "phone-05-preferences-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "05-preferences-bottom",
+      "filename": "phone-05-preferences-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "06-usage-top",
+      "filename": "phone-06-usage-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "06-usage-bottom",
+      "filename": "phone-06-usage-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "07-card-editor-top",
+      "filename": "phone-07-card-editor-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "07-card-editor-bottom",
+      "filename": "phone-07-card-editor-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "08-deck-editor",
+      "filename": "phone-08-deck-editor.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "09-study-question-top",
+      "filename": "phone-09-study-question-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "09-study-question-bottom",
+      "filename": "phone-09-study-question-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "10-study-solution",
+      "filename": "phone-10-study-solution.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "11-study-complete",
+      "filename": "phone-11-study-complete.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "12-smart-question",
+      "filename": "phone-12-smart-question.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "13-smart-feedback-top",
+      "filename": "phone-13-smart-feedback-top.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "13-smart-feedback-bottom",
+      "filename": "phone-13-smart-feedback-bottom.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "14-smart-complete",
+      "filename": "phone-14-smart-complete.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "15-ai-error",
+      "filename": "phone-15-ai-error.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "16-pomodoro-break",
+      "filename": "phone-16-pomodoro-break.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "17-empty-library",
+      "filename": "phone-17-empty-library.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "phone",
+      "state": "18-keyboard-light",
+      "filename": "phone-18-keyboard-light.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "MLK__rows",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 627,
+        "height": 218,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "phone",
+      "state": "19-keyboard-dark",
+      "filename": "phone-19-keyboard-dark.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "MLK__rows",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 627,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "phone",
+      "state": "20-editor-keyboard-notice",
+      "filename": "phone-20-editor-keyboard-notice.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": {
+        "top": 627,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "small",
+      "state": "01-library-top",
+      "filename": "small-01-library-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Mathematik und Lernmethoden – Aufgaben, Formeln und Zusammenhänge durchsehen",
+          "coveredBy": "app-nav",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "01-library-bottom",
+      "filename": "small-01-library-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Smart Study starten",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "02-library-menu",
+      "filename": "small-02-library-menu.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "03-browse-top",
+      "filename": "small-03-browse-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "03-browse-bottom",
+      "filename": "small-03-browse-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "04-smart-setup-top",
+      "filename": "small-04-smart-setup-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "04-smart-setup-bottom",
+      "filename": "small-04-smart-setup-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "05-preferences-top",
+      "filename": "small-05-preferences-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "05-preferences-bottom",
+      "filename": "small-05-preferences-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "06-usage-top",
+      "filename": "small-06-usage-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "06-usage-bottom",
+      "filename": "small-06-usage-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "07-card-editor-top",
+      "filename": "small-07-card-editor-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "07-card-editor-bottom",
+      "filename": "small-07-card-editor-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "08-deck-editor",
+      "filename": "small-08-deck-editor.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "09-study-question-top",
+      "filename": "small-09-study-question-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "09-study-question-bottom",
+      "filename": "small-09-study-question-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "10-study-solution",
+      "filename": "small-10-study-solution.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "11-study-complete",
+      "filename": "small-11-study-complete.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "12-smart-question",
+      "filename": "small-12-smart-question.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "13-smart-feedback-top",
+      "filename": "small-13-smart-feedback-top.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "13-smart-feedback-bottom",
+      "filename": "small-13-smart-feedback-bottom.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "14-smart-complete",
+      "filename": "small-14-smart-complete.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "15-ai-error",
+      "filename": "small-15-ai-error.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "16-pomodoro-break",
+      "filename": "small-16-pomodoro-break.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "17-empty-library",
+      "filename": "small-17-empty-library.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "small",
+      "state": "18-keyboard-light",
+      "filename": "small-18-keyboard-light.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "layer-switch MLK__tooltip MLK__tex-math",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 483,
+        "height": 218,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "small",
+      "state": "19-keyboard-dark",
+      "filename": "small-19-keyboard-dark.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "layer-switch MLK__tooltip MLK__tex-math",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 483,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "small",
+      "state": "20-editor-keyboard-notice",
+      "filename": "small-20-editor-keyboard-notice.png",
+      "viewport": [
+        320,
+        700
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": {
+        "top": 483,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "landscape",
+      "state": "01-library-top",
+      "filename": "landscape-01-library-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "01-library-bottom",
+      "filename": "landscape-01-library-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "02-library-menu",
+      "filename": "landscape-02-library-menu.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "03-browse-top",
+      "filename": "landscape-03-browse-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "03-browse-bottom",
+      "filename": "landscape-03-browse-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "04-smart-setup-top",
+      "filename": "landscape-04-smart-setup-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "04-smart-setup-bottom",
+      "filename": "landscape-04-smart-setup-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "05-preferences-top",
+      "filename": "landscape-05-preferences-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "05-preferences-bottom",
+      "filename": "landscape-05-preferences-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "06-usage-top",
+      "filename": "landscape-06-usage-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "06-usage-bottom",
+      "filename": "landscape-06-usage-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "07-card-editor-top",
+      "filename": "landscape-07-card-editor-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "07-card-editor-bottom",
+      "filename": "landscape-07-card-editor-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "08-deck-editor",
+      "filename": "landscape-08-deck-editor.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "09-study-question-top",
+      "filename": "landscape-09-study-question-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "09-study-question-bottom",
+      "filename": "landscape-09-study-question-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "10-study-solution",
+      "filename": "landscape-10-study-solution.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "11-study-complete",
+      "filename": "landscape-11-study-complete.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "12-smart-question",
+      "filename": "landscape-12-smart-question.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "13-smart-feedback-top",
+      "filename": "landscape-13-smart-feedback-top.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "13-smart-feedback-bottom",
+      "filename": "landscape-13-smart-feedback-bottom.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "14-smart-complete",
+      "filename": "landscape-14-smart-complete.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "15-ai-error",
+      "filename": "landscape-15-ai-error.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "16-pomodoro-break",
+      "filename": "landscape-16-pomodoro-break.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "17-empty-library",
+      "filename": "landscape-17-empty-library.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "landscape",
+      "state": "18-keyboard-light",
+      "filename": "landscape-18-keyboard-light.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 149,
+        "height": 242,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "landscape",
+      "state": "19-keyboard-dark",
+      "filename": "landscape-19-keyboard-dark.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 149,
+        "height": 242,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "landscape",
+      "state": "20-editor-keyboard-notice",
+      "filename": "landscape-20-editor-keyboard-notice.png",
+      "viewport": [
+        844,
+        390
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "01-library-top",
+      "filename": "zoom200-01-library-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Import / Export",
+          "coveredBy": "router-link-active router-link-exact-active app-nav-item is-active",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "01-library-bottom",
+      "filename": "zoom200-01-library-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "02-library-menu",
+      "filename": "zoom200-02-library-menu.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "03-browse-top",
+      "filename": "zoom200-03-browse-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "INPUT",
+          "label": "",
+          "coveredBy": "app-nav",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "03-browse-bottom",
+      "filename": "zoom200-03-browse-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "04-smart-setup-top",
+      "filename": "zoom200-04-smart-setup-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Lokal",
+          "coveredBy": "router-link-active router-link-exact-active app-nav-item is-active",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "OpenRouter-KI",
+          "coveredBy": "app-nav-item",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "04-smart-setup-bottom",
+      "filename": "zoom200-04-smart-setup-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "10 Min.",
+          "coveredBy": "brand-name",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "25 Min. (Pomodoro)",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ohne Zeitlimit",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "05-preferences-top",
+      "filename": "zoom200-05-preferences-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "05-preferences-bottom",
+      "filename": "zoom200-05-preferences-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "SELECT",
+          "label": "SystemspracheDeutschEnglish",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "06-usage-top",
+      "filename": "zoom200-06-usage-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "06-usage-bottom",
+      "filename": "zoom200-06-usage-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "07-card-editor-top",
+      "filename": "zoom200-07-card-editor-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "07-card-editor-bottom",
+      "filename": "zoom200-07-card-editor-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "08-deck-editor",
+      "filename": "zoom200-08-deck-editor.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "09-study-question-top",
+      "filename": "zoom200-09-study-question-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "09-study-question-bottom",
+      "filename": "zoom200-09-study-question-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "10-study-solution",
+      "filename": "zoom200-10-study-solution.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "11-study-complete",
+      "filename": "zoom200-11-study-complete.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "12-smart-question",
+      "filename": "zoom200-12-smart-question.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "13-smart-feedback-top",
+      "filename": "zoom200-13-smart-feedback-top.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "13-smart-feedback-bottom",
+      "filename": "zoom200-13-smart-feedback-bottom.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "14-smart-complete",
+      "filename": "zoom200-14-smart-complete.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "15-ai-error",
+      "filename": "zoom200-15-ai-error.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "16-pomodoro-break",
+      "filename": "zoom200-16-pomodoro-break.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "17-empty-library",
+      "filename": "zoom200-17-empty-library.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Import / Export",
+          "coveredBy": "router-link-active router-link-exact-active app-nav-item is-active",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom200",
+      "state": "18-keyboard-light",
+      "filename": "zoom200-18-keyboard-light.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "MLK__rows",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 233,
+        "height": 218,
+        "background": "#f0edf8"
+      }
+    },
+    {
+      "profile": "zoom200",
+      "state": "19-keyboard-dark",
+      "filename": "zoom200-19-keyboard-dark.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Symboltastatur anzeigen",
+          "coveredBy": "MLK__toolbar",
+          "reachable": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Rechenweg (optional)",
+          "coveredBy": "hide-shift MLK__keycap",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "coveredBy": "MLK__rows",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Ich weiß es nicht",
+          "coveredBy": "big-op hide-shift MLK__keycap",
+          "reachable": true
+        }
+      ],
+      "keyboard": {
+        "top": 233,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "zoom200",
+      "state": "20-editor-keyboard-notice",
+      "filename": "zoom200-20-editor-keyboard-notice.png",
+      "viewport": [
+        640,
+        450
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": {
+        "top": 233,
+        "height": 218,
+        "background": "#2d2739"
+      }
+    },
+    {
+      "profile": "zoom400",
+      "state": "01-library-top",
+      "filename": "zoom400-01-library-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "01-library-bottom",
+      "filename": "zoom400-01-library-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "02-library-menu",
+      "filename": "zoom400-02-library-menu.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "03-browse-top",
+      "filename": "zoom400-03-browse-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "03-browse-bottom",
+      "filename": "zoom400-03-browse-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "04-smart-setup-top",
+      "filename": "zoom400-04-smart-setup-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "04-smart-setup-bottom",
+      "filename": "zoom400-04-smart-setup-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "05-preferences-top",
+      "filename": "zoom400-05-preferences-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "05-preferences-bottom",
+      "filename": "zoom400-05-preferences-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Hell",
+          "coveredBy": "brand-name",
+          "reachable": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Dunkel",
+          "coveredBy": "app-bar-inner",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "06-usage-top",
+      "filename": "zoom400-06-usage-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [
+        {
+          "tag": "BUTTON",
+          "label": "Verbindungslogs exportieren",
+          "coveredBy": "app-nav",
+          "reachable": true
+        }
+      ],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "06-usage-bottom",
+      "filename": "zoom400-06-usage-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "07-card-editor-top",
+      "filename": "zoom400-07-card-editor-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "07-card-editor-bottom",
+      "filename": "zoom400-07-card-editor-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "08-deck-editor",
+      "filename": "zoom400-08-deck-editor.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "09-study-question-top",
+      "filename": "zoom400-09-study-question-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "09-study-question-bottom",
+      "filename": "zoom400-09-study-question-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "10-study-solution",
+      "filename": "zoom400-10-study-solution.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "11-study-complete",
+      "filename": "zoom400-11-study-complete.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "12-smart-question",
+      "filename": "zoom400-12-smart-question.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "13-smart-feedback-top",
+      "filename": "zoom400-13-smart-feedback-top.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "13-smart-feedback-bottom",
+      "filename": "zoom400-13-smart-feedback-bottom.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "14-smart-complete",
+      "filename": "zoom400-14-smart-complete.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "15-ai-error",
+      "filename": "zoom400-15-ai-error.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "16-pomodoro-break",
+      "filename": "zoom400-16-pomodoro-break.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "17-empty-library",
+      "filename": "zoom400-17-empty-library.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "18-keyboard-light",
+      "filename": "zoom400-18-keyboard-light.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "19-keyboard-dark",
+      "filename": "zoom400-19-keyboard-dark.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    },
+    {
+      "profile": "zoom400",
+      "state": "20-editor-keyboard-notice",
+      "filename": "zoom400-20-editor-keyboard-notice.png",
+      "viewport": [
+        320,
+        240
+      ],
+      "pageOverflow": false,
+      "modalOverflow": false,
+      "blocked": [],
+      "keyboard": null
+    }
+  ],
+  "errors": []
+}

@@ -25,12 +25,14 @@ function measure(): void {
   const bottom = (viewport?.offsetTop || 0) + (viewport?.height || innerHeight)
   const space = rect?.height ? Math.max(0, bottom - rect.top) + 12 : 0
   document.documentElement.style.setProperty('--notification-space', `${space}px`)
+  window.dispatchEvent(new Event('notification-geometrychange'))
 }
 let observer: ResizeObserver | undefined
 onMounted(() => {
   observer = new ResizeObserver(measure)
   if (root.value) observer.observe(root.value)
   window.addEventListener('resize', measure)
+  window.addEventListener('math-keyboard-geometrychange', measure)
   window.visualViewport?.addEventListener('resize', measure)
   window.visualViewport?.addEventListener('scroll', measure)
   measure()
@@ -39,6 +41,7 @@ watch(() => [library.persistenceIssue, modalOpen.value, ...visible.value.map(mes
 onBeforeUnmount(() => {
   observer?.disconnect()
   window.removeEventListener('resize', measure)
+  window.removeEventListener('math-keyboard-geometrychange', measure)
   window.visualViewport?.removeEventListener('resize', measure)
   window.visualViewport?.removeEventListener('scroll', measure)
   document.documentElement.style.removeProperty('--notification-space')

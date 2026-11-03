@@ -14,6 +14,9 @@ interface AiEvaluationInput {
   language?: 'en' | 'de'
   referenceAnswer: string
   userAnswer: string
+  evaluationScope?: 'answer' | 'working' | 'answer_and_working'
+  referenceWorking?: string
+  userWorking?: string
 }
 
 interface AiEvaluationResult extends AiOperationResult {
@@ -21,6 +24,7 @@ interface AiEvaluationResult extends AiOperationResult {
     verdict: AnswerVerdict
     feedback: string
     model?: string
+    working?: { verdict: AnswerVerdict; feedback: string }
   }
 }
 

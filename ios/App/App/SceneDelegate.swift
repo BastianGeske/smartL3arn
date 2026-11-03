@@ -165,6 +165,9 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
             "question": call.getString("question") as Any? ?? NSNull(),
             "referenceAnswer": call.getString("referenceAnswer") as Any? ?? NSNull(),
             "userAnswer": call.getString("userAnswer") as Any? ?? NSNull(),
+            "evaluationScope": call.getString("evaluationScope") ?? "answer",
+            "referenceWorking": call.getString("referenceWorking") ?? "",
+            "userWorking": call.getString("userWorking") ?? "",
             "language": call.getString("language") ?? "en"
         ]
         guard let body = NativeAiEvaluationRequest.body(input: input, model: configuredModel),
@@ -172,13 +175,13 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["ok": false, "reason": "invalid-input"])
             return
         }
-        send(key: key, endpoint: "chat/completions", body: data) { body, reason in
+        send(key: key, endpoint: "chat/completions", body: data, requiresWorking: input["evaluationScope"] as? String == "answer_and_working") { body, reason in
             if let reason = reason { call.resolve(["ok": false, "reason": reason]) }
             else { call.resolve(["ok": true, "body": body ?? [:]]) }
         }
     }
 
-    private func send(key: String, endpoint: String, body: Data?,
+    private func send(key: String, endpoint: String, body: Data?, requiresWorking: Bool = false,
                       completion: @escaping ([String: Any]?, String?) -> Void) {
         requestLock.lock()
         guard activeRequests < 2 else {
@@ -220,7 +223,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 if json == nil && reason == nil { reason = "invalid-response" }
             } else { reason = "unavailable" }
-            if reason == nil && operation == "evaluate" && !NativeAiJournal.evaluationIsValid(json) {
+            if reason == nil && operation == "evaluate" && !NativeAiJournal.evaluationIsValid(json, requiresWorking: requiresWorking) {
                 reason = "invalid-response"
             }
             let resultReason = reason

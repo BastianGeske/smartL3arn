@@ -1,0 +1,219 @@
+{
+  "name": "Aufgabentypen – Beispiele",
+  "cards": [
+    {
+      "id": "short",
+      "front": "Wie heißt die Hauptstadt Deutschlands?",
+      "back": "Berlin",
+      "task": {
+        "kind": "short_text"
+      }
+    },
+    {
+      "id": "long",
+      "front": "Erkläre den Unterschied zwischen Wetter und Klima.",
+      "back": "Wetter beschreibt den aktuellen Zustand der Atmosphäre; Klima beschreibt langfristige typische Wetterverhältnisse.",
+      "task": {
+        "kind": "long_text"
+      }
+    },
+    {
+      "id": "number",
+      "front": "Berechne \\(12\\cdot 3\\).",
+      "back": "36",
+      "task": {
+        "kind": "calculation",
+        "answer": {
+          "kind": "number",
+          "value": "36"
+        },
+        "solutionSteps": [
+          {
+            "kind": "math",
+            "value": "12\\cdot3=12+12+12=36"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fraction",
+      "front": "Berechne \\(\\frac14+\\frac14\\).",
+      "back": "1/2",
+      "task": {
+        "kind": "calculation",
+        "answer": {
+          "kind": "fraction",
+          "numerator": "1",
+          "denominator": "2"
+        }
+      }
+    },
+    {
+      "id": "quantity",
+      "front": "Welche Strecke wird in 2 Sekunden bei einer Geschwindigkeit von 2,5 m/s zurückgelegt?",
+      "back": "5 m",
+      "task": {
+        "kind": "calculation",
+        "answer": {
+          "kind": "quantity",
+          "pairs": [
+            {
+              "value": "5",
+              "unit": "m"
+            },
+            {
+              "value": "500",
+              "unit": "cm"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "formula",
+      "front": "Gib die Formel für die Fläche eines Kreises an.",
+      "back": "A=\\pi r^2",
+      "task": {
+        "kind": "calculation",
+        "answer": {
+          "kind": "formula",
+          "value": "A=\\pi r^2"
+        },
+        "solutionSteps": [
+          {
+            "kind": "text",
+            "value": "Die Fläche wächst proportional zum Quadrat des Radius."
+          }
+        ]
+      }
+    },
+    {
+      "id": "single",
+      "front": "Welche Stadt ist die Hauptstadt Frankreichs?",
+      "back": "Paris",
+      "task": {
+        "kind": "single_choice",
+        "options": [
+          {
+            "id": "berlin",
+            "text": "Berlin"
+          },
+          {
+            "id": "paris",
+            "text": "Paris"
+          },
+          {
+            "id": "rom",
+            "text": "Rom"
+          }
+        ],
+        "correctIds": [
+          "paris"
+        ]
+      }
+    },
+    {
+      "id": "multiple",
+      "front": "Welche der Zahlen sind Primzahlen?",
+      "back": "2 und 3",
+      "task": {
+        "kind": "multiple_choice",
+        "options": [
+          {
+            "id": "two",
+            "text": "2"
+          },
+          {
+            "id": "three",
+            "text": "3"
+          },
+          {
+            "id": "four",
+            "text": "4"
+          }
+        ],
+        "correctIds": [
+          "two",
+          "three"
+        ]
+      }
+    },
+    {
+      "id": "boolean",
+      "front": "Die Zahl 1 ist eine Primzahl.",
+      "back": "Falsch",
+      "task": {
+        "kind": "true_false",
+        "correct": false,
+        "explanation": "Eine Primzahl hat genau zwei positive Teiler; die Zahl 1 hat nur einen."
+      }
+    },
+    {
+      "id": "cloze",
+      "front": "Die Hauptstadt Deutschlands heißt {{city}}. Es gilt: 2 + 2 = {{sum}}.",
+      "back": "Berlin; 4",
+      "task": {
+        "kind": "cloze",
+        "gaps": [
+          {
+            "id": "city",
+            "kind": "text",
+            "answer": "Berlin"
+          },
+          {
+            "id": "sum",
+            "kind": "number",
+            "answer": "4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "matching",
+      "front": "Ordne die Länder ihren Hauptstädten zu.",
+      "back": "Deutschland → Berlin; Frankreich → Paris",
+      "task": {
+        "kind": "matching",
+        "pairs": [
+          {
+            "id": "de",
+            "left": "Deutschland",
+            "right": "Berlin"
+          },
+          {
+            "id": "fr",
+            "left": "Frankreich",
+            "right": "Paris"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ordering",
+      "front": "Ordne die Zahlen aufsteigend.",
+      "back": "1, 2, 3",
+      "task": {
+        "kind": "ordering",
+        "items": [
+          {
+            "id": "two",
+            "text": "2"
+          },
+          {
+            "id": "one",
+            "text": "1"
+          },
+          {
+            "id": "three",
+            "text": "3"
+          }
+        ],
+        "correctOrder": [
+          "one",
+          "two",
+          "three"
+        ]
+      }
+    }
+  ]
+}

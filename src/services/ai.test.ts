@@ -57,4 +57,15 @@ describe('iOS AI bridge', () => {
     await getAiBridge()!.saveOpenRouterKey('test-key')
     expect(native.saveOpenRouterKey).toHaveBeenCalledWith({ apiKey: 'test-key' })
   })
+  it('requires separate working feedback when both answer and working are requested', async () => {
+    const request = { ...input, evaluationScope: 'answer_and_working' as const, referenceWorking: '', userWorking: 'Ein Rechenweg.' }
+    native.evaluateAnswer.mockResolvedValueOnce({ ok: true, body: { choices: [{ message: { content: JSON.stringify({ verdict: 'correct', feedback: 'Richtig.' }) } }] } })
+    expect(await getAiBridge()!.evaluateAnswer(request)).toEqual({ ok: false, reason: 'invalid-response' })
+    native.evaluateAnswer.mockResolvedValueOnce({ ok: true, body: { choices: [{ message: { content: JSON.stringify({ verdict: 'correct', feedback: 'Ergebnis richtig.', working: { verdict: 'incorrect', feedback: 'Schritt falsch.' } }) } }] } })
+    expect(await getAiBridge()!.evaluateAnswer(request)).toMatchObject({ ok: true, result: { verdict: 'correct', working: { verdict: 'incorrect' } } })
+  })
+  it('rejects oversized working before contacting the native bridge', async () => {
+    expect(await getAiBridge()!.evaluateAnswer({ ...input, evaluationScope: 'working', referenceWorking: '', userWorking: 'x'.repeat(4001) })).toEqual({ ok: false, reason: 'invalid-input' })
+    expect(native.evaluateAnswer).not.toHaveBeenCalled()
+  })
 })

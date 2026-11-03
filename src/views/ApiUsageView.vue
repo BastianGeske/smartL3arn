@@ -252,7 +252,12 @@ onUnmounted(() => document.removeEventListener('visibilitychange', resume))
   .usage-table td::before { display: block; content: attr(data-label); margin-bottom: 5px; color: var(--text-muted); font-size: 11px; font-weight: 600; }
   .usage-table td small { white-space: normal; }
 }
-.summary-item strong { font-size: 22px; overflow-wrap: anywhere; }
+.summary-item strong { font-size: 22px; overflow-wrap: anywhere; overflow: visible; white-space: normal; text-overflow: clip; line-height: 1.3; }
+@media (min-width: 720px) and (max-width: 1100px) {
+  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-item:nth-child(3) { border-left: 0; }
+  .summary-item:nth-child(n + 3) { border-top: 1px solid var(--border); }
+}
 @media (max-width: 800px) {
   .usage-details { grid-template-columns: 1fr; gap: 24px; }
   .usage-current-model { width: 100%; margin-left: 0; }

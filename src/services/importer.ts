@@ -3,6 +3,7 @@ import { createCard, genId, parseCards } from '../domain/importExport'
 import { todayStr } from '../domain/dates'
 import { checkDataSize, MAX_CARDS, MAX_FILE_BYTES, normalizeDeck } from '../../shared/data-validation.mjs'
 import type { AppData, Card, Deck } from '../domain/types'
+import { TaskValidationError } from '../../shared/tasks.mjs'
 
 export class ImportError extends Error {
   constructor(readonly key: TranslationKey) { super(t(key)) }
@@ -18,7 +19,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function deckFromBackup(value: unknown, fallbackName = t('import.defaultDeck')): Deck | null {
   if (!isRecord(value) || !Array.isArray(value.cards)) return null
   try { return normalizeDeck(value, { today: todayStr(), name: fallbackName.slice(0, 120), newDeckId: true }) }
-  catch { throw new ImportError('import.invalidBackup') }
+  catch (error) { throw new ImportError(error instanceof TaskValidationError ? `task.${error.code}` as TranslationKey : 'import.invalidBackup') }
 }
 
 async function readImportFile(file: File): Promise<string> {
