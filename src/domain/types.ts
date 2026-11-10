@@ -21,8 +21,6 @@ export interface AnswerEvaluation {
   verdict: AnswerVerdict
   feedback: string
   model?: string
-  fallbackReason?: string
-  localSimilarity?: number
   parts?: ResponsePart[]
 }
 
@@ -37,6 +35,7 @@ export interface SessionStats {
 export interface StudySession extends SessionStats {
   date: string
   smart?: boolean
+  practice?: boolean
 }
 
 export interface Elaboration {
@@ -49,6 +48,7 @@ export interface CardStats {
   again: number
   hard: number
   elaborations?: Elaboration[]
+  practiceAvailableAt?: number
   smartNeedsPractice?: boolean
   smartLastGrade?: RatingKey
   smartLastReviewedSession?: number
@@ -98,7 +98,10 @@ export interface SmartConfig {
   evaluationMode: EvaluationMode
 }
 
+export type StudyPurpose = 'review' | 'relearning' | 'practice'
+
 export interface SmartQueueItem {
+  purpose?: StudyPurpose
   deckId: string
   cardId: string
 }

@@ -4,6 +4,14 @@ Im Karteneditor legt **Aufgabentyp** die Darstellung und das Antwortfeld fest.
 Smart Study verwendet die interaktiven Felder, wenn **Antwort eingeben** aktiv ist.
 Der Standardmodus und Smart Study ohne Antworteingabe zeigen die Aufgaben und
 anschließend die Musterlösung. Die Lernbewertung bleibt immer manuell.
+Freie Textantworten werden lokal anhand der Musterlösung selbst bewertet;
+Zeichenähnlichkeit liefert kein Richtig/Falsch-Urteil. Strukturierte Antworten
+und optionale KI-Prüfungen erhalten fachliches Feedback.
+
+Nach Nochmal/Schwer gilt in beiden Modi eine gespeicherte Pause von zehn Minuten
+für diese Karte. Andere Karten können weitergelernt werden. Freiwilliges Üben
+verändert keine FSRS-Fälligkeiten. JSON erhält `practiceAvailableAt` in den
+Kartenstatistiken und die Kennzeichnung `practice` an Übungssitzungen.
 
 | `task.kind` | Eingabe und Lösungskonfiguration |
 | --- | --- |
@@ -46,9 +54,16 @@ erhalten getrenntes Feedback; eine andere gültige Lösungsmethode ist zulässig
 KI-Eingaben sind auf 4000 UTF-16-Zeichen je Feld begrenzt. Bei Fehlern bleiben
 alle Eingaben erhalten. Für Formel und Rechenweg wird zusammen eine Anfrage gesendet.
 
+Im KI-Modus werden passende Zahlen-, Bruch- und Einheitenergebnisse lokal
+bestätigt. Abweichende Ergebnisse prüft die KI auf gleichwertige Schreibweisen;
+andere Werte oder Vorzeichen bleiben falsch. Wird ein Rechenweg mitgeschickt,
+prüft die KI ihn getrennt vom Ergebnis, bei einem abweichenden Ergebnis gemeinsam
+in einer Anfrage. Andere strukturierte Typen werden auch im KI-Modus lokal geprüft.
+
 ## Import, Speicherung und Export
 
 [Beispieldeck für alle Typen](task-types.example.json) über **Import JSON** importieren.
+Für eigene Inhalte gibt es die vollständige [Promptvorlage](flashcard-prompt.md).
 `front` und `back` sind weiterhin erforderlich. Bei strukturierten Aufgaben sind
 die Daten in `task` maßgeblich; `back` wird als lesbare Musterlösung daraus erzeugt.
 `explanation` ergänzt die Musterlösung. Bei Textaufgaben steht die Musterantwort

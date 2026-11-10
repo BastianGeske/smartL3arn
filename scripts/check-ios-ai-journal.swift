@@ -16,6 +16,9 @@ struct CheckAiJournal {
         expect(request["max_tokens"] as? Int == 4096, "native token limit cannot be overridden")
         expect(request["model"] as? String == "trusted/model", "native model cannot be overridden")
         expect((request["messages"] as? [[String: String]])?.first?["content"]?.contains("German") == true, "native language selection")
+        let instructions = (request["messages"] as! [[String: String]])[0]["content"]!
+        expect(instructions.contains("equivalent mathematical notation, number words"), "native evaluator accepts alternate writing")
+        expect(instructions.contains("Do not excuse a different numeric value, sign"), "native evaluator preserves mathematical correctness")
         expect(NativeAiEvaluationRequest.body(input: ["body": request], model: "trusted/model") == nil, "arbitrary API body rejected")
         var oversized = input
         oversized["question"] = String(repeating: "x", count: 4001)

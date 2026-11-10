@@ -45,6 +45,7 @@ declare global {
         credentialSource: 'environment' | 'bundled' | 'stored' | null
         model?: string
       }>
+      testOpenRouterConnection: () => Promise<AiOperationResult>
       saveOpenRouterKey: (apiKey: string) => Promise<AiOperationResult>
       removeOpenRouterKey: () => Promise<AiOperationResult>
       evaluateAnswer: (input: AiEvaluationInput) => Promise<AiEvaluationResult>

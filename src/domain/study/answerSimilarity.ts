@@ -2,7 +2,6 @@ import { t } from '../../i18n'
 import type {
   AnswerEvaluation,
   AnswerVerdict,
-  ConfidenceLevel,
 } from '../types'
 
 export function normalizeAnswer(value: string): string {
@@ -72,29 +71,6 @@ export interface SimilarityBand {
   verdict: AnswerVerdict
 }
 
-export function similarityBand(score: number): SimilarityBand {
-  if (score >= 0.97) return { band: 'perfect', label: t('verdict.correct'), verdict: 'correct' }
-  if (score >= 0.82) return { band: 'close', label: t('verdict.mostly_correct'), verdict: 'mostly_correct' }
-  if (score >= 0.5) return { band: 'partial', label: t('verdict.partially_correct'), verdict: 'partially_correct' }
-  return { band: 'wrong', label: t('verdict.incorrect'), verdict: 'incorrect' }
-}
-
-export function localEvaluation(
-  typed: string,
-  correct: string,
-  fallbackReason?: string,
-): AnswerEvaluation {
-  const score = answerSimilarity(typed, correct)
-  const band = similarityBand(score)
-  return {
-    source: 'local',
-    verdict: band.verdict,
-    feedback: t(typed.trim() ? 'smart.localCompared' : 'smart.noAnswer'),
-    localSimilarity: score,
-    ...(fallbackReason ? { fallbackReason } : {}),
-  }
-}
-
 export function evaluationBand(evaluation: AnswerEvaluation): SimilarityBand {
   const bands: Record<AnswerVerdict, SimilarityBand> = {
     correct: { band: 'perfect', label: t('verdict.correct'), verdict: 'correct' },
@@ -103,16 +79,4 @@ export function evaluationBand(evaluation: AnswerEvaluation): SimilarityBand {
     incorrect: { band: 'wrong', label: t('verdict.incorrect'), verdict: 'incorrect' },
   }
   return bands[evaluation.verdict]
-}
-
-export function calibrationMatch(
-  level: ConfidenceLevel,
-  verdict: AnswerVerdict | null,
-): boolean | null {
-  if (verdict === null) return null
-  if (level === 'high') return verdict === 'correct'
-  if (level === 'medium') {
-    return verdict === 'mostly_correct' || verdict === 'partially_correct'
-  }
-  return verdict === 'partially_correct' || verdict === 'incorrect'
 }

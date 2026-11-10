@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAiBridge } from './ai'
 
-const native = vi.hoisted(() => ({ evaluateAnswer: vi.fn(), getAiStatus: vi.fn(),
+const native = vi.hoisted(() => ({ evaluateAnswer: vi.fn(), getAiStatus: vi.fn(), testOpenRouterConnection: vi.fn(),
   saveOpenRouterKey: vi.fn(), removeOpenRouterKey: vi.fn(), getApiUsage: vi.fn(), getAiDiagnostics: vi.fn() }))
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: () => 'ios' }, registerPlugin: () => native,
@@ -14,6 +14,13 @@ const input = { deckName: 'Biologie', question: 'Was ist Photosynthese?',
 beforeEach(() => { vi.clearAllMocks(); delete window.smartL3arn })
 
 describe('iOS AI bridge', () => {
+  it.each([{ ok: true }, { ok: false, reason: 'auth' }])('returns the native connection result without sending credentials: %j', async result => {
+    native.testOpenRouterConnection.mockResolvedValue(result)
+    expect(await getAiBridge()!.testOpenRouterConnection()).toEqual(result)
+    expect(native.testOpenRouterConnection).toHaveBeenCalledWith()
+    expect(native.evaluateAnswer).not.toHaveBeenCalled()
+    expect(native.saveOpenRouterKey).not.toHaveBeenCalled()
+  })
   it('loads persistent native usage and diagnostics', async () => {
     const usage = { model: 'test/model', groups: [], persistenceError: false, unreadableEntries: 0 }
     const logs = { filename: 'test.jsonl', content: '', persistenceError: false }

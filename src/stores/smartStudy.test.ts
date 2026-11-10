@@ -44,22 +44,23 @@ describe('AI evaluation selection', () => {
     await smart.start()
     smart.setResponse({ kind: 'text', value: 'a'.repeat(4000) })
     const evaluate = vi.spyOn(tasks, 'evaluateResponse')
-    const compare = vi.spyOn(similarity, 'localEvaluation')
+    const compare = vi.spyOn(similarity, 'answerSimilarity')
     bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'incorrect', feedback: 'Try again.' } })
     await smart.checkAnswer()
     expect(evaluate).not.toHaveBeenCalled()
     expect(compare).not.toHaveBeenCalled()
     expect(bridge.evaluateAnswer).toHaveBeenCalledOnce()
   })
-  it.each([undefined, 'short_text', 'long_text'] as const)('retains local text comparison for local %s cards', async kind => {
+  it.each([undefined, 'short_text', 'long_text'] as const)('uses self-assessment for local %s cards', async kind => {
     useSettingsStore().smartConfig.evaluationMode = 'local'
     useLibraryStore().decks[0]!.cards = [createCard('Explain', 'Expected answer', kind ? { kind } : undefined)]
     await smart.start()
     smart.setResponse({ kind: 'text', value: 'Expected answer' })
-    const compare = vi.spyOn(similarity, 'localEvaluation')
+    const compare = vi.spyOn(similarity, 'answerSimilarity')
     await smart.checkAnswer()
-    expect(compare).toHaveBeenCalledOnce()
-    expect(smart.session!.evaluation).toMatchObject({ source: 'local', verdict: 'correct' })
+    expect(compare).not.toHaveBeenCalled()
+    expect(smart.session!.evaluation).toBeNull()
+    expect(smart.session!.selfAssessment).toBe(true)
     expect(bridge.evaluateAnswer).not.toHaveBeenCalled()
   })
   it('uses the AI result instead of local string similarity', async () => {
@@ -96,7 +97,8 @@ describe('AI evaluation selection', () => {
   it('uses local grading only when explicitly selected', async () => {
     useSettingsStore().smartConfig.evaluationMode = 'local'
     await smart.checkAnswer()
-    expect(smart.session!.evaluation?.source).toBe('local')
+    expect(smart.session!.evaluation).toBeNull()
+    expect(smart.session!.selfAssessment).toBe(true)
     expect(bridge.evaluateAnswer).not.toHaveBeenCalled()
   })
 })
@@ -170,12 +172,102 @@ describe('typed task evaluation', () => {
     expect(bridge.evaluateAnswer.mock.calls[0]![0].referenceAnswer).toBe('\\(x^2\\)')
     expect(smart.session!.phase).toBe('reviewing')
   })
-  it('checks numbers locally even when AI is selected, preserving exact signs', async () => {
-    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '-4' } })
-    smart.setResponse({ kind: 'text', value: '4' })
+  it.each<{ answer: CalculationAnswer; response: StudyResponse }>([
+    { answer: { kind: 'number', value: '4' }, response: { kind: 'text', value: '+004,00' } },
+    { answer: { kind: 'fraction', numerator: '1', denominator: '2' }, response: { kind: 'text', value: '0.5' } },
+    { answer: { kind: 'quantity', pairs: [{ value: '5', unit: 'm' }] }, response: { kind: 'quantity', value: '5', unit: 'm' } },
+  ])('keeps matching $answer.kind results local in AI mode', async ({ answer, response }) => {
+    await calculation({ kind: 'calculation', answer })
+    smart.setResponse(response)
     await smart.checkAnswer()
     expect(bridge.evaluateAnswer).not.toHaveBeenCalled()
-    expect(smart.session!.evaluation).toMatchObject({ source: 'local', verdict: 'incorrect' })
+    expect(smart.session!.evaluation).toMatchObject({ source: 'local', verdict: 'correct' })
+    expect(smart.session!.phase).toBe('reviewing')
+  })
+  it('asks AI about a numerical mismatch and preserves a genuinely incorrect verdict', async () => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '-4' } })
+    smart.setResponse({ kind: 'text', value: '4' })
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'incorrect', feedback: 'The sign changes the value.' } })
+    await smart.checkAnswer()
+    expect(bridge.evaluateAnswer).toHaveBeenCalledOnce()
+    expect(bridge.evaluateAnswer.mock.calls[0]![0]).toMatchObject({ referenceAnswer: '-4', userAnswer: '4', evaluationScope: 'answer' })
+    expect(smart.session!.evaluation).toMatchObject({ source: 'openrouter', verdict: 'incorrect' })
+  })
+  it.each(['four', 'fOur', '2 + 2', '4.0.'])('lets AI interpret a nonnumeric writing difference: %s', async answer => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '4' } })
+    smart.setResponse({ kind: 'text', value: answer })
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'correct', feedback: 'Equivalent written answer.' } })
+    await smart.checkAnswer()
+    expect(smart.inputError).toBeNull()
+    expect(bridge.evaluateAnswer).toHaveBeenCalledOnce()
+    expect(bridge.evaluateAnswer.mock.calls[0]![0]).toMatchObject({ referenceAnswer: '4', userAnswer: answer, evaluationScope: 'answer' })
+    expect(smart.session!.evaluation).toMatchObject({ source: 'openrouter', verdict: 'correct' })
+    expect(smart.session!.phase).toBe('reviewing')
+  })
+  it('lets AI interpret an alternate written fraction', async () => {
+    await calculation({ kind: 'calculation', answer: { kind: 'fraction', numerator: '1', denominator: '2' } })
+    smart.setResponse({ kind: 'text', value: 'one half' })
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'correct', feedback: 'Equivalent fraction.' } })
+    await smart.checkAnswer()
+    expect(smart.inputError).toBeNull()
+    expect(bridge.evaluateAnswer.mock.calls[0]![0]).toMatchObject({ userAnswer: 'one half', evaluationScope: 'answer' })
+    expect(smart.session!.evaluation).toMatchObject({ source: 'openrouter', verdict: 'correct' })
+  })
+  it('asks AI about unit spelling differences', async () => {
+    await calculation({ kind: 'calculation', answer: { kind: 'quantity', pairs: [{ value: '5', unit: 'm' }] } })
+    smart.setResponse({ kind: 'quantity', value: '5', unit: 'meters' })
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'correct', feedback: 'Same unit.' } })
+    await smart.checkAnswer()
+    expect(bridge.evaluateAnswer.mock.calls[0]![0]).toMatchObject({ userAnswer: '5 meters', referenceAnswer: '5 m', evaluationScope: 'answer' })
+    expect(smart.session!.evaluation?.source).toBe('openrouter')
+  })
+  it.each(['4', 'four'])('keeps numerical mismatches and validation local when local mode is selected: %s', async answer => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '-4' } })
+    useSettingsStore().smartConfig.evaluationMode = 'local'
+    smart.setResponse({ kind: 'text', value: answer })
+    await smart.checkAnswer()
+    expect(bridge.evaluateAnswer).not.toHaveBeenCalled()
+    if (answer === 'four') {
+      expect(smart.inputError).toBe('task.invalidMath')
+      expect(smart.session!.phase).toBe('asking')
+    } else expect(smart.session!.evaluation).toMatchObject({ source: 'local', verdict: 'incorrect' })
+  })
+  it.each(['timeout', 'unavailable', 'invalid-response'])('keeps mismatches available for retry on %s without finalizing local grading', async reason => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '4' } })
+    smart.setResponse({ kind: 'text', value: 'four' })
+    bridge.evaluateAnswer.mockResolvedValueOnce({ ok: false, reason })
+      .mockResolvedValueOnce({ ok: true, result: { verdict: 'correct', feedback: 'Equivalent answer.' } })
+    await smart.checkAnswer()
+    expect(smart.evaluationError).not.toBeNull()
+    expect(smart.session!.phase).toBe('asking')
+    expect(smart.session!.evaluation).toBeNull()
+    expect(smart.session!.response).toEqual({ kind: 'text', value: 'four' })
+    expect(smart.session!.isEvaluating).toBe(false)
+    await smart.checkAnswer()
+    expect(smart.evaluationError).toBeNull()
+    expect(smart.session!.evaluation).toMatchObject({ source: 'openrouter', verdict: 'correct' })
+    expect(smart.session!.phase).toBe('reviewing')
+  })
+  it('checks a mismatching numerical answer and its working independently in one request', async () => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '4' } })
+    smart.setResponse({ kind: 'text', value: 'four' })
+    smart.session!.working = [{ kind: 'text', value: 'Two plus two.' }]
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'correct', feedback: 'Equivalent answer.', working: { verdict: 'incorrect', feedback: 'Insufficient reasoning.' } } })
+    await smart.checkAnswer()
+    expect(bridge.evaluateAnswer).toHaveBeenCalledOnce()
+    expect(bridge.evaluateAnswer.mock.calls[0]![0]).toMatchObject({ evaluationScope: 'answer_and_working', userAnswer: 'four', userWorking: 'Two plus two.' })
+    expect(smart.session!.evaluation).toMatchObject({ source: 'openrouter', verdict: 'correct' })
+    expect(smart.session!.workingEvaluation).toMatchObject({ source: 'openrouter', verdict: 'incorrect' })
+  })
+  it('does not finalize a mismatching answer when AI omits required working feedback', async () => {
+    await calculation({ kind: 'calculation', answer: { kind: 'number', value: '4' } })
+    smart.setResponse({ kind: 'text', value: 'four' })
+    smart.session!.working = [{ kind: 'text', value: 'Two plus two.' }]
+    bridge.evaluateAnswer.mockResolvedValue({ ok: true, result: { verdict: 'correct', feedback: 'Equivalent answer.' } })
+    await smart.checkAnswer()
+    expect(smart.evaluationError).toBe('ai.invalidResponse')
+    expect(smart.session!.phase).toBe('asking')
+    expect(smart.session!.evaluation).toBeNull()
   })
   it('keeps invalid fractions in the asking phase without evaluating them', async () => {
     await calculation({ kind: 'calculation', answer: { kind: 'fraction', numerator: '1', denominator: '2' } })
@@ -229,8 +321,9 @@ describe('typed task evaluation', () => {
     await smart.rate(0)
     expect(smart.session!.working).toEqual([])
     expect(smart.session!.workingEvaluation).toBeNull()
-    expect(smart.session!.response).toEqual({ kind: 'text', value: '' })
-    expect(smart.currentCard!.task!.kind).toBe('calculation')
+    expect(smart.session!.response).toBeNull()
+    expect(smart.isDone).toBe(true)
+    expect(smart.nextPracticeAt).toBeGreaterThan(Date.now())
   })
 })
 

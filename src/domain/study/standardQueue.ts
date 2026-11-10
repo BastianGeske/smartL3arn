@@ -1,3 +1,4 @@
+import { practiceReady } from './practice'
 import { isDue, todayStr } from '../dates'
 import type { Deck } from '../types'
 
@@ -14,19 +15,21 @@ export function buildStandardQueue(
   today = todayStr(),
   random = Math.random,
 ): string[] {
-  const overdue = deck.cards
+  const cards = deck.cards.filter(card => practiceReady(deck, card.id))
+  const overdue = cards
     .filter((card) => isDue(card, today) && card.dueDate && card.dueDate < today)
     .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5))
     .map((card) => card.id)
   shuffleInPlace(overdue, random)
 
-  const dueToday = deck.cards
+  const dueToday = cards
     .filter((card) => isDue(card, today) && (!card.dueDate || card.dueDate === today))
     .sort((a, b) => (b.difficulty || 5) - (a.difficulty || 5))
     .map((card) => card.id)
   shuffleInPlace(dueToday, random)
 
-  const queue = [...overdue, ...dueToday]
+  const focus = cards.filter(card => !isDue(card, today) && deck.cardStats?.[card.id]?.smartNeedsPractice).map(card => card.id)
+  const queue = [...overdue, ...focus, ...dueToday]
   if (queue.length) return queue
-  return shuffleInPlace(deck.cards.map((card) => card.id), random)
+  return shuffleInPlace(cards.map((card) => card.id), random)
 }

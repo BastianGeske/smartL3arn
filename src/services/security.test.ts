@@ -19,6 +19,7 @@ test.each(['__proto__', 'constructor', 'prototype'])('reserved ID %s is repaired
   await library.addDeck(deck)
   const study = useStudyStore()
   study.start(deck.id)
+  study.flip()
   await study.rate(2)
   expect(Object.hasOwn(Object.prototype, 'reviews')).toBe(false)
   expect(deck.cardStats?.[deck.cards[0].id]?.reviews).toBe(1)

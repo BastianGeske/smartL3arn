@@ -1,3 +1,4 @@
+import { practiceReady, studyPurpose } from './practice'
 import { isDue, todayStr } from '../dates'
 import type { Card, Deck, SmartConfig, SmartQueueItem } from '../types'
 import { shuffleInPlace } from './standardQueue'
@@ -38,6 +39,7 @@ export function smartCoreCardsForDeck(
   const dueToday: Card[] = []
 
   deck.cards.forEach((card) => {
+    if (!practiceReady(deck, card.id)) return
     const due = isDue(card, today)
     if (due && card.dueDate && card.dueDate < today) overdue.push(card)
     else if (due) dueToday.push(card)
@@ -100,12 +102,15 @@ export function buildSmartStudyQueue(
     : selectedDecks
       .map((deck) => ({
         deckId: deck.id,
-        cards: shuffleSmartCards(deck, [...deck.cards], random),
+        cards: shuffleSmartCards(deck, deck.cards.filter(card => practiceReady(deck, card.id)), random),
       }))
       .filter((bucket) => bucket.cards.length > 0)
 
+  const purposes = new Map(selectedDecks.map(deck => [deck.id, new Map(deck.cards.map(card => [card.id, studyPurpose(deck, card)]))]))
   return {
-    queue: buildSmartQueueFromBuckets(shuffleInPlace(buckets, random), config.techniques.interleaving),
+    queue: buildSmartQueueFromBuckets(shuffleInPlace(buckets, random), config.techniques.interleaving).map(item => {
+      return { ...item, purpose: purposes.get(item.deckId)!.get(item.cardId)! }
+    }),
     mode: hasCore ? 'core' : 'practice',
     hasCore,
   }

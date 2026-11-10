@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n, type TranslationKey } from '../i18n'
-import { computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import StudyCardBody from '../components/StudyCardBody.vue'
@@ -9,7 +9,6 @@ import StudyCompletion from '../components/StudyCompletion.vue'
 import StudyHeader from '../components/StudyHeader.vue'
 import SmartCardMeta from '../components/SmartCardMeta.vue'
 import {
-  calibrationMatch,
   evaluationBand,
 } from '../domain/study/answerSimilarity'
 import type { ConfidenceLevel, Rating } from '../domain/types'
@@ -46,22 +45,28 @@ const feedbackBand = computed(() => (
     ? null
     : evaluationBand(smart.session.evaluation)
 ))
-const calibration = computed(() => {
-  const session = smart.session
-  if (!session?.confidenceLevel) return null
-  return calibrationMatch(session.confidenceLevel, session.evaluation?.verdict || null)
-})
 const breakProgress = computed(() => {
   const duration = smart.session?.breakDurationMs || 0
   return duration ? Math.min(1, Math.max(0, 1 - smart.breakRemainingMs / duration)) : 1
 })
 const nextAvailability = computed(() => smart.availableQueue())
+const stopAvailabilityRefresh = watch(() => smart.isDone, (done, _previous, onCleanup) => {
+  if (!done) return
+  smart.refreshAvailability()
+  const timer = setInterval(smart.refreshAvailability, 500)
+  onCleanup(() => clearInterval(timer))
+}, { immediate: true })
 const hasWorking = computed(() => Boolean(workingText(smart.session?.working || [])))
 const workingBand = computed(() => smart.session?.workingEvaluation ? evaluationBand(smart.session.workingEvaluation) : null)
 const usesAI = computed(() => {
   if (settings.smartConfig.evaluationMode !== 'openrouter') return false
+  const session = smart.session
+  if (session?.phase === 'reviewing') {
+    return session.evaluation?.source === 'openrouter' || session.workingEvaluation?.source === 'openrouter'
+  }
+  // Before submission, show the available evaluator without revealing whether the draft matches.
   const task = smart.currentCard?.task
-  return !task || ['short_text', 'long_text'].includes(task.kind) || (task.kind === 'calculation' && (task.answer.kind === 'formula' || hasWorking.value))
+  return !task || ['short_text', 'long_text', 'calculation'].includes(task.kind)
 })
 const answerDisplay = computed(() => smart.currentCard?.task?.kind === 'calculation' && smart.currentCard.task.answer.kind === 'formula' && smart.session?.typedAnswer ? `\\(${smart.session.typedAnswer}\\)` : smart.session?.typedAnswer || '')
 
@@ -70,12 +75,13 @@ onMounted(async () => {
     await router.replace({ name: 'smart-setup' })
     return
   }
-  smart.startTimer()
+  if (!smart.isDone) smart.startTimer()
   window.addEventListener('keydown', handleKeydown)
   await nextTick(focusCurrentInput)
 })
 
 onBeforeUnmount(() => {
+  stopAvailabilityRefresh()
   smart.stopTimer()
   window.removeEventListener('keydown', handleKeydown)
 })
@@ -134,7 +140,7 @@ async function exit(): Promise<void> {
 <template>
   <div v-if="smart.session" class="study-shell" :class="{ 'smart-study-shell': !smart.isDone && !smart.isBreak }">
     <StudyHeader
-      :title="t('nav.smart')"
+      :title="t(smart.currentItem?.purpose === 'practice' ? 'study.practice' : 'nav.smart')"
       :progress="smart.isDone || smart.isBreak ? 100 : progress"
       :label="smart.isBreak ? t('smart.focusComplete') : (smart.isDone ? t('study.reviewed', { count: smart.session.sessionStats.reviewed }) : t('common.of', { current: smart.session.index + 1, total: smart.session.queue.length }))"
       :smart-timer="timerLabel"
@@ -187,6 +193,7 @@ async function exit(): Promise<void> {
       :note="smart.session.timeUp ? t('smart.timeUp', { count: settings.smartConfig.duration }) : t('smart.allCards', { count: smart.session.queue.length })"
       :stats="smart.session.sessionStats"
     >
+      <p v-if="smart.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(smart.nextPracticeAt).toLocaleString() }) }}</p>
       <div class="smart-done-actions">
         <button
           v-if="nextAvailability.queue.length"
@@ -206,6 +213,7 @@ async function exit(): Promise<void> {
 
     <main v-else-if="smart.currentCard && smart.currentDeck" class="smart-study-main">
       <div class="smart-body">
+        <p v-if="smart.currentItem?.purpose === 'practice'" class="field-hint">{{ t('study.practiceNote') }}</p>
         <template v-if="smart.session.phase === 'asking'">
           <section
             class="smart-card-block smart-card-front"
@@ -216,7 +224,7 @@ async function exit(): Promise<void> {
             <SmartCardMeta
               :deck-name="smart.currentDeck.name"
               :ai="usesAI"
-              :mode-label="t(smart.session.mode === 'practice' ? 'study.practice' : 'smart.scheduled')"
+              :mode-label="t(smart.currentItem?.purpose === 'practice' ? 'study.practice' : 'smart.scheduled')"
             />
             <StudyCardBody :key="`${smart.currentCard.id}:${smart.session.index}`" :card="smart.currentCard" side="question" :interactive="settings.smartConfig.techniques.typeRecall" label-id="smart-question-label" content-id="smart-question-content">
               <template v-if="smart.currentCard.task?.kind === 'cloze' && settings.smartConfig.techniques.typeRecall" #content>
@@ -318,14 +326,8 @@ async function exit(): Promise<void> {
           >
             <div class="smart-feedback-score">
               <span>{{ t(`verdict.${feedbackBand.verdict}`) }}</span>
-              <strong v-if="smart.session.evaluation.source === 'local' && smart.session.evaluation.localSimilarity !== undefined">
-                {{ t('smart.localMatch', { value: Math.round((smart.session.evaluation.localSimilarity || 0) * 100) }) }}
-              </strong>
-              <strong v-else>{{ t(smart.session.evaluation.source === 'local' ? 'task.localChecked' : 'smart.aiReview') }}</strong>
+              <strong>{{ t(smart.session.evaluation.source === 'local' ? 'task.localChecked' : 'smart.aiReview') }}</strong>
             </div>
-            <p v-if="smart.session.evaluation.fallbackReason" class="smart-feedback-fallback">
-              {{ t('smart.localFallback', { reason: t(smart.session.evaluation.fallbackReason as TranslationKey) }) }}
-            </p>
             <div v-if="smart.session.evaluation.source === 'openrouter'" class="smart-feedback-row">
               <span class="smart-feedback-label">{{ t('smart.feedback') }}</span>
               <span class="smart-feedback-text">{{ smart.session.evaluation.feedback }}</span>
@@ -339,19 +341,18 @@ async function exit(): Promise<void> {
             </div>
             <template v-if="smart.session.evaluation.parts?.length"><p>{{ smart.session.evaluation.feedback }}</p><ul class="task-part-feedback"><li v-for="(part, i) in smart.session.evaluation.parts" :key="i" :class="part.correct ? 'is-correct' : 'is-incorrect'"><span>{{ part.correct ? '✓' : '✗' }} <MathContent :text="part.label" /></span><span>{{ t('task.received') }}: <MathContent :text="part.actual || '—'" /><template v-if="!part.correct"> · {{ t('task.expected') }}: <MathContent :text="part.expected" /></template></span></li></ul></template>
           </div>
-          <section v-if="settings.smartConfig.techniques.typeRecall && smart.session.selfAssessment" class="smart-feedback task-self-assessment"><strong>{{ t('task.selfAssessment') }}</strong><p>{{ t('task.formulaLocal') }}</p><div class="smart-feedback-row"><span class="smart-feedback-label">{{ t('smart.youWrote') }}</span><MathContent :text="answerDisplay" /></div></section>
+          <section v-if="settings.smartConfig.techniques.typeRecall && smart.session.selfAssessment" class="smart-feedback task-self-assessment"><strong>{{ t('task.selfAssessment') }}</strong><p>{{ t('study.selfCompare') }}</p><div class="smart-feedback-row"><span class="smart-feedback-label">{{ t('smart.youWrote') }}</span><MathContent :text="answerDisplay" /></div></section>
           <section v-if="settings.smartConfig.techniques.typeRecall && hasWorking && smart.currentCard.task?.kind === 'calculation'" class="smart-feedback" :class="workingBand ? `smart-feedback-${workingBand.band}` : 'task-self-assessment'"><strong>{{ t('task.workingFeedback') }}<template v-if="workingBand"> · {{ workingBand.label }}</template></strong><MathContent :text="workingText(smart.session.working)" /><p v-if="smart.session.workingEvaluation">{{ smart.session.workingEvaluation.feedback }}</p><p v-else>{{ t('task.workingLocal') }}</p></section>
 
           <div
             v-if="settings.smartConfig.techniques.confidenceCheck && smart.session.confidenceLevel"
             class="smart-calibration"
-            :class="calibration === null ? '' : (calibration ? 'is-good' : 'is-off')"
           >
-            <AppIcon :name="calibration ? 'check-circle-2' : 'gauge'" :size="16" />
+            <AppIcon name="gauge" :size="16" />
             <span>
               {{ t('smart.confidenceLabel') }} <strong>{{ t(`confidence.${smart.session.confidenceLevel}`) }}</strong>
-              <template v-if="calibration !== null">
-                · {{ calibration ? t('smart.calibrated') : t('smart.mismatch') }}
+              <template v-if="smart.session.evaluation">
+                · {{ t(`verdict.${smart.session.evaluation!.verdict}`) }}
               </template>
             </span>
           </div>

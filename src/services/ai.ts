@@ -1,10 +1,11 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
 type AiBridge = Pick<NonNullable<Window['smartL3arn']>,
-  'getAiStatus' | 'saveOpenRouterKey' | 'removeOpenRouterKey' | 'evaluateAnswer' | 'getApiUsage' | 'getAiDiagnostics'>
+  'getAiStatus' | 'testOpenRouterConnection' | 'saveOpenRouterKey' | 'removeOpenRouterKey' | 'evaluateAnswer' | 'getApiUsage' | 'getAiDiagnostics'>
 
 const nativeAi = registerPlugin<{
   getAiStatus: AiBridge['getAiStatus']
+  testOpenRouterConnection: AiBridge['testOpenRouterConnection']
   getApiUsage: AiBridge['getApiUsage']
   getAiDiagnostics: AiBridge['getAiDiagnostics']
   saveOpenRouterKey: (options: { apiKey: string }) => ReturnType<AiBridge['saveOpenRouterKey']>
@@ -16,6 +17,7 @@ const verdicts = ['correct', 'mostly_correct', 'partially_correct', 'incorrect']
 
 const iosAi: AiBridge = {
   getAiStatus: () => nativeAi.getAiStatus(),
+  testOpenRouterConnection: () => nativeAi.testOpenRouterConnection(),
   getApiUsage: () => nativeAi.getApiUsage(),
   getAiDiagnostics: () => nativeAi.getAiDiagnostics(),
   saveOpenRouterKey: (apiKey) => nativeAi.saveOpenRouterKey({ apiKey }),

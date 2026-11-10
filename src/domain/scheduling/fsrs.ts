@@ -1,6 +1,8 @@
 import { addDaysToIsoDate, daysBetweenIsoDates, todayStr } from '../dates'
 import type { Card, Rating } from '../types'
 
+// FSRS-5: https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm
+// Specification checked 2026-11-10 (page revision July 28, 2026); existing weights retained.
 const FSRS_W = [
   0.40255, 1.18385, 3.1262, 15.4722, 7.2102, 0.5316, 1.0651, 0.06164,
   1.4654, 0.1649, 1.031, 1.9395, 0.11505, 0.29605, 2.2698, 0.2315,
@@ -30,7 +32,7 @@ export function fsrsInitDifficulty(grade: number): number {
 }
 
 export function fsrsNextDifficulty(difficulty: number, grade: number): number {
-  const nextDifficulty = difficulty - FSRS_W[6] * (grade - 3)
+  const nextDifficulty = difficulty - FSRS_W[6] * (grade - 3) * (10 - difficulty) / 9
   const initialEasyDifficulty = fsrsInitDifficulty(4)
   return Math.min(
     10,
@@ -83,12 +85,14 @@ export function scheduleCard(card: Card, rating: Rating, today = todayStr()): Ca
     difficulty = fsrsInitDifficulty(grade)
   } else {
     difficulty = fsrsNextDifficulty(card.difficulty ?? 5, grade)
-    stability = grade === 1
-      ? fsrsNextStabilityForget(card.difficulty ?? 5, card.stability, retrievability)
+    stability = daysSince === 0
+      ? card.stability * Math.exp(FSRS_W[17] * (grade - 3 + FSRS_W[18]))
+      : grade === 1
+      ? Math.min(card.stability * Math.exp(-FSRS_W[17] * FSRS_W[18]), fsrsNextStabilityForget(card.difficulty ?? 5, card.stability, retrievability))
       : fsrsNextStabilityRecall(card.difficulty ?? 5, card.stability, retrievability, grade)
   }
 
-  stability = Math.max(0.1, stability)
+  stability = Math.min(365_000, Math.max(0.1, stability))
   const interval = grade === 1 ? 1 : fsrsInterval(stability)
   return {
     ...card,

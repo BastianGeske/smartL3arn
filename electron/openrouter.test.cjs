@@ -34,6 +34,27 @@ function evaluationBody() {
   }
 }
 
+test('connection validation authenticates without sending learning content or requesting inference', async () => {
+  const requests = []
+  const client = createOpenRouterClient({ fetchImpl: async (url, options) => {
+    requests.push({ url, options })
+    return jsonResponse({ data: { label: 'private' } })
+  } })
+  assert.equal(await client.validateKey(' active-key ', { credentialSource: 'stored' }), true)
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].url, 'https://openrouter.ai/api/v1/key')
+  assert.equal(requests[0].options.method, 'GET')
+  assert.equal(requests[0].options.headers.Authorization, 'Bearer active-key')
+  assert.equal(requests[0].options.body, undefined)
+})
+
+test('connection validation rejects malformed success payloads', async () => {
+  for (const body of [null, {}, { data: null }, { data: [] }, { data: 'invalid' }]) {
+    const client = createOpenRouterClient({ fetchImpl: async () => jsonResponse(body) })
+    await assert.rejects(client.validateKey('active-key'), error => error.code === 'invalid-response')
+  }
+})
+
 test('evaluates formula results and working independently with one strict request', async () => {
   let request, calls = 0
   const client = createOpenRouterClient({ fetchImpl: async (_url, options) => {
@@ -90,6 +111,8 @@ test('sends only the current card context and requests a strict schema', async (
     reference_answer: 'Berlin',
     learner_answer: 'The capital is Berlin.',
   })
+  assert.match(request.messages[0].content, /equivalent mathematical notation, number words/)
+  assert.match(request.messages[0].content, /Do not excuse a different numeric value, sign/)
   assert.deepEqual(result, {
     verdict: 'correct',
     feedback: 'Correct.',

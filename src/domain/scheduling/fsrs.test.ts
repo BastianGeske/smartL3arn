@@ -53,3 +53,28 @@ describe('FSRS scheduling', () => {
     expect(card).toEqual(original)
   })
 })
+
+// Numerical reference values from FSRS-5 equations, with this project's retained weights.
+describe('FSRS-5 reference cases', () => {
+  it.each([[0, 1.5031], [1, 2.5195], [2, 4.2233], [3, 7.0793]])('uses the same-day equation for rating %s', (rating, expected) => {
+    const card = { ...newCard(), stability: 3, difficulty: 5, lastReview: '2026-08-03' }
+    expect(scheduleCard(card, rating as 0 | 1 | 2 | 3, '2026-08-03').stability).toBeCloseTo(expected, 3)
+  })
+  it('damps difficulty changes instead of applying the full delta', () => {
+    const card = { ...newCard(), stability: 3.1262, difficulty: 5.3146, lastReview: '2026-08-03' }
+    expect(scheduleCard(card, 1, '2026-08-03').difficulty).toBe(5.7097)
+    expect(scheduleCard(card, 3, '2026-08-03').stability).toBe(7.3771)
+  })
+})
+
+
+describe('calendar boundaries', () => {
+  it.each([['2026-03-28', '2026-03-29'], ['2026-10-24', '2026-10-25'], ['2026-12-31', '2027-01-01']])('uses calendar days from %s to %s', (previous, today) => {
+    const card = { ...newCard(), stability: 3, difficulty: 5, lastReview: previous }
+    const result = scheduleCard(card, 2, today)
+    expect(result.stability).toBeGreaterThan(3)
+    expect(result.lastReview).toBe(today)
+    expect(result.dueDate > today).toBe(true)
+    expect(card.lastReview).toBe(previous)
+  })
+})

@@ -1,7 +1,7 @@
+import { advanceReady, nextPracticeAt, practiceReady, recordPractice, retryLimit } from '../domain/study/practice'
 import { locale, type TranslationKey } from '../i18n'
 import { computed, onScopeDispose, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { localEvaluation } from '../domain/study/answerSimilarity'
 import { buildSmartStudyQueue } from '../domain/study/smartQueue'
 import { scheduleCard } from '../domain/scheduling/fsrs'
 import {
@@ -11,11 +11,10 @@ import {
   type Card,
   type Deck,
   type Rating,
-  type RatingKey,
   type SmartSessionState,
   type StudyResponse,
 } from '../domain/types'
-import { AI_TEXT_LIMIT, initialResponse, evaluateResponse, responseError, responseText, workingText, taskReferenceAnswer } from '../domain/tasks'
+import { AI_TEXT_LIMIT, initialResponse, evaluateResponse, aiEvaluationScope, responseError, responseText, workingText, taskReferenceAnswer } from '../domain/tasks'
 import { todayStr } from '../domain/dates'
 import {
   getPomodoroBreakUntil,
@@ -27,18 +26,12 @@ import { useUiStore } from './ui'
 import { getAiBridge } from '../services/ai'
 import { cardStatsFor } from '../domain/cardStats'
 
-const REQUEUE_LIMITS: Record<RatingKey, number> = {
-  again: 2,
-  hard: 1,
-  good: 0,
-  easy: 0,
-}
 const POMODORO_MINUTES = 25
 const BREAK_MINUTES = 7
 
 function unansweredEvaluation(card: Card) {
   return (card.task && !['short_text', 'long_text'].includes(card.task.kind) ? evaluateResponse(card, { kind: 'text', value: '' }) : null)
-    ?? { ...localEvaluation('', card.back), verdict: 'incorrect' as const, localSimilarity: 0 }
+    ?? null
 }
 
 const fallbackMessages: Record<string, TranslationKey> = {
@@ -103,7 +96,13 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   }
 
   function availableQueue() {
+    // Track clock refreshes in computed callers while checking availability at call time.
+    void clockNow.value
     return buildSmartStudyQueue(selectedDecks(), settings.smartConfig)
+  }
+
+  function refreshAvailability(): void {
+    clockNow.value = Date.now()
   }
 
   async function start(): Promise<boolean> {
@@ -255,6 +254,10 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
     const response = card.task ? value.response ?? initialResponse(card.task) : { kind: 'text' as const, value: value.typedAnswer }
     inputError.value = responseError(card.task, response)
+    // In AI mode, written numbers and alternate notation can be interpreted semantically.
+    if (inputError.value === 'task.invalidMath' && settings.smartConfig.evaluationMode === 'openrouter'
+      && card.task?.kind === 'calculation' && ['number', 'fraction'].includes(card.task.answer.kind)
+      && response.kind === 'text' && response.value.trim()) inputError.value = null
     if (inputError.value) return
     const typedAnswer = responseText(response, card.task).trim()
     value.typedAnswer = typedAnswer
@@ -263,6 +266,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     value.selfAssessment = false
     if (!typedAnswer) {
       value.evaluation = unansweredEvaluation(card)
+      value.selfAssessment = value.evaluation === null
       value.phase = 'reviewing'
       return
     }
@@ -276,8 +280,9 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       value.phase = 'reviewing'
       return
     }
-    if (deterministic) value.evaluation = evaluateResponse(card, response)
-    if (deterministic && !working) { value.phase = 'reviewing'; return }
+    const scope = aiEvaluationScope(card, response, Boolean(working))
+    value.evaluation = deterministic && (!scope || scope === 'working') ? evaluateResponse(card, response) : null
+    if (!scope) { value.phase = 'reviewing'; return }
     const referenceAnswer = taskReferenceAnswer(card)
     const referenceWorking = working && card.task?.kind === 'calculation' ? workingText(card.task.solutionSteps || []) : ''
     const fields: [string, TranslationKey][] = [
@@ -309,8 +314,8 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
         referenceAnswer,
         userAnswer: typedAnswer,
         language: locale.value,
+        evaluationScope: scope,
         ...(working ? {
-          evaluationScope: deterministic ? 'working' as const : 'answer_and_working' as const,
           referenceWorking,
           userWorking: working,
         } : {}),
@@ -329,14 +334,14 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     ) return
 
     value.isEvaluating = false
-    if (result.ok && result.result && (!working || deterministic || result.result.working)) {
+    if (result.ok && result.result && (scope !== 'answer_and_working' || result.result.working)) {
       const evaluated = {
         source: 'openrouter',
         verdict: result.result.verdict,
         feedback: result.result.feedback,
         ...(result.result.model ? { model: result.result.model } : {}),
       } as const
-      if (deterministic && working) value.workingEvaluation = evaluated
+      if (scope === 'working') value.workingEvaluation = evaluated
       else {
         value.evaluation = evaluated
         if (working && result.result.working) value.workingEvaluation = { source: 'openrouter', ...result.result.working }
@@ -360,6 +365,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     value.selfAssessment = false
     inputError.value = null
     value.evaluation = unansweredEvaluation(card)
+    value.selfAssessment = value.evaluation === null
     value.phase = 'reviewing'
   }
 
@@ -393,12 +399,10 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     value.perDeck[item.deckId] = deckStats
 
     const cardIndex = deck.cards.findIndex((entry) => entry.id === card.id)
-    deck.cards[cardIndex] = scheduleCard(card, rating)
+    if (item.purpose !== 'practice') deck.cards[cardIndex] = scheduleCard(card, rating)
 
     const stats = cardStatsFor(deck, card.id)
-    stats.reviews += 1
-    if (rating === 0) stats.again += 1
-    if (rating === 1) stats.hard += 1
+    recordPractice(deck, card, rating, item.purpose || 'review')
     if (settings.smartConfig.techniques.whyPrompt && value.elaboration.trim()) {
       stats.elaborations ||= []
       stats.elaborations.push({
@@ -413,15 +417,17 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     delete stats.smartSkipUntilSession
     stats.smartLastGrade = key
     stats.smartLastReviewedSession = deck.smartSessionSeq || 0
-    if (key === 'again' || key === 'hard') stats.smartNeedsPractice = true
-    else delete stats.smartNeedsPractice
 
-    if (requeueCount < REQUEUE_LIMITS[key]) {
+    if (requeueCount < retryLimit(rating)) {
       value.requeues[queueKey] = requeueCount + 1
-      value.queue.push({ ...item })
+      value.queue.push({ ...item, purpose: item.purpose === 'practice' ? 'practice' : 'relearning' })
     }
 
     value.index += 1
+    advanceReady(value.queue, value.index, entry => {
+      const entryDeck = library.deckById(entry.deckId)
+      return Boolean(entryDeck && practiceReady(entryDeck, entry.cardId))
+    })
     value.typedAnswer = ''
     value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
     value.working = []
@@ -450,7 +456,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       const deck = library.deckById(deckId)
       if (!deck) return
       deck.sessions ||= []
-      deck.sessions.push({ date: todayStr(), ...stats, smart: true })
+      deck.sessions.push({ date: todayStr(), ...stats, smart: true, practice: value.mode === 'practice' })
       if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90)
     })
     value.sessionSaved = true
@@ -473,6 +479,11 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     isBreak,
     isDone,
     availableQueue,
+    refreshAvailability,
+    nextPracticeAt: computed(() => {
+      void clockNow.value
+      return nextPracticeAt(selectedDecks())
+    }),
     start,
     startTimer,
     stopTimer,

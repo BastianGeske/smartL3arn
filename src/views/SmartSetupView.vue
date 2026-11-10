@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n, type TranslationKey } from '../i18n'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onScopeDispose, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
@@ -30,6 +30,8 @@ const aiStatus = ref<{
 }>({ available: Boolean(ai), configured: false, credentialSource: null })
 const apiKey = ref('')
 const aiBusy = ref(false)
+const aiTesting = ref(false)
+const aiResponseTime = ref<number | null>(null)
 const aiLoading = ref(Boolean(ai))
 const aiMessage = ref<TranslationKey | ''>('')
 const fixedKeyActive = computed(() => Capacitor.getPlatform() !== 'ios'
@@ -39,9 +41,13 @@ const selectedDecks = computed(() => settings.smartConfig.deckIds
   .map((id) => library.deckById(id))
   .filter((deck) => Boolean(deck)))
 const canStart = computed(() => selectedDecks.value.some((deck) => deck && deck.cards.length > 0))
-const available = computed(() => canStart.value
-  ? smart.availableQueue()
-  : { queue: [], hasCore: false, mode: 'practice' as const })
+const availabilityNow = ref(Date.now())
+const availabilityTimer = setInterval(() => { availabilityNow.value = Date.now() }, 1000)
+onScopeDispose(() => clearInterval(availabilityTimer))
+const available = computed(() => {
+  void availabilityNow.value
+  return canStart.value ? smart.availableQueue() : { queue: [], hasCore: false, mode: 'practice' as const }
+})
 const selectedDue = computed(() => selectedDecks.value.reduce(
   (sum, deck) => sum + (deck?.cards.filter((card) => isDue(card)).length || 0),
   0,
@@ -65,6 +71,7 @@ const durations: { value: number; label: TranslationKey }[] = [
 ]
 
 const aiFailureMessages: Record<string, TranslationKey> = {
+  'not-configured': 'ai.notConfigured',
   auth: 'ai.auth',
   forbidden: 'ai.forbidden',
   credits: 'ai.credits',
@@ -94,10 +101,34 @@ onMounted(async () => {
   }
 })
 
+async function testConnection(): Promise<void> {
+  if (!ai || aiBusy.value || aiLoading.value || !aiStatus.value.configured) return
+  aiBusy.value = true
+  aiTesting.value = true
+  aiResponseTime.value = null
+  aiMessage.value = 'ai.testingConnection'
+  const started = performance.now()
+  try {
+    const result = await ai.testOpenRouterConnection()
+    if (result.ok) {
+      aiResponseTime.value = Math.round(performance.now() - started)
+      aiMessage.value = 'ai.connectionSuccess'
+    } else {
+      aiMessage.value = aiFailureMessages[result.reason || ''] || 'ai.connectionFailed'
+    }
+  } catch {
+    aiMessage.value = 'ai.unavailable'
+  } finally {
+    aiTesting.value = false
+    aiBusy.value = false
+  }
+}
+
 async function saveApiKey(): Promise<void> {
   const key = apiKey.value.trim()
   if (!key || !ai) return
   aiBusy.value = true
+  aiResponseTime.value = null
   aiMessage.value = 'ai.validating'
   const result = await ai.saveOpenRouterKey(key).catch(
     () => ({ ok: false, reason: 'unavailable' }),
@@ -118,6 +149,7 @@ async function saveApiKey(): Promise<void> {
 async function removeApiKey(): Promise<void> {
   if (!ai) return
   aiBusy.value = true
+  aiResponseTime.value = null
   const result = await ai.removeOpenRouterKey().catch(
     () => ({ ok: false, reason: 'unavailable' }),
   )
@@ -227,12 +259,14 @@ async function start(): Promise<void> {
         </section>
 
         <div class="smart-options">
+        <p v-if="smart.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(smart.nextPracticeAt).toLocaleString() }) }}</p>
 
 
           <section class="config-section" aria-labelledby="smart-techniques-title">
             <div class="config-heading">
               <div><span class="config-step">2</span><h2 id="smart-techniques-title">{{ t('smart.techniques') }}</h2></div>
             </div>
+            <p v-if="settings.smartConfig.deckIds.length < 2">{{ t('smart.mixHint') }}</p>
             <div class="technique-list">
               <label v-for="technique in techniques" :key="technique.key" class="technique-row">
                 <span class="technique-icon"><AppIcon :name="technique.icon" :size="17" /></span>
@@ -299,6 +333,16 @@ async function start(): Promise<void> {
                   ? t('ai.environmentKey')
                   : aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : t('ai.storedKey') }}
               </p>
+              <div class="ai-key-actions">
+                <button
+                  class="btn btn-secondary btn-sm ai-test-connection"
+                  type="button"
+                  :disabled="aiBusy || aiLoading || !aiStatus.configured"
+                  :aria-busy="aiTesting"
+                  @click="testConnection"
+                >{{ t(aiTesting ? 'ai.testingConnection' : 'ai.testConnection') }}</button>
+              </div>
+              <p class="ai-privacy-note">{{ t('ai.connectionHint') }}</p>
               <form class="ai-key-form" @submit.prevent="saveApiKey">
                 <p v-if="aiStatus.model" class="ai-status-message">{{ t('usage.configured') }} <strong>{{ aiStatus.model }}</strong></p>
                 <p v-if="Capacitor.getPlatform() === 'ios' && aiStatus.credentialSource === 'bundled'" class="ai-privacy-note">{{ t('ai.privateBuildHint') }}</p>
@@ -327,7 +371,7 @@ async function start(): Promise<void> {
                   >{{ t('ai.removeKey') }}</button>
                 </div>
               </form>
-              <p v-if="aiMessage" class="ai-status-message" role="status">{{ t(aiMessage) }}</p>
+              <p v-if="aiMessage" class="ai-status-message" role="status">{{ t(aiMessage, { ms: aiResponseTime ?? 0 }) }}</p>
             </div>
             <p v-else class="ai-privacy-note">
               {{ t('ai.desktopOnly') }}

@@ -18,7 +18,7 @@ The interface is available in German and English. OpenRouter answer evaluation i
 - [Mobile builds (iOS and Android)](#mobile-builds-ios-and-android)
 - [Usage walkthrough](#usage-walkthrough)
 - [Smart Study mode](#smart-study-mode)
-  - [Local answer comparison](#local-answer-comparison)
+  - [Local answer assessment](#local-answer-assessment)
   - [OpenRouter answer evaluation](#openrouter-answer-evaluation)
     - [Set up OpenRouter in the app](#set-up-openrouter-in-the-app)
     - [Configure a local .env file](#configure-a-local-env-file)
@@ -74,7 +74,7 @@ Typical use cases:
 
 - Due cards sorted into two priority groups: overdue first, then today-due
 - Cards shuffled within each group to avoid memorising the order
-- "Again" cards are re-queued in a learning phase at the end of the main queue
+- Again/Hard cards can return in a learning phase, after at least ten minutes
 - Session statistics bar (live counts of Again / Hard / Good / Easy)
 - Daily streak tracking (consecutive days with a session)
 - The completion screen offers **Study Again** if cards remain due, or **Practice again** plus the next review date when the deck is caught up
@@ -85,21 +85,20 @@ Typical use cases:
 - Multi-deck selection (interleave across decks in one session)
 - Four optional techniques, toggle each on or off:
   - Active recall by typing the answer
-  - Confidence calibration (Not sure / Maybe / Confident)
+  - Confidence check (Not sure / Maybe / Confident)
   - Elaborative why-prompt (free-text explanation)
   - Interleaving (round-robin across selected decks)
 - Session length: 10 min, 25 min (Pomodoro), or no limit
 - Live countdown timer in the header
 - When a 25-minute Pomodoro timer expires, a 7-minute break is shown before the next Pomodoro round; completing the queue earlier finishes the session directly
-- Typed-answer comparison with a similarity score (Levenshtein based, diacritics stripped, punctuation ignored)
-- For text cards, pure integer and decimal answers are compared exactly, including their sign; decimal comma and point are equivalent, and large values retain full precision. This text comparison does not evaluate fractions, expressions, scientific notation, or thousands separators. Typed calculations additionally support exact fractions, scientific notation, tolerances, and declared value–unit pairs.
+- Free-text self-assessment against the reference answer; no correctness verdict based on text similarity
 - Optional semantic answer evaluation through OpenRouter in macOS Electron and native iOS
 - Secure local API-key storage through Electron or the iOS Keychain; AI errors preserve the answer for retry without local grading
-- Color-coded feedback band: perfect (>=97%), close (>=82%), partial (>=50%), wrong (<50%)
+- Content verdicts only for structured answers and AI checks; free text uses self-assessment
 - Ratings remain manual; local or AI feedback never chooses or highlights a suggested rating
-- Confidence-vs-result calibration feedback
+- Neutral comparison of stated confidence with a checked result
 - Why-prompt elaborations stored per card (latest three kept)
-- Four-button Smart Study queue control: Good/Easy leave the session and rely on FSRS spacing; Hard is re-queued once, Again is re-queued up to two retries
+- Four-button Smart Study queue control: Good/Easy leave the session; Hard permits one retry and Again two, each after at least ten minutes
 - Again/Hard cards are marked for extra practice and stay eligible across Smart Study sessions until later rated Good/Easy
 - Queue priority within each deck: overdue cards first, then extra-practice Again/Hard cards, then today's due/new cards; if nothing is due or flagged, Smart Study offers a voluntary practice round across the selected decks
 - Each session randomizes cards within these priority groups (with a bias toward weaker cards) and the starting deck order; interleaving still alternates decks. The same queue logic runs on every platform.
@@ -111,7 +110,7 @@ Typical use cases:
 - TXT and CSV import (comma or tab delimited)
 - Two import entry points on Home: "Import JSON" and "Import TXT / CSV" both create a new deck
 - "Import TXT / CSV" inside a deck appends cards to the open deck
-- JSON, CSV, and Anki-compatible TXT export per deck; **Export All** creates a full JSON backup
+- JSON, CSV, and Anki-compatible TXT export per deck; **Export All** creates a full JSON backup, including task definitions
 - JSON deck and backup restoration preserve scheduling, statistics, explanations, and session history
 - CSV header detection, quoted multiline fields, escaped quotes, and UTF-8 BOM support
 
@@ -132,6 +131,8 @@ Typical use cases:
 - Violet Prism UI with Kartenfächer branding and native app icons
 
 ## Recent improvements
+
+- The [German flashcard prompt template](docs/flashcard-prompt.md) covers all interactive task types, calculation formats, cloze alternatives, units, tolerances, and reference working. JSON preserves these definitions; CSV/TXT re-import creates text cards.
 
 - OpenRouter requests avoid unsupported sampling parameters, so strict structured-output routing works with models that do not accept `temperature`. Errors distinguish invalid keys, blocked requests, exhausted credits, and unavailable model providers.
 - Persistent connection logs record request phases, durations, HTTP/provider/network codes, and app versions, with a privacy-filtered export under API Usage.
@@ -249,34 +250,34 @@ Use Smart Study to combine multiple decks and configure how you recall and revie
 
 | Technique | What it does | Research origin |
 |---|---|---|
-| Active Recall (Typing) | You type the answer before revealing the back side. The app compares your answer to the correct one. | Roediger and Karpicke (2006); generation effect |
-| Confidence Calibration | You rate certainty (Not sure / Maybe / Confident) before revealing, then see whether your judgement matched reality. | Dunlosky and Metcalfe; metacognition research |
+| Active Recall (Typing) | You type the answer before revealing the back side. You compare local free-text answers with the reference; structured tasks and optional AI provide content feedback. | Roediger and Karpicke (2006); generation effect |
+| Confidence check | You rate certainty (Not sure / Maybe / Confident) before revealing, then compare your certainty with the checked result, without a calibration score. | Dunlosky and Metcalfe; metacognition research |
 | Elaborative Why-Prompt | After reviewing, you briefly type why the answer is correct. Saved to the card history. | Pressley et al.; Chi et al. (self-explanation) |
-| Interleaving | Cards are pulled round-robin from every selected deck rather than block by block. | Rohrer and Pashler (2007) |
+| Mix decks | Cards alternate across selected decks. Choose related topics or problem types; a single deck is already shuffled. | Rohrer and Pashler (2007) |
 | Spacing (always on) | FSRS-5 schedules each card individually. | Cepeda et al.; Ebbinghaus |
 | Pomodoro timer | Optional 10 or 25 minute focused session, or no limit; expiration of a 25-minute timer starts a 7-minute break. | Cirillo |
 
 Each technique can be toggled independently in Smart Study setup. Preferences (selected decks, toggles, duration, and evaluation mode) persist in `localStorage` under `ankiweb_smart_config`. Answer feedback is separate from your rating: **Again**, **Hard**, **Good**, and **Easy** are always chosen manually. Session counts include repeated ratings of re-queued cards.
 
-### Local answer comparison
+### Local answer assessment
 
-Local comparison requires no API key or network request. Text answers use normalized Levenshtein similarity: casing, diacritics, ordinary punctuation, and repeated whitespace are ignored, while minus signs directly before digits are retained. This measures textual similarity, rather than semantic correctness; synonyms and paraphrases can receive a lower score.
+Free text (legacy cards, `short_text`, `long_text`) is self-assessed against the reference answer. The app does not infer correctness from matching wording, including exact text matches. Formula answers and working also require self-assessment in local mode. AI mode can provide semantic feedback; failures preserve the input without switching evaluators.
 
-When the reference answer is a pure integer or decimal, the learner answer must also be a valid number with the same value. Comparison uses strings, retaining precision for large values. Decimal comma and point, leading/trailing zeros, a positive sign, and Unicode minus are normalized.
+Structured choices, true/false, cloze, matching, ordering, and numeric calculations use their declared solutions. Text gaps accept stored answers and alternatives. Numeric calculations support fractions, scientific notation, tolerances and declared value–unit pairs. See [task types](docs/task-types.md).
 
-| Typed answer | Reference answer | Local result |
-|---|---|---|
-| `Héllo, world!` | `hello world` | 100% match |
-| `1,50` | `1.5` | 100% match |
-| `+003.00` | `3` | 100% match |
-| `3` | `-3` | Incorrect, 0% |
-| `9007199254740992` | `9007199254740993` | Incorrect, 0% |
+### Review and practice policy
 
-Pure numeric answers use exact equality; text uses the four similarity bands described above. This is not a mathematical expression evaluator: fractions, scientific notation, expressions, and grouped thousands are outside the exact-number comparison. AI mode uses the provider's semantic verdict instead of a local percentage. API failures preserve the answer for retry and do not switch to local grading.
+Both modes delay another attempt after Again/Hard by ten minutes, persisted across restarts and mode changes. This is a product default, not a universal research optimum. Other available cards continue; if only delayed cards remain, the session finishes and shows the next available practice time. Again allows up to two extra attempts and Hard one per session. Unresolved regular learning steps remain flagged for later sessions.
+
+Queue entries distinguish regular reviews, relearning steps and voluntary practice. Only regular reviews and relearning update FSRS. Voluntary practice preserves all scheduler fields and existing relearning flags; sessions are marked `practice` in JSON statistics. `cardStats.practiceAvailableAt` is an optional millisecond timestamp; old backups need no migration. Past intervals are not recalculated on upgrade.
+
+FSRS-5 includes same-day stability updates and damped difficulty changes with the existing weights and 90% desired retention. Reference: [official algorithm, revision July 28, 2026](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm). Calendar-day elapsed time and day-based due dates remain in use.
 
 ### OpenRouter answer evaluation
 
 OpenRouter compares the meaning of a typed answer with the current question and reference answer. It returns one of four verdicts with brief feedback in the selected UI language. It never sets an FSRS rating for you.
+
+In AI mode, calculation results that match the stored solution are confirmed locally. A mismatch is sent to OpenRouter so it can recognize equivalent notation, written-out numbers, and unambiguous spelling differences; genuinely different values or signs must still be marked incorrect. If working is submitted with a mismatching result, AI checks the answer and working independently in one request. Other structured tasks remain local. Failed AI checks keep the draft available for retry without finalizing the local mismatch.
 
 #### Set up OpenRouter in the app
 
@@ -284,7 +285,8 @@ OpenRouter compares the meaning of a typed answer with the current question and 
 2. Start the macOS desktop app with `npm start`, or open the installed macOS/iOS app. `npm run dev` opens the browser version, where AI configuration is unavailable.
 3. Open **Smart Study → Answer evaluation** (German: **Smart Study → Antwortbewertung**). Paste the key into **OpenRouter API key** and click **Validate and save** (**Prüfen und speichern**).
 4. Confirm **Configured** (**Eingerichtet**) and the configured model, then select **OpenRouter AI** (**OpenRouter-KI**). Private iOS Debug builds use the bundled key automatically. A manually saved iOS Keychain key overrides the bundled key; Electron uses saved keys as fallbacks behind local runtime environment credentials; packaged keys are ignored.
-5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** or press Enter. AI feedback shows **OpenRouter** and, when supplied, the actual model ID. Errors keep your answer for retry and never silently grade it locally.
+   Use **Test connection** (**Verbindung testen**) to check API reachability and validate the active key without re-entering it. The result shows the response time or a specific error. This uses `GET /api/v1/key`, sends no learning content, and does not generate an AI evaluation or add a usage entry. It does not test model availability or sufficient credits for inference.
+5. Select a deck, enable **Typed recall** (**Antwort eintippen**), and start a session. Type a non-empty answer and choose **Check answer** (or press Enter for a single-line field, Ctrl/Cmd+Enter for a multiline or formula field). AI feedback shows **OpenRouter** and, when supplied, the actual model ID. Errors keep your answer for retry and never silently grade it locally.
 6. Open [API Usage](#api-usage-overview) and click **Refresh** to inspect the recorded request, tokens, and reported cost. A successful key validation alone does not prove the chosen model can produce the required response format; the first answer check verifies that.
 
 The in-app key uses Electron's OS-backed secure storage (`openrouter-key.bin`) or the iOS Keychain. It is separate from deck data and exports. To stop using AI, select **Local** (**Lokal**). **Remove stored key** removes only the saved local copy; on iOS a bundled key then becomes active again. Revoke a key in OpenRouter to disable it at the provider.
@@ -330,9 +332,9 @@ The model is configured with `OPENROUTER_MODEL`; there is no model picker in the
 
 #### What is sent and how errors work
 
-Each non-empty AI answer check sends the deck name, current question, reference answer, and learner answer, alongside the evaluator instructions and selected feedback language. Other cards, session history, confidence selections, and elaborations are not sent. OpenRouter receives the API key for authentication and routes the evaluation to the selected provider.
+Each AI answer check sends the deck name, current question, reference answer, and learner answer, alongside the evaluator instructions, evaluation scope, and selected feedback language. When a calculation includes learner working, the request also sends that working and any stored reference working from `solutionSteps`. Other cards, session history, confidence selections, and why-prompt elaborations are not sent. OpenRouter receives the API key for authentication and routes the evaluation to the selected provider.
 
-The desktop request timeout is **8 seconds**; native iOS uses **30 seconds**. Authentication failures, rate limits, unavailable providers, timeouts, and malformed evaluations display an error and preserve the answer for retry. No automatic local grading takes place. Empty answers and **I don't know** do not make an API request. Local comparison is available when explicitly selecting Local mode.
+Desktop and native iOS requests use a **60-second** timeout and allow **4,096 output tokens**. Authentication failures, rate limits, unavailable providers, timeouts, and malformed evaluations display an error and preserve the answer for retry. AI failures never trigger local fallback grading. Empty answers and **I don't know** do not make an API request. Select Local mode explicitly to use self-assessment for free text instead of AI evaluation.
 
 #### Troubleshooting
 
@@ -348,7 +350,7 @@ The desktop request timeout is **8 seconds**; native iOS uses **30 seconds**. Au
 | Rate limit reached | Wait before retrying and check the current OpenRouter/provider quota. Consider another compatible available model. |
 | OpenRouter unavailable | Export the connection logs and inspect the HTTP status, typed provider error, and network code. Check the connection and whether the configured model supports structured outputs. |
 | Invalid evaluation or repeated timeouts | Export the connection logs. Desktop and iOS allow 4,096 output tokens and a 60-second deadline, leaving room for reasoning and the final JSON evaluation. Unsupported JSON schemas or truncated responses can still cause errors; retry or explicitly select local mode. |
-| Card too long | Deck name, question, reference answer, and typed answer are each limited to 4,000 characters after trimming. Shorten the affected field. |
+| Card too long | Deck name, question, reference answer, typed answer, reference working, and learner working are each limited to 4,000 UTF-16 characters. Working lines and LaTeX delimiters count toward the combined working-field limit. Shorten the affected field. |
 | Secure key storage unavailable | Check the OS secure-storage availability, or use the local `.env` configuration described above. |
 | Usage shows `—` | The provider did not supply that information; it means unknown, not free. Refresh after the request finishes. |
 
@@ -419,7 +421,8 @@ Three shapes are accepted by **Import JSON** on Home.
 |---|---|---|---|---|
 | `front` | string | yes | - | Question side |
 | `back` | string | yes | - | Answer side |
-| `id` | string | no | generated | Retained for deck objects and full backups; regenerated for bare arrays |
+| `task` | object | no | text card | Typed question and solution configuration; see [task types](docs/task-types.md) |
+| `id` | string | no | generated | Valid, unique IDs are retained in all three JSON shapes; missing, invalid, or duplicate IDs are regenerated |
 | `interval` | number | no | `0` | Days until next review |
 | `repetitions` | number | no | `0` | Successful review streak |
 | `easeFactor` | number | no | `2.5` | Legacy SM-2 ease (kept for compat) |
@@ -428,102 +431,35 @@ Three shapes are accepted by **Import JSON** on Home.
 | `difficulty` | number | no | unset | FSRS difficulty |
 | `lastReview` | string | no | unset | Last review date, `YYYY-MM-DD` |
 
-Cards missing a non-empty `front` or `back` are skipped. Unknown card fields are ignored. Deck objects and full backups preserve existing card IDs so `cardStats` still refers to the right cards; missing IDs are generated. Deck IDs are always regenerated, and imports add decks rather than merging existing ones. Bare arrays generate fresh card IDs.
+Cards require non-empty `front` and `back` strings (up to 20,000 characters each). Invalid card data, unknown task types, or invalid task configurations reject the import rather than silently skipping cards. Unknown card fields are ignored. Valid, unique card IDs are retained in deck objects, full backups, and bare arrays; missing, invalid, or duplicate IDs are regenerated. Deck objects and full backups can also restore `cardStats` for retained card IDs. Deck IDs are always regenerated, and imports add decks rather than merging existing ones.
+
+For structured tasks, `task` defines the correct solution and the importer regenerates readable `back` content from it. Put solution explanations in `task.explanation` and calculation working in `task.solutionSteps`; text tasks (`short_text` / `long_text`) continue to use `back` as the reference answer. JSON imports are limited to 10 MiB, 100,000 cards in total, and 1,000 decks in a full backup.
 
 Optional deck-level `cardStats`, `sessions`, and `smartSessionSeq` are restored from deck objects and full backups. This retains review/failure statistics, elaborations, extra-practice flags, and learning history alongside the card scheduling fields.
 
 ### AI prompt for high-quality flashcards
 
-Copy the following prompt into an AI assistant, replace the placeholders with your learning material, and save the generated response as a `.json` file. You can then import it through **Import JSON** on Home.
+The complete, copyable **[German flashcard prompt template](docs/flashcard-prompt.md)**
+was checked against the current task schema and importer on **9 November 2026**.
+Replace its placeholders with your material, learning goal, card count, and local
+or AI evaluation preference. Save the generated JSON as a UTF-8 `.json` file and
+use **Import JSON** on Home.
 
-```text
-Du bist ein Experte für Lernpsychologie, Active Recall und Spaced Repetition.
+The template covers all nine task types and the four calculation formats, including
+text/numeric cloze alternatives, explicit accepted units, justified rounding
+tolerances, LaTeX, reference working steps, and structured explanations. It asks for
+a suitable mix based on the material rather than forcing every type into each deck.
+Its examples use actual JSON objects rather than pseudo-values such as `"text" or "number"`.
 
-Erstelle aus dem unten angegebenen Lernstoff hochwertige Lernkarten für smartL3arn.
+To use interactive answer controls, enable **Typed recall** in **Smart Study**.
+Confidence checks, why-prompts, interleaving, timers, and evaluation mode are session
+settings configured in the app, not fields that the generation prompt can import.
+Interleaving requires selecting multiple decks; generate separate topic decks when
+that fits the material. The standard study mode still displays structured questions
+and their solutions.
 
-LERNSTOFF:
-[Hier Text, Notizen, Skript oder Thema einfügen]
-
-ZIELGRUPPE UND LERNZIEL:
-[Zum Beispiel: Prüfungsvorbereitung im 2. Semester, grundlegendes Verständnis]
-
-ANZAHL:
-[Zum Beispiel: 30 Karten]
-
-REGELN FÜR DIE KARTEN:
-
-1. Prüfe zuerst, welche Inhalte wirklich prüfungs- und lernrelevant sind.
-2. Jede Karte testet genau einen klar abgegrenzten Sachverhalt.
-3. Formuliere die Vorderseite als eindeutige Frage mit genügend Kontext.
-4. Wähle ein passendes Antwortformat: kurze Antwort, Erklärung, Zahl, Bruch, Wert mit Einheit oder Formel.
-5. Verwende konkrete Fragen statt „Erkläre alles über …“.
-6. Verwende Auswahl- und Wahr/Falsch-Aufgaben nur, wenn sie einen sinnvollen Unterschied prüfen; vermeide triviale Fragen und offensichtliche falsche Antworten.
-7. Teile Listen oder komplexe Zusammenhänge in mehrere Karten auf.
-8. Erstelle bei wichtigen Konzepten unterschiedliche Abrufarten:
-   - Definition oder Bedeutung
-   - Anwendung
-   - Ursache und Wirkung
-   - Vergleich beziehungsweise Abgrenzung
-   - typischer Fehler oder Irrtum
-9. Verwende umgekehrte Karten nur, wenn beide Abrufrichtungen sinnvoll sind.
-10. Vermeide doppelte oder nahezu identische Karten.
-11. Verwende Fachbegriffe korrekt und konsistent.
-12. Nimm ausschließlich Informationen aus dem bereitgestellten Lernstoff. Erfinde keine Fakten.
-13. Falls eine Antwort mehrere Formulierungen zulässt, nenne auf der Rückseite zuerst die kürzeste erwartete Antwort und danach höchstens eine knappe Erläuterung.
-14. Sorge für eine ausgewogene Abdeckung des Lernstoffs und priorisiere zentrale Konzepte.
-15. Formuliere alle Karten auf Deutsch, sofern der Lernstoff keine andere Sprache erfordert.
-
-AUSGABEFORMAT:
-
-Gib ausschließlich valides JSON aus – ohne Markdown-Codeblock, Einleitung, Kommentare oder nachfolgenden Text.
-
-Verwende diese Grundstruktur. Für strukturierte Aufgaben ergänze pro Karte ein
-"task"-Objekt nach der folgenden Typübersicht; "front" und "back" bleiben erforderlich.
-
-{
-  "name": "[Kurzer, sinnvoller Name des Kartendecks]",
-  "cards": [
-    {
-      "front": "[Eindeutige Frage]",
-      "back": "[Kurze, präzise Antwort]"
-    }
-  ]
-}
-
-TYPÜBERSICHT:
-- Kurzantwort: "task": {"kind":"short_text"}; Musterantwort in "back".
-- Erklärung: "task": {"kind":"long_text"}; Musterantwort in "back".
-- Zahl: "task": {"kind":"calculation","answer":{"kind":"number","value":"4"}}.
-- Bruch: "task": {"kind":"calculation","answer":{"kind":"fraction","numerator":"1","denominator":"2"}}.
-- Einheit: "task": {"kind":"calculation","answer":{"kind":"quantity","pairs":[{"value":"5","unit":"m"},{"value":"500","unit":"cm"}]}}.
-- Formel: "task": {"kind":"calculation","answer":{"kind":"formula","value":"A=\\pi r^2"}}.
-- Einfach-/Mehrfachauswahl: "task": {"kind":"single_choice" oder "multiple_choice","options":[{"id":"a","text":"..."},{"id":"b","text":"..."}],"correctIds":["a"]}.
-- Wahr/Falsch: "task": {"kind":"true_false","correct":true}.
-- Lücken: "front" enthält {{gap1}}; "task": {"kind":"cloze","gaps":[{"id":"gap1","kind":"text" oder "number","answer":"..."}]}.
-- Zuordnung: "task": {"kind":"matching","pairs":[{"id":"a","left":"...","right":"..."},{"id":"b","left":"...","right":"..."}]}.
-- Reihenfolge: "task": {"kind":"ordering","items":[{"id":"a","text":"..."},{"id":"b","text":"..."}],"correctOrder":["a","b"]}.
-
-Wähle jeweils einen tatsächlichen "kind"-Wert, ohne das Wort "oder" im JSON.
-Alle IDs sind pro Aufgabe eindeutig. Zahlen werden als Zeichenketten gespeichert.
-Bruchnenner dürfen nicht null sein. Hinterlege alle gültigen Wert-Einheit-Paare.
-Rechenaufgaben dürfen "solutionSteps":[{"kind":"text" oder "math","value":"..."}]
-und strukturierte Aufgaben "explanation":"..." für eine Erläuterung enthalten.
-LaTeX in "front"/"back" steht zwischen \\( und \\) oder \\[ und \\].
-Escape jeden LaTeX-Backslash im JSON als doppelten Backslash.
-
-QUALITÄTSPRÜFUNG VOR DER AUSGABE:
-
-Kontrolliere intern jede Karte:
-- Ist sie ohne zusätzlichen Kontext eindeutig?
-- Prüft sie nur einen Sachverhalt?
-- Erfordert sie aktives Erinnern?
-- Ist die erwartete Antwort präzise?
-- Passen Aufgabenart, Antwortformat und Lösung zusammen? Sind alle referenzierten IDs und Lücken vorhanden?
-- Ist sie inhaltlich durch den Lernstoff belegt?
-- Überschneidet sie sich unnötig mit einer anderen Karte?
-
-Entferne oder überarbeite alle Karten, die diese Kriterien nicht erfüllen.
-```
+See **[task types and JSON examples](docs/task-types.md)** for the complete format
+and **[the importable example deck](docs/task-types.example.json)** for all formats.
 
 ### TXT and CSV
 
@@ -568,9 +504,9 @@ Imports made via **Home > Import TXT / CSV** create a new deck named after the f
 
 Per-deck exports live in the **Browse** view; a full backup of every deck lives on **Home**.
 
-- **Export JSON** (Browse) writes the full deck object as `<deck_name>.json`. Re-import preserves scheduling state, card IDs, card statistics, elaborations, extra-practice flags and session history; the deck receives a new ID.
-- **Export CSV** (Browse) writes two columns (`front`, `back`) with a header as `<deck_name>.csv`. Re-import recognizes the header and preserves multiline content. Scheduling state is not exported.
-- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. LF, CRLF, and CR line breaks inside a field become `<br>` (Anki renders HTML), literal tabs become spaces, and quotes are kept. Import directly in Anki via *File > Import*.
+- **Export JSON** (Browse) writes the full deck object as `<deck_name>.json`. Re-import preserves task definitions, scheduling state, card IDs, card statistics, elaborations, extra-practice flags and session history; the deck receives a new ID.
+- **Export CSV** (Browse) writes two columns (`front`, `back`) with a header as `<deck_name>.csv`. Re-import recognizes the header and preserves multiline content. Structured tasks are flattened into readable questions and solutions; re-import creates text cards. Task definitions and scheduling state are not exported.
+- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. LF, CRLF, and CR line breaks inside a field become `<br>` (Anki renders HTML), literal tabs become spaces, and quotes are kept. Structured tasks are flattened into readable questions and solutions; interactive task definitions are not retained. Import directly in Anki via *File > Import*.
 - **Export All** (Home) writes every deck — with cards, per-card stats, and session history — as a single `smartL3arn_backup_<date>.json`. Re-import it with **Import JSON** on Home to restore the whole collection (decks are added, not merged; deck IDs are regenerated).
 
 On Windows/macOS (Electron) and in a browser, exports download as a file. On iOS/Android the file is written to the app cache and the native **share sheet** opens, so you can save it to Files, Drive, email, etc. (via `@capacitor/filesystem` + `@capacitor/share`).
@@ -591,8 +527,9 @@ On Windows/macOS (Electron) and in a browser, exports download as a file. On iOS
 
 | Key | Action |
 |---|---|
-| Enter | Submit typed answer |
-| Shift+Enter | Newline in answer field |
+| Enter | Submit a single-line answer; insert a newline in a multiline answer |
+| Ctrl/Cmd+Enter | Submit an answer, including multiline and formula fields |
+| Shift+Enter | Newline in a multiline answer field |
 
 **Smart Study (reviewing phase)**
 

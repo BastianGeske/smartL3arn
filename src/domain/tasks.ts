@@ -1,7 +1,7 @@
 import { t, type TranslationKey } from '../i18n'
 import type { AnswerEvaluation, Card, StudyResponse, TaskDefinition, TaskKind, WorkingStep, ResponsePart } from './types'
 import { normalizeTask, taskSolution, numericEqual, parseNumeric, fractionValue } from '../../shared/tasks.mjs'
-import { localEvaluation, normalizeAnswer } from './study/answerSimilarity'
+import { normalizeAnswer } from './study/answerSimilarity'
 import { genId } from './importExport'
 
 export const AI_TEXT_LIMIT = 4000
@@ -111,7 +111,7 @@ const partEvaluation = (parts: ResponsePart[]): AnswerEvaluation => {
 }
 export function evaluateResponse(card: Card, response: StudyResponse): AnswerEvaluation | null {
   const task = card.task
-  if (!task || task.kind === 'short_text' || task.kind === 'long_text') return localEvaluation(responseText(response, task), card.back)
+  if (!task || task.kind === 'short_text' || task.kind === 'long_text') return null
   if (task.kind === 'calculation') {
     const a = task.answer
     if (a.kind === 'formula') return null
@@ -141,4 +141,13 @@ export function evaluateResponse(card: Card, response: StudyResponse): AnswerEva
     const actual = response.kind === 'order' ? response.ids[i] : undefined
     return { label: String(i + 1), expected: task.items.find(o => o.id === id)!.text, actual: task.items.find(o => o.id === actual)?.text || '', correct: id === actual }
   }))
+}
+
+/** Exact calculation matches stay local; mismatches need a semantic answer check. */
+export function aiEvaluationScope(card: Card, response: StudyResponse, hasWorking = false): 'answer' | 'working' | 'answer_and_working' | null {
+  const task = card.task
+  const checkAnswer = !task || task.kind === 'short_text' || task.kind === 'long_text'
+    || (task.kind === 'calculation' && (task.answer.kind === 'formula' || evaluateResponse(card, response)?.verdict !== 'correct'))
+  if (checkAnswer) return hasWorking ? 'answer_and_working' : 'answer'
+  return task?.kind === 'calculation' && hasWorking ? 'working' : null
 }

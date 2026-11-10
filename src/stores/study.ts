@@ -1,3 +1,5 @@
+import { advanceReady, nextPracticeAt, practiceReady, recordPractice, retryLimit, studyPurpose } from '../domain/study/practice'
+import type { StudyPurpose } from '../domain/types'
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { buildStandardQueue } from '../domain/study/standardQueue'
@@ -10,7 +12,6 @@ import {
 } from '../domain/types'
 import { todayStr } from '../domain/dates'
 import { useLibraryStore } from './library'
-import { cardStatsFor } from '../domain/cardStats'
 
 export const useStudyStore = defineStore('study', () => {
   const library = useLibraryStore()
@@ -20,6 +21,10 @@ export const useStudyStore = defineStore('study', () => {
   const phase = ref<'main' | 'learning'>('main')
   const index = ref(0)
   const flipped = ref(false)
+  const purposes = ref<Record<string, StudyPurpose>>({})
+  const retries = ref<Record<string, number>>(Object.create(null))
+  const practiceSession = ref(false)
+  const currentPurpose = computed(() => phase.value === 'learning' && purposes.value[currentCard.value?.id || ''] !== 'practice' ? 'relearning' : purposes.value[currentCard.value?.id || ''])
   const sessionStats = ref<SessionStats>(emptySessionStats())
 
   const deck = computed(() => deckId.value ? library.deckById(deckId.value) : undefined)
@@ -40,6 +45,9 @@ export const useStudyStore = defineStore('study', () => {
     if (!nextDeck?.cards.length) return false
     deckId.value = nextDeckId
     mainQueue.value = buildStandardQueue(nextDeck)
+    purposes.value = Object.fromEntries(nextDeck.cards.map(card => [card.id, studyPurpose(nextDeck, card)]))
+    retries.value = Object.create(null)
+    practiceSession.value = mainQueue.value.length > 0 && mainQueue.value.every(id => purposes.value[id] === 'practice')
     learningQueue.value = []
     phase.value = 'main'
     index.value = 0
@@ -55,20 +63,21 @@ export const useStudyStore = defineStore('study', () => {
   async function rate(rating: Rating): Promise<void> {
     const currentDeck = deck.value
     const card = currentCard.value
-    if (!currentDeck || !card) return
+    if (!currentDeck || !card || !flipped.value) return
+    if (!practiceReady(currentDeck, card.id)) return
 
     const key = ratingKey(rating)
     sessionStats.value.reviewed += 1
     sessionStats.value[key] += 1
     const cardIndex = currentDeck.cards.findIndex((item) => item.id === card.id)
-    currentDeck.cards[cardIndex] = scheduleCard(card, rating)
+    if (currentPurpose.value !== 'practice') currentDeck.cards[cardIndex] = scheduleCard(card, rating)
 
-    const stats = cardStatsFor(currentDeck, card.id)
-    stats.reviews += 1
-    if (rating === 0) stats.again += 1
-    if (rating === 1) stats.hard += 1
-
-    if (rating === 0) learningQueue.value.push(card.id)
+    recordPractice(currentDeck, card, rating, currentPurpose.value || 'review')
+    const count = retries.value[card.id] || 0
+    if (count < retryLimit(rating)) {
+      retries.value[card.id] = count + 1
+      learningQueue.value.push(card.id)
+    }
     index.value += 1
 
     if (
@@ -80,9 +89,11 @@ export const useStudyStore = defineStore('study', () => {
       index.value = 0
     }
 
+    advanceReady(currentQueue.value, index.value, id => practiceReady(currentDeck, id))
+
     if (complete.value) {
       currentDeck.sessions ||= []
-      currentDeck.sessions.push({ date: todayStr(), ...sessionStats.value })
+      currentDeck.sessions.push({ date: todayStr(), ...sessionStats.value, practice: practiceSession.value })
       if (currentDeck.sessions.length > 90) {
         currentDeck.sessions = currentDeck.sessions.slice(-90)
       }
@@ -100,6 +111,8 @@ export const useStudyStore = defineStore('study', () => {
     phase,
     index,
     flipped,
+    currentPurpose,
+    nextPracticeAt: computed(() => nextPracticeAt(deck.value ? [deck.value] : [])),
     sessionStats,
     deck,
     currentCard,

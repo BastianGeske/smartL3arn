@@ -28,12 +28,12 @@ describe('typed tasks', () => {
     const [restored] = await importJsonFile(new File([JSON.stringify(data)], 'tasks.json'))
     expect(restored!.cards[0]).toEqual(original)
     expect(restored!.cardStats?.[original.id]?.reviews).toBe(8)
-    expect(evaluateResponse(restored!.cards[0]!, response)?.verdict ?? 'self').toBe(task.kind === 'calculation' && task.answer.kind === 'formula' ? 'self' : 'correct')
+    expect(evaluateResponse(restored!.cards[0]!, response)?.verdict ?? 'self').toBe(['short_text', 'long_text'].includes(task.kind) || task.kind === 'calculation' && task.answer.kind === 'formula' ? 'self' : 'correct')
   })
   it('keeps legacy cards untyped and does not turn numeric answers into text similarity', () => {
     const legacy = createCard('Zahl?', '-42')
     expect(normalizeAppData({ decks: [{ name: 'Old', cards: [legacy] }] }, '2026-10-13').decks[0]!.cards[0]!.task).toBeUndefined()
-    expect(evaluateResponse(legacy, { kind: 'text', value: '42' })!.verdict).toBe('incorrect')
+    expect(evaluateResponse(legacy, { kind: 'text', value: '42' })).toBeNull()
   })
   it('grades selection IDs rather than their shuffled positions', () => {
     const card = createCard('Wähle.', 'Berlin', { kind: 'multiple_choice', options: [...options].reverse(), correctIds: ['a', 'c'] })

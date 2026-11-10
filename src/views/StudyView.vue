@@ -97,7 +97,7 @@ function adjustFlashcardHeight(): void {
 <template>
   <div v-if="study.deck" class="study-shell">
     <StudyHeader
-      :title="study.deck.name"
+      :title="study.currentPurpose === 'practice' ? `${study.deck.name} · ${t('study.practice')}` : study.deck.name"
       :progress="study.complete ? 100 : progress"
       :label="study.complete ? t('study.reviewed', { count: study.sessionStats.reviewed }) : progressLabel"
       :compact="!study.complete"
@@ -110,6 +110,7 @@ function adjustFlashcardHeight(): void {
         <AppIcon name="calendar-days" :size="16" />
         {{ t('study.nextReview', { date: formatDateLabel(upcomingDate, undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }) }}
       </template>
+      <p v-if="study.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(study.nextPracticeAt).toLocaleString() }) }}</p>
       <div class="study-done-actions">
         <button v-if="study.deck.cards.length" class="btn btn-primary" type="button" @click="study.start(study.deck.id)">
           <AppIcon name="rotate-ccw" :size="17" />
@@ -123,6 +124,7 @@ function adjustFlashcardHeight(): void {
 
     <template v-else-if="study.currentCard">
       <main class="study-main">
+        <p v-if="study.currentPurpose === 'practice'" class="field-hint">{{ t('study.practiceNote') }}</p>
         <div class="flashcard-area">
           <div class="flashcard-scene">
             <div class="flashcard" :class="{ flipped: study.flipped }">
@@ -157,7 +159,7 @@ function adjustFlashcardHeight(): void {
         </div>
       </main>
       <div class="study-actions">
-        <StudyRatingButtons v-if="study.flipped" :intervals="intervals" @rate="study.rate" />
+        <StudyRatingButtons v-if="study.flipped" :intervals="study.currentPurpose === 'practice' ? undefined : intervals" @rate="study.rate" />
         <div v-else class="show-answer-wrap">
           <button class="btn btn-primary btn-lg" type="button" @click="study.flip">
             <AppIcon name="eye" /><span>{{ t('study.reveal') }}</span><kbd>{{ t('common.space') }}</kbd>

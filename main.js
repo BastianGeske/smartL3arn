@@ -130,6 +130,26 @@ handle('ai:status', async () => {
   return { available: true, ...await getCredentialResolver().status(), model: getCredentialResolver().model };
 });
 
+let testingConnection = false;
+handle('ai:test-connection', async () => {
+  if (process.platform !== 'darwin') return { ok: false, reason: 'unavailable' };
+  if (testingConnection) return { ok: false, reason: 'rate-limit' };
+  testingConnection = true;
+  try {
+    const resolver = getCredentialResolver();
+    const { credentialSource } = await resolver.status();
+    const apiKey = await resolver.read();
+    if (!apiKey) return { ok: false, reason: 'not-configured' };
+    await getOpenRouterClient().validateKey(apiKey, { credentialSource });
+    return { ok: true };
+  } catch (error) {
+    return publicError(error);
+  } finally {
+    testingConnection = false;
+    if (diagnosticStore) await diagnosticStore.flush();
+  }
+});
+
 handle('ai:save-key', async (_event, apiKey) => {
   try {
     await getOpenRouterClient().validateKey(apiKey, { credentialSource: 'provided' });

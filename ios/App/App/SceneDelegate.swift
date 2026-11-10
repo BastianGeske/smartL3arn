@@ -62,6 +62,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
     let jsName = "NativeAi"
     let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "getAiStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "testOpenRouterConnection", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "saveOpenRouterKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeOpenRouterKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getApiUsage", returnType: CAPPluginReturnPromise),
@@ -126,6 +127,17 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
                       "credentialSource": source as Any? ?? NSNull(), "model": configuredModel])
     }
 
+    @objc func testOpenRouterConnection(_ call: CAPPluginCall) {
+        guard let key = readKey() ?? bundledKey else {
+            call.resolve(["ok": false, "reason": "not-configured"])
+            return
+        }
+        send(key: key, endpoint: "key", body: nil, source: credentialSource) { _, reason in
+            if let reason = reason { call.resolve(["ok": false, "reason": reason]) }
+            else { call.resolve(["ok": true]) }
+        }
+    }
+
     @objc func saveOpenRouterKey(_ call: CAPPluginCall) {
         guard let key = call.getString("apiKey")?.trimmingCharacters(in: .whitespacesAndNewlines),
               !key.isEmpty, key.count <= 4000 else {
@@ -181,7 +193,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    private func send(key: String, endpoint: String, body: Data?, requiresWorking: Bool = false,
+    private func send(key: String, endpoint: String, body: Data?, requiresWorking: Bool = false, source sourceOverride: String? = nil,
                       completion: @escaping ([String: Any]?, String?) -> Void) {
         requestLock.lock()
         guard activeRequests < 2 else {
@@ -200,7 +212,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         request.setValue("smartL3arn", forHTTPHeaderField: "X-Title")
         let started = Date()
         let operation = endpoint == "key" ? "validate-key" : "evaluate"
-        let source = operation == "validate-key" ? "provided" : credentialSource
+        let source = sourceOverride ?? (operation == "validate-key" ? "provided" : credentialSource)
         let model = configuredModel
         URLSession.shared.dataTask(with: request) { data, response, error in
             let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
@@ -224,6 +236,9 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
                 if json == nil && reason == nil { reason = "invalid-response" }
             } else { reason = "unavailable" }
             if reason == nil && operation == "evaluate" && !NativeAiJournal.evaluationIsValid(json, requiresWorking: requiresWorking) {
+                reason = "invalid-response"
+            }
+            if reason == nil && operation == "validate-key" && !(json?["data"] is [String: Any]) {
                 reason = "invalid-response"
             }
             let resultReason = reason

@@ -52,7 +52,7 @@ export function normalizeDeck(value, { today, name = 'Imported deck', newDeckId 
       const session = { date: date(v.date) }
       if (!session.date) invalid()
       for (const field of ['reviewed', 'again', 'hard', 'good', 'easy']) session[field] = number(v[field], 0, 100_000_000, true)
-      if (v.smart !== undefined) { if (typeof v.smart !== 'boolean') invalid(); session.smart = v.smart }
+      for (const field of ['smart', 'practice']) if (v[field] !== undefined) { if (typeof v[field] !== 'boolean') invalid(); session[field] = v[field] }
       return session
     }).slice(-90)
   }
@@ -64,7 +64,7 @@ export function normalizeDeck(value, { today, name = 'Imported deck', newDeckId 
       const v = value.cardStats[card.id]
       if (!record(v)) invalid()
       const stats = { reviews: number(v.reviews, 0, 100_000_000, true), again: number(v.again, 0, 100_000_000, true), hard: number(v.hard, 0, 100_000_000, true) }
-      for (const field of ['smartLastReviewedSession', 'smartBlockedUntil', 'smartSkipUntilSession']) if (v[field] !== undefined) stats[field] = number(v[field], 0, Number.MAX_SAFE_INTEGER, true)
+      for (const field of ['smartLastReviewedSession', 'smartBlockedUntil', 'smartSkipUntilSession', 'practiceAvailableAt']) if (v[field] !== undefined) stats[field] = number(v[field], 0, Number.MAX_SAFE_INTEGER, true)
       if (v.smartNeedsPractice !== undefined) { if (typeof v.smartNeedsPractice !== 'boolean') invalid(); stats.smartNeedsPractice = v.smartNeedsPractice }
       if (v.smartLastGrade !== undefined) { if (!['again', 'hard', 'good', 'easy'].includes(v.smartLastGrade)) invalid(); stats.smartLastGrade = v.smartLastGrade }
       if (v.elaborations !== undefined) {
