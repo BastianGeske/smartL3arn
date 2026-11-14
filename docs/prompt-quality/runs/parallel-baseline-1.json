@@ -1,0 +1,38 @@
+{
+  "case": "parallel",
+  "variant": "baseline",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:15:13.077Z",
+  "elapsedMs": 23282,
+  "usage": {
+    "prompt_tokens": 4117,
+    "completion_tokens": 2250,
+    "total_tokens": 6367,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.061468,
+      "upstream_inference_prompt_cost": 0.016468,
+      "upstream_inference_completions_cost": 0.045
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 900,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"parallel\",\"cards\":[{\"front\":\"Ablauf vor einem Workshop: Zuerst wird der Termin festgelegt. Danach folgen Raumreservierung und Materialbestellung. Erst wenn beide abgeschlossen sind, werden die Einladungen verschickt.\\n\\nWahr oder falsch? Die Materialbestellung darf erst beginnen, wenn die Raumreservierung abgeschlossen ist.\",\"back\":\"Falsch. Raumreservierung und Materialbestellung sind voneinander unabhängig. Sie können in beliebiger Reihenfolge erfolgen, sobald der Termin festgelegt ist.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Raumreservierung und Materialbestellung hängen nur von der Terminfestlegung ab, nicht voneinander. Deshalb können sie in beliebiger Reihenfolge erfolgen.\"}},{\"front\":\"Ein Workshop wird vorbereitet mit vier Schritten: Termin festlegen, Raum reservieren, Material bestellen und Einladungen verschicken. Der Termin muss zuerst feststehen. Raumreservierung und Materialbestellung sind voneinander unabhängig. Die Einladungen setzen den Abschluss beider voraus.\\n\\nWelche Abfolge ist zulässig?\",\"back\":\"Termin festlegen → Material bestellen → Raum reservieren → Einladungen verschicken\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"a\",\"text\":\"Termin festlegen → Material bestellen → Raum reservieren → Einladungen verschicken\"},{\"id\":\"b\",\"text\":\"Raum reservieren → Termin festlegen → Material bestellen → Einladungen verschicken\"},{\"id\":\"c\",\"text\":\"Termin festlegen → Raum reservieren → Einladungen verschicken → Material bestellen\"},{\"id\":\"d\",\"text\":\"Material bestellen → Raum reservieren → Termin festlegen → Einladungen verschicken\"}],\"correctIds\":[\"a\"],\"explanation\":\"Nur diese Abfolge beachtet alle Abhängigkeiten. Der Termin steht zuerst fest. Material und Raum dürfen in beliebiger Reihenfolge folgen. Die Einladungen kommen erst nach beiden. Bei den anderen Abfolgen steht der Termin nicht am Anfang oder die Einladungen gehen vor Abschluss der Materialbestellung hinaus.\"}},{\"front\":\"Vor einem Workshop wird zuerst der Termin festgelegt. Danach erfolgen Raumreservierung und Materialbestellung unabhängig voneinander. Die Raumreservierung ist bereits abgeschlossen, die Materialbestellung noch nicht.\\n\\nWarum dürfen die Einladungen jetzt noch nicht verschickt werden?\",\"back\":\"Die Einladungen hängen vom Abschluss beider Schritte ab, also von der Raumreservierung und von der Materialbestellung. Die Materialbestellung ist noch offen. Deshalb ist diese Voraussetzung noch nicht erfüllt. Eine abgeschlossene Raumreservierung allein reicht nicht.\",\"task\":{\"kind\":\"long_text\"}},{\"front\":\"Vor einem Workshop muss als Erstes der {{first}} festgelegt werden. Die Einladungen werden erst verschickt, wenn sowohl die Raumreservierung als auch die {{second}} abgeschlossen sind.\",\"back\":\"Termin; Materialbestellung\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"first\",\"kind\":\"text\",\"answer\":\"Termin\",\"alternatives\":[\"Workshoptermin\",\"Workshop-Termin\"]},{\"id\":\"second\",\"kind\":\"text\",\"answer\":\"Materialbestellung\",\"alternatives\":[\"Bestellung des Materials\",\"Materialbeschaffung\"]}]}}]}"
+}

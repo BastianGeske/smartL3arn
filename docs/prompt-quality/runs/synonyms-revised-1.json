@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "revised",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:17:50.382Z",
+  "elapsedMs": 12063,
+  "usage": {
+    "prompt_tokens": 7162,
+    "completion_tokens": 1019,
+    "total_tokens": 8181,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.049028,
+      "upstream_inference_prompt_cost": 0.028648,
+      "upstream_inference_completions_cost": 0.02038
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 679,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Wie heißt eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems?\",\"back\":\"Algorithmus (gleichbedeutend: Rechenvorschrift)\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Welche Bezeichnung wird in diesem Lernstoff gleichbedeutend mit „Algorithmus“ verwendet?\",\"back\":\"Rechenvorschrift\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wie heißt ein Platzhalter für einen gespeicherten veränderlichen Wert?\",\"back\":\"Variable (akzeptierte alternative Bezeichnung: Veränderliche)\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Welche alternative Bezeichnung für „Variable“ wird in diesem Lernstoff akzeptiert?\",\"back\":\"Veränderliche\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

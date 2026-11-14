@@ -1,0 +1,38 @@
+{
+  "case": "hierarchy",
+  "variant": "revised",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:22:37.393Z",
+  "elapsedMs": 2369,
+  "usage": {
+    "prompt_tokens": 7865,
+    "completion_tokens": 260,
+    "total_tokens": 8125,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.03666,
+      "upstream_inference_prompt_cost": 0.03146,
+      "upstream_inference_completions_cost": 0.0052
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 1,
+  "schemaError": null,
+  "content": "{\"name\":\"hierarchy\",\"cards\":[{\"front\":\"Bringe die Ebenen der klassischen Automatisierungspyramide in die richtige Reihenfolge – von unten nach oben.\",\"back\":\"Feldebene → Steuerungsebene → Prozessleitebene → Betriebsleitebene → Unternehmensebene\",\"task\":{\"kind\":\"ordering\",\"items\":[{\"id\":\"process\",\"text\":\"Prozessleitebene\"},{\"id\":\"enterprise\",\"text\":\"Unternehmensebene\"},{\"id\":\"field\",\"text\":\"Feldebene\"},{\"id\":\"operations\",\"text\":\"Betriebsleitebene\"},{\"id\":\"control\",\"text\":\"Steuerungsebene\"}],\"correctOrder\":[\"field\",\"control\",\"process\",\"operations\",\"enterprise\"]}}]}"
+}

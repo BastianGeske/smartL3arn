@@ -1,0 +1,38 @@
+{
+  "case": "rounding",
+  "variant": "revised",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:19:24.094Z",
+  "elapsedMs": 10902,
+  "usage": {
+    "prompt_tokens": 7169,
+    "completion_tokens": 1219,
+    "total_tokens": 8388,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.053056,
+      "upstream_inference_prompt_cost": 0.028676,
+      "upstream_inference_completions_cost": 0.02438
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 436,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 3,
+  "schemaError": null,
+  "content": "{\"name\":\"rounding\",\"cards\":[{\"front\":\"Wie lautet die Formel für die Strecke \\\\(s\\\\) bei gleichförmiger Bewegung mit der Geschwindigkeit \\\\(v\\\\) und der Zeit \\\\(t\\\\)?\",\"back\":\"\\\\(s = v \\\\cdot t\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"formula\",\"value\":\"s=v\\\\cdot t\"},\"explanation\":\"Bei gleichförmiger Bewegung ist die Strecke das Produkt aus Geschwindigkeit und Zeit.\"}},{\"front\":\"Ein Körper bewegt sich gleichförmig mit \\\\(v = 2{,}5\\\\,\\\\mathrm{m/s}\\\\) für \\\\(t = 3\\\\,\\\\mathrm{s}\\\\). Berechne die zurückgelegte Strecke \\\\(s\\\\). Gib das exakte Ergebnis in Metern (Einheit m) an.\",\"back\":\"\\\\(s = 7{,}5\\\\,\\\\mathrm{m}\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"quantity\",\"pairs\":[{\"value\":\"7.5\",\"unit\":\"m\"}]},\"solutionSteps\":[{\"kind\":\"text\",\"value\":\"Formel der gleichförmigen Bewegung verwenden.\"},{\"kind\":\"math\",\"value\":\"s=v\\\\cdot t=2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}}\\\\cdot 3\\\\,\\\\mathrm{s}=7{,}5\\\\,\\\\mathrm{m}\"}]}},{\"front\":\"Berechne \\\\(10 : 3\\\\) und runde das Ergebnis auf zwei Nachkommastellen.\",\"back\":\"\\\\(3{,}33\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"number\",\"value\":\"3.33\",\"tolerance\":\"0.005\"},\"solutionSteps\":[{\"kind\":\"math\",\"value\":\"10:3=3{,}333\\\\ldots\"},{\"kind\":\"text\",\"value\":\"Die dritte Nachkommastelle ist 3, also wird abgerundet.\"},{\"kind\":\"math\",\"value\":\"10:3\\\\approx 3{,}33\"}],\"explanation\":\"Akzeptiert wird 3,33 mit einer absoluten Toleranz von 0,005.\"}}]}"
+}

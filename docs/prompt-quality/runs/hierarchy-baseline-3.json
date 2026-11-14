@@ -1,0 +1,38 @@
+{
+  "case": "hierarchy",
+  "variant": "baseline",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:14:23.481Z",
+  "elapsedMs": 11992,
+  "usage": {
+    "prompt_tokens": 4120,
+    "completion_tokens": 1488,
+    "total_tokens": 5608,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.04624,
+      "upstream_inference_prompt_cost": 0.01648,
+      "upstream_inference_completions_cost": 0.02976
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 459,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"hierarchy\",\"cards\":[{\"front\":\"Bringe die Ebenen der klassischen Automatisierungspyramide in die richtige Reihenfolge – von unten (unterste Ebene) nach oben (oberste Ebene).\",\"back\":\"Feldebene → Steuerungsebene → Prozessleitebene → Betriebsleitebene → Unternehmensebene\",\"task\":{\"kind\":\"ordering\",\"items\":[{\"id\":\"unternehmen\",\"text\":\"Unternehmensebene\"},{\"id\":\"steuerung\",\"text\":\"Steuerungsebene\"},{\"id\":\"betriebsleit\",\"text\":\"Betriebsleitebene\"},{\"id\":\"feld\",\"text\":\"Feldebene\"},{\"id\":\"prozessleit\",\"text\":\"Prozessleitebene\"}],\"correctOrder\":[\"feld\",\"steuerung\",\"prozessleit\",\"betriebsleit\",\"unternehmen\"]}},{\"front\":\"Nenne alle fünf Ebenen der klassischen Automatisierungspyramide in der Reihenfolge von unten nach oben.\",\"back\":\"1. Feldebene, 2. Steuerungsebene, 3. Prozessleitebene, 4. Betriebsleitebene, 5. Unternehmensebene. Alle fünf Ebenen müssen genannt werden, und die Reihenfolge muss stimmen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Ergänze die Ebenen der klassischen Automatisierungspyramide von unten nach oben: Feldebene → {{ebene2}} → Prozessleitebene → {{ebene4}} → Unternehmensebene.\",\"back\":\"Feldebene → Steuerungsebene → Prozessleitebene → Betriebsleitebene → Unternehmensebene\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"ebene2\",\"kind\":\"text\",\"answer\":\"Steuerungsebene\",\"alternatives\":[\"Steuerungs-Ebene\"]},{\"id\":\"ebene4\",\"kind\":\"text\",\"answer\":\"Betriebsleitebene\",\"alternatives\":[\"Betriebsleit-Ebene\"]}]}},{\"front\":\"Wahr oder falsch? In der klassischen Automatisierungspyramide liegt die Prozessleitebene direkt unter der Steuerungsebene.\",\"back\":\"Falsch. Die Steuerungsebene liegt direkt über der Feldebene. Darüber folgt die Prozessleitebene. Die vollständige Reihenfolge von unten nach oben lautet: Feldebene, Steuerungsebene, Prozessleitebene, Betriebsleitebene, Unternehmensebene.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Die Reihenfolge ist umgekehrt: Die Steuerungsebene liegt direkt über der Feldebene, und darüber folgt die Prozessleitebene. Von unten nach oben gilt: Feldebene, Steuerungsebene, Prozessleitebene, Betriebsleitebene, Unternehmensebene.\"}}]}"
+}

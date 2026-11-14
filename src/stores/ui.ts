@@ -20,6 +20,7 @@ export interface Notification {
 
 export const useUiStore = defineStore('ui', () => {
   const cardEditor = ref<CardEditorState | null>(null)
+  const studyActive = ref(false)
   const deckEditor = ref<DeckEditorState | null>(null)
   const notifications = ref<Notification[]>([])
   const toast = computed(() => {
@@ -102,6 +103,7 @@ export const useUiStore = defineStore('ui', () => {
 
   return {
     cardEditor,
+    studyActive,
     deckEditor,
     toast,
     notifications,

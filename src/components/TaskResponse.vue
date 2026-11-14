@@ -91,7 +91,20 @@ function keydown(event: KeyboardEvent) {
       </template>
     </div>
     <div v-else-if="task.kind === 'matching'" class="task-matching">
-      <label v-for="pair in task.pairs" :key="pair.id" class="task-match-row"><MathContent :text="pair.left" /><select class="select" :value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, pair.id) : ''" :disabled="disabled" @change="field(pair.id, ($event.target as HTMLSelectElement).value)"><option value="">{{ t('task.select') }}</option><option v-for="optionId in optionOrder" :key="optionId" :value="optionId">{{ task.pairs.find(p => p.id === optionId)?.right }}</option></select></label>
+      <label v-for="pair in task.pairs" :key="pair.id" class="task-match-row">
+        <MathContent :id="`${id}-${pair.id}-label`" :text="pair.left" />
+        <span class="task-match-control">
+          <select class="select" :aria-labelledby="`${id}-${pair.id}-label`" :value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, pair.id) : ''" :disabled="disabled" @change="field(pair.id, ($event.target as HTMLSelectElement).value)">
+            <option value="">{{ t('task.select') }}</option>
+            <option v-for="optionId in optionOrder" :key="optionId" :value="optionId">{{ task.pairs.find(p => p.id === optionId)?.right }}</option>
+          </select>
+          <!-- The native select handles keyboard/touch input; its visible value can wrap. -->
+          <span class="task-match-value" aria-hidden="true">
+            <MathContent :text="task.pairs.find(p => p.id === (modelValue.kind === 'fields' ? fieldValue(modelValue.values, pair.id) : ''))?.right || t('task.select')" />
+            <AppIcon name="chevron-down" :size="16" />
+          </span>
+        </span>
+      </label>
     </div>
     <ol v-else-if="task.kind === 'ordering' && modelValue.kind === 'order'" class="task-ordering"><li v-for="(itemId, i) in modelValue.ids" :key="itemId"><MathContent :text="task.items.find(o => o.id === itemId)?.text || ''" /><div class="task-row-actions"><button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === 0" :aria-label="`${t('task.up')} ${i + 1}`" @click="move(i, -1)"><AppIcon name="chevron-up" :size="18" /></button><button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === modelValue.ids.length - 1" :aria-label="`${t('task.down')} ${i + 1}`" @click="move(i, 1)"><AppIcon name="chevron-down" :size="18" /></button></div></li></ol>
   </div>

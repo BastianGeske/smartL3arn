@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "revised",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:18:13.636Z",
+  "elapsedMs": 12898,
+  "usage": {
+    "prompt_tokens": 7162,
+    "completion_tokens": 1434,
+    "total_tokens": 8596,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.057328,
+      "upstream_inference_prompt_cost": 0.028648,
+      "upstream_inference_completions_cost": 0.02868
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 854,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Ergänze den Fachbegriff: Eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems heißt {{term}}.\",\"back\":\"Algorithmus (gleichbedeutend: Rechenvorschrift)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Algorithmus\",\"alternatives\":[\"Rechenvorschrift\"]}],\"explanation\":\"Im gegebenen Kontext sind Algorithmus und Rechenvorschrift gleichbedeutend; beide Bezeichnungen werden akzeptiert.\"}},{\"front\":\"Welche Bezeichnung wird im gegebenen Kontext gleichbedeutend mit dem Fachbegriff „Algorithmus“ verwendet?\",\"back\":\"Rechenvorschrift\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Ergänze den Fachbegriff: Ein Platzhalter für einen gespeicherten veränderlichen Wert heißt {{term}}.\",\"back\":\"Variable (alternativ: Veränderliche)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Variable\",\"alternatives\":[\"Veränderliche\"]}],\"explanation\":\"Im gegebenen Kontext ist Veränderliche eine akzeptierte alternative Bezeichnung für Variable.\"}},{\"front\":\"Welche alternative Bezeichnung wird im gegebenen Kontext für den Fachbegriff „Variable“ akzeptiert?\",\"back\":\"Veränderliche\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

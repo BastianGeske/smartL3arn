@@ -39,8 +39,12 @@ const upcomingDate = computed(() => {
     .sort((left, right) => left.dueDate.localeCompare(right.dueDate))[0]?.dueDate || null
 })
 
-onMounted(() => {
-  if (study.deckId !== routeDeckId.value && !study.start(routeDeckId.value)) {
+onMounted(async () => {
+  const cardIds = new Set(study.deck?.cards.map(card => card.id))
+  const staleQueue = study.deckId === routeDeckId.value
+    && [...study.mainQueue, ...study.learningQueue].some(id => !cardIds.has(id))
+  if (staleQueue) await study.saveSessions()
+  if ((study.deckId !== routeDeckId.value || staleQueue) && !study.start(routeDeckId.value)) {
     void router.replace('/')
     return
   }

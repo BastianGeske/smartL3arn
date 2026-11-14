@@ -1,3 +1,5 @@
+import { splitCards, type SplitDraft } from '../domain/splitMatching'
+import { useUiStore } from './ui'
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { createCard, genId } from '../domain/importExport'
@@ -18,6 +20,8 @@ export const useLibraryStore = defineStore('library', () => {
   const repository = getStorageRepository()
   let pendingSave: Promise<void> = Promise.resolve()
   let loadFailed = false
+  const transactionBusy = ref(false)
+  function assertWritable() { if (transactionBusy.value) throw new Error('Library transaction in progress') }
 
   const decks = computed(() => data.value.decks)
 
@@ -34,6 +38,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   function persist(): Promise<void> {
+    assertWritable()
     // Do not overwrite an unreadable original library with an empty/new one.
     if (loadFailed) return Promise.reject(new Error(t('common.loadError')))
     let snapshot: AppData
@@ -59,6 +64,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function createDeck(name: string, coverId: DeckCoverId = defaultCover(decks.value.length)): Promise<Deck> {
+    assertWritable()
     if (!isDeckCoverId(coverId)) throw new Error('Invalid deck cover.')
     const deck: Deck = { id: genId(), name, coverId, cards: [] }
     data.value.decks.push(deck)
@@ -71,12 +77,14 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function renameDeck(deckId: string, name: string): Promise<void> {
+    assertWritable()
     const deck = deckById(deckId)
     if (!deck) return
     await updateDeck(deckId, name, deck.coverId || defaultCover(decks.value.indexOf(deck) % 3))
   }
 
   async function updateDeck(deckId: string, name: string, coverId: DeckCoverId): Promise<void> {
+    assertWritable()
     if (!isDeckCoverId(coverId)) throw new Error('Invalid deck cover.')
     const deck = deckById(deckId)
     if (!deck) return
@@ -87,6 +95,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function deleteDeck(deckId: string): Promise<void> {
+    assertWritable()
     const index = data.value.decks.findIndex(deck => deck.id === deckId)
     if (index < 0) return
     const deck = data.value.decks[index]!
@@ -96,6 +105,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function addCard(deckId: string, front: string, back: string, task?: TaskDefinition): Promise<Card | undefined> {
+    assertWritable()
     const deck = deckById(deckId)
     if (!deck) return undefined
     const card = createCard(front, back, task)
@@ -110,6 +120,7 @@ export const useLibraryStore = defineStore('library', () => {
     cardId: string,
     updates: Pick<Card, 'front' | 'back'> & { task?: TaskDefinition },
   ): Promise<void> {
+    assertWritable()
     const card = deckById(deckId)?.cards.find((item) => item.id === cardId)
     if (!card) return
     const previous = { front: card.front, back: card.back, task: card.task }
@@ -121,6 +132,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function deleteCard(deckId: string, cardId: string): Promise<void> {
+    assertWritable()
     const deck = deckById(deckId)
     if (!deck) return
     const cards = [...deck.cards]
@@ -136,6 +148,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function addCards(deckId: string, cards: Card[]): Promise<void> {
+    assertWritable()
     const deck = deckById(deckId)
     if (!deck) return
     const previous = [...deck.cards]
@@ -149,6 +162,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function addDecks(decksToAdd: Deck[]): Promise<void> {
+    assertWritable()
     decksToAdd.forEach((deck, index) => { deck.coverId ??= defaultCover(decks.value.length + index) })
     data.value.decks.push(...decksToAdd)
     try { await persist() }
@@ -159,8 +173,43 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  async function splitMatchingCard(deckId: string, cardId: string, drafts: SplitDraft[], replaceOriginal = false, expectedSource?: string): Promise<Card[]> {
+    assertWritable()
+    const ui = useUiStore()
+    if (ui.studyActive) throw new Error('Cannot split during study')
+    const cards = splitCards(drafts)
+    transactionBusy.value = true
+    try {
+      await pendingSave.catch(() => undefined)
+      if (loadFailed || ui.studyActive) throw new Error('Library not available for splitting')
+      const next: AppData = JSON.parse(JSON.stringify(data.value))
+      const deck = next.decks.find(deck => deck.id === deckId)
+      const index = deck?.cards.findIndex(card => card.id === cardId) ?? -1
+      const source = deck?.cards[index]
+      if (!deck || !source || source.task?.kind !== 'matching' || (expectedSource && JSON.stringify({ front: source.front, back: source.back, task: source.task }) !== expectedSource)) throw new Error('Source card changed')
+      const pairIds = new Set(source.task.pairs.map(pair => pair.id))
+      const selectedIds = drafts.filter(draft => draft.selected).map(draft => draft.pairId)
+      if (new Set(selectedIds).size !== selectedIds.length || selectedIds.some(id => !pairIds.has(id))) throw new Error('Invalid source pairs')
+      deck.cards.splice(index + (replaceOriginal ? 0 : 1), replaceOriginal ? 1 : 0, ...cards)
+      if (replaceOriginal && deck.cardStats) delete deck.cardStats[cardId]
+      const normalized = normalizeAppData(next, todayStr())
+      try { await repository.save(normalized) }
+      catch (error) {
+        saveError.value = error instanceof Error ? error.message : String(error)
+        persistenceIssue.value = 'save'
+        throw error
+      }
+      data.value = normalized
+      saveError.value = null
+      persistenceIssue.value = null
+      return cards
+    } finally { transactionBusy.value = false }
+  }
+
   return {
     data,
+    transactionBusy,
+    splitMatchingCard,
     decks,
     ready,
     saveError,

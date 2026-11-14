@@ -8,6 +8,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
 import { PRACTICE_DELAY_MS } from '../domain/study/practice'
 import { t } from '../i18n'
+import { createCard } from '../domain/importExport'
 
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => true } }))
 vi.mock('../services/ai', () => ({ getAiBridge: () => undefined }))
@@ -130,4 +131,60 @@ it('keeps the Pomodoro break timer separate from completion refreshes', async ()
   await vi.advanceTimersByTimeAsync(7 * 60_000)
   expect(smart.session!.breakDone).toBe(true)
   expect(vi.getTimerCount()).toBe(0)
+})
+
+it('restarts a dormant queue when its original matching card was replaced by individual cards', async () => {
+  const library = useLibraryStore(), deck = library.decks[0]!
+  const source = await library.addCard(deck.id, 'Ordne zu.', 'A → 1\nB → 2', { kind: 'matching', pairs: [{ id: 'a', left: 'A', right: '1' }, { id: 'b', left: 'B', right: '2' }] })
+  await smart.start()
+  expect(smart.session!.queue.some(item => item.cardId === source!.id)).toBe(true)
+  smart.reveal()
+  await smart.rate(3)
+  const previousStats = { ...smart.session!.sessionStats }
+  smart.stopTimer()
+  const cards = await library.splitMatchingCard(deck.id, source!.id, [{ pairId: 'a', selected: true, front: 'What matches A?', back: '1' }, { pairId: 'b', selected: true, front: 'What matches B?', back: '2' }], true)
+  await mountView()
+  expect(smart.session!.queue.some(item => item.cardId === source!.id)).toBe(false)
+  expect(smart.session!.queue.map(item => item.cardId)).toEqual(expect.arrayContaining(cards.map(card => card.id)))
+  expect(smart.currentCard).toBeDefined()
+  expect(library.deckById(deck.id)!.sessions).toHaveLength(1)
+  expect(library.deckById(deck.id)!.sessions![0]).toMatchObject({ ...previousStats, smart: true })
+  expect(smart.session!.sessionStats.reviewed).toBe(0)
+})
+
+it('resumes a large intact queue with one index pass per deck', async () => {
+  const library = useLibraryStore()
+  const deck = library.decks[0]!
+  deck.cards = Array.from({ length: 10_000 }, (_, index) => createCard(`Q${index}`, 'Answer'))
+  await smart.start()
+  smart.session!.index = 3
+  smart.session!.sessionStats.reviewed = 3
+  const previous = smart.session
+  const start = vi.spyOn(smart, 'start')
+  const map = vi.spyOn(deck.cards, 'map')
+  const some = vi.spyOn(deck.cards, 'some')
+  await mountView()
+  expect(start).not.toHaveBeenCalled()
+  expect(smart.session).toBe(previous)
+  expect(smart.session!.index).toBe(3)
+  expect(smart.session!.sessionStats.reviewed).toBe(3)
+  expect(map).toHaveBeenCalledOnce()
+  expect(some).not.toHaveBeenCalled()
+})
+
+it('checks card IDs within their own deck', async () => {
+  const library = useLibraryStore()
+  const deck = library.decks[0]!
+  const other = await library.createDeck('Other')
+  await library.addCard(other.id, 'Other', 'Answer')
+  other.cards[0]!.id = deck.cards[0]!.id
+  await library.addCard(other.id, 'Remaining', 'Answer')
+  useSettingsStore().smartConfig.deckIds = [deck.id, other.id]
+  await smart.start()
+  const previous = smart.session
+  deck.cards = []
+  await mountView()
+  expect(smart.session).not.toBe(previous)
+  expect(smart.session!.queue.every(item => item.deckId === other.id)).toBe(true)
+  expect(library.deckById(deck.id)!.sessions || []).toHaveLength(0)
 })

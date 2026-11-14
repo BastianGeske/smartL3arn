@@ -1,0 +1,38 @@
+{
+  "case": "ide",
+  "variant": "baseline",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:12:39.081Z",
+  "elapsedMs": 18254,
+  "usage": {
+    "prompt_tokens": 4187,
+    "completion_tokens": 2242,
+    "total_tokens": 6429,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.061588,
+      "upstream_inference_prompt_cost": 0.016748,
+      "upstream_inference_completions_cost": 0.04484
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 805,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 8,
+  "schemaError": null,
+  "content": "{\"name\":\"ide\",\"cards\":[{\"front\":\"Welche IDE-Funktion übersetzt einen Sketch, ohne ihn auf das Board zu übertragen?\",\"back\":\"Überprüfen\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Erkläre, wie sich die IDE-Funktionen „Überprüfen“ und „Hochladen“ in ihrer Wirkung unterscheiden.\",\"back\":\"Beide übersetzen den Sketch. Nur Hochladen überträgt ihn zusätzlich auf das Board. Überprüfen überträgt nichts auf das Board.\",\"task\":{\"kind\":\"long_text\"}},{\"front\":\"Wahr oder falsch: Beim Überprüfen wird der Sketch übersetzt und anschließend auf das Board übertragen.\",\"back\":\"Falsch\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Überprüfen übersetzt den Sketch nur und überträgt ihn nicht auf das Board. Das Übertragen auf das Board übernimmt das Hochladen.\"}},{\"front\":\"Du möchtest in der IDE Unterstützung für ein bestimmtes Board installieren. Welches Werkzeug verwendest du?\",\"back\":\"Boardverwalter\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"board\",\"text\":\"Boardverwalter\"},{\"id\":\"lib\",\"text\":\"Bibliotheksverwalter\"},{\"id\":\"sketchbook\",\"text\":\"Sketchbook\"},{\"id\":\"ausgabe\",\"text\":\"Ausgabe-Fenster\"}],\"correctIds\":[\"board\"],\"explanation\":\"Der Boardverwalter installiert Unterstützung für Boards. Der Bibliotheksverwalter installiert dagegen Bibliotheken.\"}},{\"front\":\"Ordne jedem IDE-Bestandteil seine Aufgabe zu.\",\"back\":\"Boardverwalter: installiert Unterstützung für Boards; Bibliotheksverwalter: installiert Bibliotheken; Ausgabe-Fenster: zeigt Fehler und Warnungen beim Übersetzen; Sketchbook: listet gespeicherte Sketches auf\",\"task\":{\"kind\":\"matching\",\"pairs\":[{\"id\":\"board\",\"left\":\"Boardverwalter\",\"right\":\"Installiert Unterstützung für Boards\"},{\"id\":\"lib\",\"left\":\"Bibliotheksverwalter\",\"right\":\"Installiert Bibliotheken\"},{\"id\":\"ausgabe\",\"left\":\"Ausgabe-Fenster\",\"right\":\"Zeigt Fehler und Warnungen beim Übersetzen\"},{\"id\":\"sketchbook\",\"left\":\"Sketchbook\",\"right\":\"Listet gespeicherte Sketches auf\"}]}},{\"front\":\"Ergänze: Fehler und Warnungen beim Übersetzen eines Sketches zeigt das {{fenster}} der IDE an.\",\"back\":\"Ausgabe-Fenster\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"fenster\",\"kind\":\"text\",\"answer\":\"Ausgabe-Fenster\",\"alternatives\":[\"Ausgabefenster\",\"Ausgabe Fenster\",\"Ausgabe\"]}]}},{\"front\":\"Welche der folgenden IDE-Funktionen übersetzen einen Sketch?\",\"back\":\"Überprüfen, Hochladen\",\"task\":{\"kind\":\"multiple_choice\",\"options\":[{\"id\":\"pruefen\",\"text\":\"Überprüfen\"},{\"id\":\"hochladen\",\"text\":\"Hochladen\"},{\"id\":\"sketchbook\",\"text\":\"Sketchbook\"},{\"id\":\"lib\",\"text\":\"Bibliotheksverwalter\"}],\"correctIds\":[\"pruefen\",\"hochladen\"],\"explanation\":\"Überprüfen und Hochladen übersetzen beide den Sketch; Hochladen überträgt ihn zusätzlich auf das Board. Das Sketchbook listet gespeicherte Sketches auf, der Bibliotheksverwalter installiert Bibliotheken.\"}},{\"front\":\"Welcher Bestandteil der IDE listet deine gespeicherten Sketches auf?\",\"back\":\"Das Sketchbook\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

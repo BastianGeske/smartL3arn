@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "revised",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:23:26.006Z",
+  "elapsedMs": 5474,
+  "usage": {
+    "prompt_tokens": 7916,
+    "completion_tokens": 481,
+    "total_tokens": 8397,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.041284,
+      "upstream_inference_prompt_cost": 0.031664,
+      "upstream_inference_completions_cost": 0.00962
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 301,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 2,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Wie heißt eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems?\",\"back\":\"Algorithmus (gleichbedeutend: Rechenvorschrift)\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wie heißt ein Platzhalter für einen gespeicherten veränderlichen Wert?\",\"back\":\"Variable (alternativ: Veränderliche)\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

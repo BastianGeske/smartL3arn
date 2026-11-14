@@ -1,0 +1,38 @@
+{
+  "case": "parallel",
+  "variant": "revised",
+  "run": 2,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:23:05.456Z",
+  "elapsedMs": 11849,
+  "usage": {
+    "prompt_tokens": 7862,
+    "completion_tokens": 1299,
+    "total_tokens": 9161,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.057428,
+      "upstream_inference_prompt_cost": 0.031448,
+      "upstream_inference_completions_cost": 0.02598
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 683,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 3,
+  "schemaError": null,
+  "content": "{\"name\":\"parallel\",\"cards\":[{\"front\":\"Bei der Vorbereitung eines Workshops gibt es die Schritte Raumreservierung und Materialbestellung. Welcher Schritt muss erledigt sein, bevor diese beiden Schritte erfolgen können?\",\"back\":\"Zuerst muss der Termin des Workshops festgelegt werden.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wahr oder falsch? Bei der Vorbereitung eines Workshops muss nach der Terminfestlegung zuerst der Raum reserviert werden, bevor das Material bestellt werden kann.\",\"back\":\"Falsch. Raumreservierung und Materialbestellung sind voneinander unabhängig und können in beliebiger Reihenfolge erfolgen.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Zwischen Raumreservierung und Materialbestellung besteht keine Abhängigkeit. Richtig ist: Nach der Terminfestlegung können beide unabhängig voneinander und in beliebiger Reihenfolge erfolgen.\"}},{\"front\":\"Bei der Vorbereitung eines Workshops sind der Termin festgelegt und der Raum reserviert. Die Materialbestellung ist noch nicht abgeschlossen. Dürfen die Einladungen schon verschickt werden? Begründe mit den Abhängigkeiten im Ablauf.\",\"back\":\"Nein. Die Einladungen hängen von beiden Schritten ab: von der Raumreservierung und von der Materialbestellung. Sie werden erst verschickt, wenn beide abgeschlossen sind. Ist nur einer der beiden Schritte erledigt, reicht das nicht aus.\",\"task\":{\"kind\":\"long_text\"}}]}"
+}

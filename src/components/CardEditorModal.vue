@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { taskQuality } from '../domain/taskQuality'
+import type { SplitDraft } from '../domain/splitMatching'
+import SplitMatchingEditor from './SplitMatchingEditor.vue'
+import type { Card } from '../domain/types'
 import { useI18n } from '../i18n'
 import { computed, nextTick, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
@@ -28,6 +32,13 @@ const task = ref<TaskDefinition>(newTask('short_text'))
 const taskError = ref<TranslationKey | null>(null)
 const previewResponse = ref<StudyResponse>(initialResponse())
 const previewSolution = ref(false)
+const splitSource = ref<Card | null>(null)
+const splitError = ref(false)
+const splitTrigger = ref<HTMLButtonElement>()
+const qualityHints = computed(() => {
+  if (!front.value.trim() || (textTask.value && !back.value.trim())) return []
+  try { return taskQuality({ id: existingCard.value?.id || 'draft', ...cardContent(front.value.trim(), back.value.trim(), task.value) }) } catch { return [] }
+})
 const textTask = computed(() => task.value.kind === 'short_text' || task.value.kind === 'long_text')
 const previewCard = computed(() => {
   try { return cardContent(front.value, back.value, task.value) }
@@ -53,6 +64,8 @@ const existingCard = computed(() => {
 watch(editor, async (value) => {
   document.body.classList.toggle('modal-open', Boolean(value))
   if (!value) return
+  splitSource.value = null
+  splitError.value = false
   front.value = existingCard.value?.front || ''
   back.value = existingCard.value?.back || ''
   task.value = existingCard.value?.task ? JSON.parse(JSON.stringify(existingCard.value.task)) : newTask('short_text')
@@ -65,6 +78,40 @@ watch(editor, async (value) => {
   await nextTick()
   frontInput.value?.focus()
 }, { deep: true })
+
+const sourceSignature = (card: Pick<Card, 'front' | 'back' | 'task'>) => JSON.stringify({ front: card.front, back: card.back, task: card.task })
+const dirty = computed(() => {
+  if (!existingCard.value) return true
+  try { return sourceSignature(cardContent(front.value.trim(), back.value.trim(), task.value)) !== sourceSignature(cardContent(existingCard.value.front.trim(), existingCard.value.back.trim(), existingCard.value.task)) } catch { return true }
+})
+async function convertSingle() {
+  if (task.value.kind === 'multiple_choice' && task.value.correctIds.length === 1) {
+    task.value = { ...task.value, kind: 'single_choice' }
+    await nextTick()
+    document.getElementById('task-type')?.focus()
+  }
+}
+function beginSplit() {
+  if (dirty.value || ui.studyActive || saving.value || existingCard.value?.task?.kind !== 'matching') return
+  splitSource.value = JSON.parse(JSON.stringify(existingCard.value))
+  splitError.value = false
+}
+async function cancelSplit() {
+  splitSource.value = null
+  await nextTick()
+  splitTrigger.value?.focus()
+}
+async function createSplit(drafts: SplitDraft[], replace: boolean) {
+  if (!editor.value || !splitSource.value || saving.value) return
+  saving.value = true
+  splitError.value = false
+  try {
+    const cards = await library.splitMatchingCard(editor.value.deckId, splitSource.value.id, drafts, replace, sourceSignature(splitSource.value))
+    ui.showToast('split.created', { count: cards.length })
+    ui.closeCardEditor()
+  } catch { splitError.value = true }
+  finally { saving.value = false }
+}
 
 function close(): void {
   if (saving.value) return
@@ -116,14 +163,16 @@ async function save(): Promise<void> {
   >
     <div class="modal card-editor-modal" tabindex="-1" :aria-busy="saving">
       <div class="modal-header">
-        <h2 id="card-modal-title">{{ existingCard ? t('card.edit') : t('card.add') }}</h2>
+        <h2 id="card-modal-title">{{ splitSource ? t('split.title') : existingCard ? t('card.edit') : t('card.add') }}</h2>
         <button class="btn-icon" type="button" :disabled="saving" :aria-label="t('card.closeEditor')" @click="close">
           <AppIcon name="x" />
         </button>
       </div>
-      <div class="modal-body">
+      <SplitMatchingEditor v-if="splitSource" :source="splitSource" :busy="saving" :error="splitError" @cancel="cancelSplit" @create="createSplit" />
+      <div v-else class="modal-body">
         <label class="field-label" for="task-type">{{ t('task.typeLabel') }}</label>
-        <select id="task-type" class="select" :value="task.kind" :disabled="saving" @change="changeTask"><option v-for="kind in taskKinds" :key="kind" :value="kind">{{ taskLabel(kind) }}</option></select>
+        <select id="task-type" class="select" aria-describedby="task-type-help" :value="task.kind" :disabled="saving" @change="changeTask"><option v-for="kind in taskKinds" :key="kind" :value="kind">{{ taskLabel(kind) }}</option></select>
+        <p id="task-type-help" class="field-hint">{{ t(`quality.help.${task.kind}`) }}</p>
         <label class="field-label" for="modal-front">{{ t('common.front') }}</label>
         <textarea
           id="modal-front"
@@ -150,7 +199,7 @@ async function save(): Promise<void> {
           :aria-invalid="error && !back.trim()"
           @input="error = false"
         />
-        <fieldset class="task-editor-fields" :disabled="saving"><TaskConfigEditor v-model="task" :disabled="saving" /></fieldset>
+        <fieldset class="task-editor-fields" :disabled="saving"><TaskConfigEditor v-model="task" :disabled="saving" :hints="qualityHints" @convert-single="convertSingle" /></fieldset>
         <p v-if="taskError" class="form-error" role="alert">{{ t(taskError) }}</p>
         <details class="task-details task-preview"><summary>{{ t('task.preview') }}</summary><TaskQuestion :card="previewCard" interactive /><TaskResponse :key="`${task.kind}:${task.kind === 'calculation' ? task.answer.kind : ''}`" :task="task" :front="front" :model-value="previewResponse" @update:model-value="previewResponse = $event" /><button class="btn btn-quiet btn-sm" type="button" @click="previewSolution = !previewSolution">{{ t('task.previewSolution') }}</button><MathContent v-if="previewSolution" :text="previewCard.back" /></details>
         <p v-if="error" class="form-error" aria-live="polite">
@@ -158,7 +207,11 @@ async function save(): Promise<void> {
         </p>
         <p v-if="saveError" class="form-error" role="alert">{{ t('card.saveFailed') }}</p>
       </div>
-      <div class="modal-footer">
+      <div v-if="!splitSource" class="modal-footer">
+        <div v-if="existingCard?.task?.kind === 'matching' && task.kind === 'matching' && !ui.studyActive" class="split-entry">
+          <button ref="splitTrigger" class="btn btn-secondary" type="button" :disabled="saving || dirty" @click="beginSplit">{{ t('split.title') }}</button>
+          <span v-if="dirty" class="field-hint">{{ t('split.saveFirst') }}</span>
+        </div>
         <button class="btn btn-secondary" type="button" :disabled="saving" @click="close">{{ t('common.cancel') }}</button>
         <button class="btn btn-primary" type="button" :disabled="saving" @click="save">
           {{ existingCard ? t('common.save') : t('card.add') }}

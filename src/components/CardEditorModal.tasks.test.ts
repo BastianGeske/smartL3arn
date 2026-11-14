@@ -118,3 +118,33 @@ it('identifies oversized serialized reference working before saving', async () =
   expect(wrapper.find('[role="alert"]').exists()).toBe(true)
   expect(useLibraryStore().decks[0]!.cards).toHaveLength(0)
 })
+
+it('updates quality advice and converts a valid multiple choice without losing options or the correct ID', async () => {
+  await wrapper.get('#task-type').setValue('multiple_choice')
+  await wrapper.get('#modal-front').setValue('Welche Aussage ist richtig?')
+  await wrapper.findAll('.task-config input.input')[0]!.setValue('A')
+  await wrapper.findAll('.task-config input.input')[1]!.setValue('B')
+  await wrapper.findAll('.task-config input[type="checkbox"]')[1]!.setValue(true)
+  expect(wrapper.find('[data-quality-code="singleCorrect"]').exists()).toBe(true)
+  expect(wrapper.find('[data-quality-code="missingExplanation"]').exists()).toBe(true)
+  const task = wrapper.findComponent(TaskConfigEditor).props('modelValue')
+  if (task.kind !== 'multiple_choice') throw new Error('Expected choice')
+  const before = JSON.parse(JSON.stringify(task))
+  await wrapper.get('[data-quality-code="singleCorrect"] button').trigger('click')
+  const next = wrapper.findComponent(TaskConfigEditor).props('modelValue')
+  expect(next).toEqual({ ...before, kind: 'single_choice' })
+  expect(wrapper.find('[data-quality-code="singleCorrect"]').exists()).toBe(false)
+  await wrapper.get('#task-explanation').setValue('B ist richtig, A ist falsch.')
+  expect(wrapper.find('[data-quality-code="missingExplanation"]').exists()).toBe(false)
+  await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  expect(useLibraryStore().decks[0]!.cards[0]!.task).toEqual({ ...before, kind: 'single_choice', explanation: 'B ist richtig, A ist falsch.' })
+})
+
+it('allows splitting a clean saved matching card with outer whitespace but requires saving real edits', async () => {
+  const library = useLibraryStore(), deck = library.decks[0]!
+  const card = await library.addCard(deck.id, '  Ordne zu.  ', 'A → 1\nB → 2', { kind: 'matching', pairs: [{ id: 'a', left: 'A', right: '1' }, { id: 'b', left: 'B', right: '2' }] })
+  useUiStore().editCard(deck.id, card!.id); await flushPromises()
+  expect(wrapper.get('.split-entry button').attributes('disabled')).toBeUndefined()
+  await wrapper.get('#modal-front').setValue('Ordne die geänderten Begriffe zu.')
+  expect(wrapper.get('.split-entry button').attributes('disabled')).toBeDefined()
+})

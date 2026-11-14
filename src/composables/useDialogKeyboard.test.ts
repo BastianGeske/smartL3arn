@@ -35,3 +35,38 @@ it('includes math fields and summaries but skips collapsed preview controls when
   expect(document.activeElement).toBe(trigger)
   wrapper.unmount()
 })
+
+it('returns focus to the import heading if the corrected card no longer has a report entry', async () => {
+  document.body.innerHTML = '<h2 id="import-quality-title" tabindex="-1">Import</h2><button id="resolved-card">Edit</button>'
+  const open = ref(false)
+  document.getElementById('resolved-card')!.focus()
+  wrapper = mount(defineComponent({ setup() { useDialogKeyboard(computed(() => open.value)); return () => null } }), { attachTo: document.body })
+  open.value = true
+  document.getElementById('resolved-card')!.remove()
+  open.value = false
+  await import('vue').then(vue => vue.nextTick())
+  expect(document.activeElement?.id).toBe('import-quality-title')
+})
+
+it('keeps the native wrapping matching select in the dialog tab order', () => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList)
+  document.body.innerHTML = '<div class="modal-overlay"><div class="modal"><button>First</button><span class="task-match-control"><select style="opacity:0"><option>A</option></select><span class="task-match-value">A</span></span><button>Last</button></div></div>'
+  const open = ref(false)
+  wrapper = mount(defineComponent({ setup() { useDialogKeyboard(computed(() => open.value)); return () => null } }), { attachTo: document.body })
+  open.value = true
+  const select = document.querySelector('select')!
+  select.focus()
+  const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+  select.dispatchEvent(tab)
+  expect(tab.defaultPrevented).toBe(false)
+})
+
+it('uses the import heading when a pointer-opened editor had no focused trigger', async () => {
+  document.body.innerHTML = '<h2 id="import-quality-title" tabindex="-1">Import</h2>'
+  const open = ref(false)
+  wrapper = mount(defineComponent({ setup() { useDialogKeyboard(computed(() => open.value)); return () => null } }), { attachTo: document.body })
+  open.value = true
+  open.value = false
+  await import('vue').then(vue => vue.nextTick())
+  expect(document.activeElement?.id).toBe('import-quality-title')
+})

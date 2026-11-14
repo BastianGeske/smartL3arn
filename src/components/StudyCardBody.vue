@@ -11,6 +11,7 @@ const uid = useId()
 const labelId = computed(() => props.labelId || `study-label-${uid}`)
 const contentId = computed(() => props.contentId || `study-content-${uid}`)
 const label = computed(() => props.label || t(props.side === 'question' ? 'study.question' : 'study.answer'))
+const structured = computed(() => props.card.task && ['single_choice', 'multiple_choice', 'matching', 'ordering', 'cloze', 'true_false'].includes(props.card.task.kind))
 </script>
 
 <template>
@@ -19,7 +20,7 @@ const label = computed(() => props.label || t(props.side === 'question' ? 'study
     <slot name="actions" />
   </div>
   <span v-else :id="labelId" class="card-side-label">{{ label }}</span>
-  <div :id="contentId" class="card-content">
+  <div :id="contentId" class="card-content" :class="{ 'card-content-structured': structured }">
     <slot name="content">
       <TaskQuestion v-if="side === 'question'" :key="card.id" :card="card" :interactive="interactive" />
       <TaskSolution v-else :card="card" />

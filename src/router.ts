@@ -1,3 +1,4 @@
+import { useLibraryStore } from './stores/library'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from './views/HomeView.vue'
 import BrowseView from './views/BrowseView.vue'
@@ -20,3 +21,6 @@ export const router = createRouter({
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
+
+// Keep active study queues stable while an atomic card split is being saved.
+router.beforeEach(to => !(useLibraryStore().transactionBusy && (to.name === 'study' || to.name === 'smart-study')))

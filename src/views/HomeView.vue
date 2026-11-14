@@ -2,6 +2,8 @@
 import { useI18n } from '../i18n'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ImportQualitySummary from '../components/ImportQualitySummary.vue'
+import { taskQuality } from '../domain/taskQuality'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import AppMenu from '../components/AppMenu.vue'
@@ -20,6 +22,7 @@ const router = useRouter()
 const library = useLibraryStore()
 const study = useStudyStore()
 const ui = useUiStore()
+const importedDeckIds = ref<string[]>([])
 const jsonInput = ref<HTMLInputElement>()
 const textInput = ref<HTMLInputElement>()
 
@@ -79,6 +82,7 @@ async function handleJson(event: Event): Promise<void> {
     catch (error) { ui.showError(importErrorKey(error)); return }
     try { await library.addDecks(decks) }
     catch { return }
+    importedDeckIds.value = decks.some(deck => deck.cards.some(card => taskQuality(card).length)) ? decks.map(deck => deck.id) : []
     ui.showToast('import.decks', { count: decks.length })
   } finally {
     input.value = ''
@@ -179,6 +183,7 @@ async function exportAll(): Promise<void> {
       </div>
       </div>
 
+      <ImportQualitySummary v-if="importedDeckIds.length" :deck-ids="importedDeckIds" @dismiss="importedDeckIds = []" />
       <section class="library-section" aria-labelledby="deck-list-title">
         <div class="section-heading">
           <div>

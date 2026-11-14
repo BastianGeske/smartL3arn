@@ -1,0 +1,38 @@
+{
+  "case": "ide",
+  "variant": "revised",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:13:50.444Z",
+  "elapsedMs": 13286,
+  "usage": {
+    "prompt_tokens": 7178,
+    "completion_tokens": 1515,
+    "total_tokens": 8693,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.059012,
+      "upstream_inference_prompt_cost": 0.028712,
+      "upstream_inference_completions_cost": 0.0303
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 738,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 7,
+  "schemaError": null,
+  "content": "{\"name\":\"ide\",\"cards\":[{\"front\":\"Was bewirkt die IDE-Funktion „Überprüfen“ mit einem Sketch?\",\"back\":\"Sie übersetzt den Sketch, ohne ihn auf das Board zu übertragen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was bewirkt die IDE-Funktion „Hochladen“ mit einem Sketch?\",\"back\":\"Sie übersetzt den Sketch und überträgt ihn anschließend auf das Board.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wahr oder falsch: Beim Hochladen wird der Sketch nur auf das Board übertragen, aber nicht übersetzt.\",\"back\":\"Falsch\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Falsch. Hochladen übersetzt den Sketch und überträgt ihn auf das Board. Nur übersetzt, aber nicht übertragen wird beim Überprüfen.\"}},{\"front\":\"Wozu dient der Boardverwalter in der IDE?\",\"back\":\"Er installiert Unterstützung für Boards.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Du möchtest in der IDE eine zusätzliche Bibliothek installieren. Welches Werkzeug verwendest du?\",\"back\":\"Bibliotheksverwalter\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"lib\",\"text\":\"Bibliotheksverwalter\"},{\"id\":\"board\",\"text\":\"Boardverwalter\"},{\"id\":\"sketchbook\",\"text\":\"Sketchbook\"}],\"correctIds\":[\"lib\"],\"explanation\":\"Der Bibliotheksverwalter installiert Bibliotheken. Der Boardverwalter installiert Unterstützung für Boards, das Sketchbook listet gespeicherte Sketches auf.\"}},{\"front\":\"In welchem Bereich der IDE werden Fehler und Warnungen beim Übersetzen eines Sketches angezeigt?\",\"back\":\"Im Ausgabe-Fenster.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was listet das Sketchbook in der IDE auf?\",\"back\":\"Die gespeicherten Sketches.\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

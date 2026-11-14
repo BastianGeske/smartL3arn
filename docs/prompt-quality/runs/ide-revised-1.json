@@ -1,0 +1,38 @@
+{
+  "case": "ide",
+  "variant": "revised",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:13:24.257Z",
+  "elapsedMs": 10074,
+  "usage": {
+    "prompt_tokens": 7178,
+    "completion_tokens": 1102,
+    "total_tokens": 8280,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.050752,
+      "upstream_inference_prompt_cost": 0.028712,
+      "upstream_inference_completions_cost": 0.02204
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 665,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 6,
+  "schemaError": null,
+  "content": "{\"name\":\"ide\",\"cards\":[{\"front\":\"Welche IDE-Funktion übersetzt einen Sketch, ohne ihn auf das Board zu übertragen?\",\"back\":\"Überprüfen\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was geschieht mit einem Sketch, wenn du in der IDE die Funktion „Hochladen“ verwendest?\",\"back\":\"Der Sketch wird übersetzt und anschließend auf das Board übertragen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Mit welchem Werkzeug der IDE installierst du Unterstützung für Boards?\",\"back\":\"Mit dem Boardverwalter\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was installiert der Bibliotheksverwalter der IDE?\",\"back\":\"Bibliotheken\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"In welchem Bereich der IDE werden Fehler und Warnungen beim Übersetzen eines Sketches angezeigt?\",\"back\":\"Im Ausgabe-Fenster\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was listet das Sketchbook in der IDE auf?\",\"back\":\"Die gespeicherten Sketches\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

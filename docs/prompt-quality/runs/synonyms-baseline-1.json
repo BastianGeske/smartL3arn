@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "baseline",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:17:02.521Z",
+  "elapsedMs": 15394,
+  "usage": {
+    "prompt_tokens": 4171,
+    "completion_tokens": 1395,
+    "total_tokens": 5566,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.044584,
+      "upstream_inference_prompt_cost": 0.016684,
+      "upstream_inference_completions_cost": 0.0279
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 748,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Wie heißt eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems?\",\"back\":\"Algorithmus. Die Bezeichnung Rechenvorschrift ist gleichbedeutend.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Ergänze den Fachbegriff: Ein Platzhalter für einen gespeicherten Wert, der sich ändern kann, heißt {{term}}.\",\"back\":\"Variable (auch: Veränderliche)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Variable\",\"alternatives\":[\"Veränderliche\",\"die Variable\",\"die Veränderliche\"]}]}},{\"front\":\"Ordne jeder alternativen Bezeichnung den gleichbedeutenden Fachbegriff aus dem Lernstoff zu.\",\"back\":\"Rechenvorschrift – Algorithmus; Veränderliche – Variable\",\"task\":{\"kind\":\"matching\",\"pairs\":[{\"id\":\"algo\",\"left\":\"Rechenvorschrift\",\"right\":\"Algorithmus\"},{\"id\":\"var\",\"left\":\"Veränderliche\",\"right\":\"Variable\"}]}},{\"front\":\"Wahr oder falsch? Im gegebenen Lernstoff bezeichnet „Rechenvorschrift“ etwas anderes als „Algorithmus“.\",\"back\":\"Falsch. Im Lernstoff sind Algorithmus und Rechenvorschrift gleichbedeutend.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Im Lernstoff sind die Bezeichnungen Algorithmus und Rechenvorschrift ausdrücklich gleichbedeutend. Beide meinen eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems.\"}}]}"
+}

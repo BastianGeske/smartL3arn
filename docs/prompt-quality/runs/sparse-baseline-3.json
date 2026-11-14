@@ -1,0 +1,38 @@
+{
+  "case": "sparse",
+  "variant": "baseline",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:20:14.049Z",
+  "elapsedMs": 17694,
+  "usage": {
+    "prompt_tokens": 4101,
+    "completion_tokens": 1908,
+    "total_tokens": 6009,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.054564,
+      "upstream_inference_prompt_cost": 0.016404,
+      "upstream_inference_completions_cost": 0.03816
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 892,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 5,
+  "schemaError": null,
+  "content": "{\"name\":\"sparse\",\"cards\":[{\"front\":\"Was bedeutet beim fiktiven Gerät Nera eine dauerhaft grüne Anzeige?\",\"back\":\"Das Gerät ist betriebsbereit.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Ergänze: Beim fiktiven Gerät Nera zeigt eine dauerhaft {{farbe}} Anzeige an, dass das Gerät betriebsbereit ist.\",\"back\":\"grüne\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"farbe\",\"kind\":\"text\",\"answer\":\"grüne\",\"alternatives\":[\"grün\",\"gruene\",\"gruen\"]}]}},{\"front\":\"Wahr oder falsch: Laut Beschreibung des fiktiven Geräts Nera zeigt eine dauerhaft rote Anzeige eine Störung an.\",\"back\":\"Falsch.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Beschrieben ist nur die dauerhaft grüne Anzeige (Gerät betriebsbereit). Andere Farben oder Zustände sind nicht beschrieben; eine Bedeutung für Rot ist daher nicht belegt.\"}},{\"front\":\"Welche Aussagen über das fiktive Gerät Nera sind durch seine Beschreibung belegt?\",\"back\":\"Dauerhaft grün bedeutet betriebsbereit; weitere Farben und Zustände sind nicht beschrieben.\",\"task\":{\"kind\":\"multiple_choice\",\"options\":[{\"id\":\"gruen\",\"text\":\"Eine dauerhaft grüne Anzeige bedeutet, dass das Gerät betriebsbereit ist.\"},{\"id\":\"blink\",\"text\":\"Eine blinkende grüne Anzeige bedeutet, dass das Gerät startet.\"},{\"id\":\"aus\",\"text\":\"Eine erloschene Anzeige bedeutet, dass das Gerät ausgeschaltet ist.\"},{\"id\":\"weitere\",\"text\":\"Für weitere Zustände oder Farben der Anzeige ist keine Bedeutung beschrieben.\"}],\"correctIds\":[\"gruen\",\"weitere\"],\"explanation\":\"Die Beschreibung legt nur fest: dauerhaft grün = betriebsbereit. Blinken, erloschene Anzeige oder andere Farben werden nicht beschrieben; Bedeutungen dafür wären erfunden.\"}},{\"front\":\"Warum lässt sich aus der Beschreibung des fiktiven Geräts Nera nicht ableiten, was eine blinkende grüne Anzeige bedeutet?\",\"back\":\"Belegt ist nur, dass eine dauerhaft grüne Anzeige Betriebsbereitschaft bedeutet. Blinken ist ein anderer Zustand, und weitere Zustände sind nicht beschrieben. Eine Bedeutung dafür wäre daher eine unbelegte Vermutung.\",\"task\":{\"kind\":\"long_text\"}}]}"
+}

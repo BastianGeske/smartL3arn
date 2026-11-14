@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "baseline",
+  "run": 2,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:17:22.268Z",
+  "elapsedMs": 19746,
+  "usage": {
+    "prompt_tokens": 4171,
+    "completion_tokens": 1774,
+    "total_tokens": 5945,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.052164,
+      "upstream_inference_prompt_cost": 0.016684,
+      "upstream_inference_completions_cost": 0.03548
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 973,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems heißt {{term}}.\",\"back\":\"Algorithmus (gleichbedeutend: Rechenvorschrift)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Algorithmus\",\"alternatives\":[\"Rechenvorschrift\"]}]}},{\"front\":\"Ein Platzhalter für einen gespeicherten veränderlichen Wert heißt {{term}}.\",\"back\":\"Variable (akzeptierte alternative Bezeichnung: Veränderliche)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Variable\",\"alternatives\":[\"Veränderliche\"]}]}},{\"front\":\"Welche Bezeichnung ist im gegebenen Lernstoff gleichbedeutend mit dem Begriff Algorithmus?\",\"back\":\"Rechenvorschrift\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"rv\",\"text\":\"Rechenvorschrift\"},{\"id\":\"ve\",\"text\":\"Veränderliche\"},{\"id\":\"va\",\"text\":\"Variable\"},{\"id\":\"pl\",\"text\":\"Platzhalter\"}],\"correctIds\":[\"rv\"],\"explanation\":\"Im Lernstoff sind Algorithmus und Rechenvorschrift gleichbedeutend. Variable und Veränderliche bezeichnen einen Platzhalter für einen gespeicherten veränderlichen Wert, also keine Folge von Anweisungen.\"}},{\"front\":\"Wahr oder falsch? Im gegebenen Lernstoff bezeichnet der Begriff Rechenvorschrift einen Platzhalter für einen gespeicherten veränderlichen Wert.\",\"back\":\"Falsch. Rechenvorschrift ist gleichbedeutend mit Algorithmus.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Rechenvorschrift ist gleichbedeutend mit Algorithmus, also einer eindeutigen, endlichen Folge von Anweisungen zur Lösung eines Problems. Ein Platzhalter für einen gespeicherten veränderlichen Wert heißt Variable oder Veränderliche.\"}}]}"
+}

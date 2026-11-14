@@ -1,0 +1,38 @@
+{
+  "case": "ide",
+  "variant": "baseline",
+  "run": 2,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:12:55.380Z",
+  "elapsedMs": 16293,
+  "usage": {
+    "prompt_tokens": 4187,
+    "completion_tokens": 2074,
+    "total_tokens": 6261,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.058228,
+      "upstream_inference_prompt_cost": 0.016748,
+      "upstream_inference_completions_cost": 0.04148
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 668,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 8,
+  "schemaError": null,
+  "content": "{\"name\":\"ide\",\"cards\":[{\"front\":\"Was macht die IDE-Funktion „Überprüfen“ mit einem Sketch?\",\"back\":\"Sie übersetzt den Sketch, ohne ihn auf das Board zu übertragen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Welche IDE-Funktion übersetzt einen Sketch und überträgt ihn anschließend auf das Board?\",\"back\":\"Hochladen\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"verify\",\"text\":\"Überprüfen\"},{\"id\":\"upload\",\"text\":\"Hochladen\"},{\"id\":\"boards\",\"text\":\"Boardverwalter\"},{\"id\":\"sketchbook\",\"text\":\"Sketchbook\"}],\"correctIds\":[\"upload\"],\"explanation\":\"Hochladen übersetzt den Sketch und überträgt ihn auf das Board. Überprüfen übersetzt nur, ohne Übertragung.\"}},{\"front\":\"Wahr oder falsch: Nach „Überprüfen“ befindet sich der übersetzte Sketch auf dem Board.\",\"back\":\"Falsch\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Überprüfen übersetzt den Sketch nur, ohne ihn auf das Board zu übertragen. Die Übertragung erfolgt erst beim Hochladen.\"}},{\"front\":\"Ordne jedem IDE-Bestandteil seine Aufgabe zu.\",\"back\":\"Boardverwalter: installiert Unterstützung für Boards; Bibliotheksverwalter: installiert Bibliotheken; Ausgabe-Fenster: zeigt Fehler und Warnungen beim Übersetzen; Sketchbook: listet gespeicherte Sketches auf.\",\"task\":{\"kind\":\"matching\",\"pairs\":[{\"id\":\"boards\",\"left\":\"Boardverwalter\",\"right\":\"Installiert Unterstützung für Boards\"},{\"id\":\"libs\",\"left\":\"Bibliotheksverwalter\",\"right\":\"Installiert Bibliotheken\"},{\"id\":\"output\",\"left\":\"Ausgabe-Fenster\",\"right\":\"Zeigt Fehler und Warnungen beim Übersetzen\"},{\"id\":\"sketchbook\",\"left\":\"Sketchbook\",\"right\":\"Listet gespeicherte Sketches auf\"}]}},{\"front\":\"In der IDE installiert man Bibliotheken über den {{tool}}.\",\"back\":\"Bibliotheksverwalter\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"tool\",\"kind\":\"text\",\"answer\":\"Bibliotheksverwalter\",\"alternatives\":[\"Bibliotheks-Verwalter\"]}]}},{\"front\":\"In welchem Bereich der IDE werden Fehler und Warnungen beim Übersetzen eines Sketches angezeigt?\",\"back\":\"Im Ausgabe-Fenster.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wie unterscheiden sich „Überprüfen“ und „Hochladen“ in der IDE? Nenne die Gemeinsamkeit und den Unterschied.\",\"back\":\"Gemeinsamkeit: Beide übersetzen den Sketch. Unterschied: Hochladen überträgt den Sketch zusätzlich auf das Board, Überprüfen überträgt ihn nicht.\",\"task\":{\"kind\":\"long_text\"}},{\"front\":\"Welche IDE-Funktionen übersetzen einen Sketch? Wähle alle zutreffenden aus.\",\"back\":\"Überprüfen und Hochladen\",\"task\":{\"kind\":\"multiple_choice\",\"options\":[{\"id\":\"verify\",\"text\":\"Überprüfen\"},{\"id\":\"upload\",\"text\":\"Hochladen\"},{\"id\":\"sketchbook\",\"text\":\"Sketchbook\"},{\"id\":\"libs\",\"text\":\"Bibliotheksverwalter\"}],\"correctIds\":[\"verify\",\"upload\"],\"explanation\":\"Überprüfen und Hochladen übersetzen beide den Sketch. Das Sketchbook listet gespeicherte Sketches auf, der Bibliotheksverwalter installiert Bibliotheken.\"}}]}"
+}

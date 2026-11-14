@@ -106,6 +106,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   }
 
   async function start(): Promise<boolean> {
+    if (library.transactionBusy) return false
     evaluationError.value = null
     const breakUntil = getPomodoroBreakUntil()
     if (
@@ -454,7 +455,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     if (!value || value.sessionSaved) return
     Object.entries(value.perDeck).forEach(([deckId, stats]) => {
       const deck = library.deckById(deckId)
-      if (!deck) return
+      if (!deck || !stats.reviewed) return
       deck.sessions ||= []
       deck.sessions.push({ date: todayStr(), ...stats, smart: true, practice: value.mode === 'practice' })
       if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90)
@@ -485,6 +486,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       return nextPracticeAt(selectedDecks())
     }),
     start,
+    saveSessions,
     startTimer,
     stopTimer,
     setConfidence,

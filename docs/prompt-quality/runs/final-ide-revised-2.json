@@ -1,0 +1,38 @@
+{
+  "case": "ide",
+  "variant": "revised",
+  "run": 2,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:22:27.252Z",
+  "elapsedMs": 7777,
+  "usage": {
+    "prompt_tokens": 7932,
+    "completion_tokens": 929,
+    "total_tokens": 8861,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.050308,
+      "upstream_inference_prompt_cost": 0.031728,
+      "upstream_inference_completions_cost": 0.01858
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 495,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 6,
+  "schemaError": null,
+  "content": "{\"name\":\"ide\",\"cards\":[{\"front\":\"Was bewirkt die IDE-Funktion „Überprüfen“ bei einem Sketch?\",\"back\":\"Sie übersetzt den Sketch, ohne ihn auf das Board zu übertragen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was bewirkt die IDE-Funktion „Hochladen“ bei einem Sketch?\",\"back\":\"Sie übersetzt den Sketch und überträgt ihn auf das Board.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wofür dient der Boardverwalter in der IDE?\",\"back\":\"Er installiert Unterstützung für Boards.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Wofür dient der Bibliotheksverwalter in der IDE?\",\"back\":\"Er installiert Bibliotheken.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was zeigt das Ausgabe-Fenster der IDE an?\",\"back\":\"Fehler und Warnungen beim Übersetzen.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Was listet das Sketchbook in der IDE auf?\",\"back\":\"Die gespeicherten Sketches.\",\"task\":{\"kind\":\"short_text\"}}]}"
+}

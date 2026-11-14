@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TaskQualityHints from './TaskQualityHints.vue'
+import type { TaskQualityHint } from '../domain/taskQuality'
 import AppIcon from './AppIcon.vue'
 import { useI18n } from '../i18n'
 import type { CalculationAnswer, TaskDefinition } from '../domain/types'
@@ -8,8 +10,10 @@ import MathInput from './MathInput.vue'
 import WorkingSteps from './WorkingSteps.vue'
 import NumberInput from './NumberInput.vue'
 const task = defineModel<TaskDefinition>({ required: true })
-defineProps<{ disabled?: boolean }>()
+defineProps<{ disabled?: boolean; hints?: TaskQualityHint[] }>()
+defineEmits<{ convertSingle: [] }>()
 const { t } = useI18n()
+function focusExplanation() { document.getElementById('task-explanation')?.focus() }
 function changeFormat(event: Event) {
   if (task.value.kind !== 'calculation') return
   const kind = (event.target as HTMLSelectElement).value as CalculationAnswer['kind']
@@ -48,6 +52,7 @@ function addItem() {
 </script>
 <template>
   <div class="task-config">
+    <TaskQualityHints :hints="(hints || []).filter(hint => hint.field !== 'explanation')" :disabled="disabled" @convert-single="$emit('convertSingle')" />
     <template v-if="task.kind === 'calculation'">
       <label class="field-label" for="task-answer-format">{{ t('task.answerFormat') }}</label>
       <select id="task-answer-format" class="select" :value="task.answer.kind" @change="changeFormat"><option v-for="kind in (['number', 'fraction', 'quantity', 'formula'] as const)" :key="kind" :value="kind">{{ calculationLabel(kind) }}</option></select>
@@ -85,6 +90,7 @@ function addItem() {
       <p class="field-label">{{ t('task.items') }}</p>
       <div v-for="(item, i) in task.items" :key="item.id" class="task-edit-row"><span>{{ i + 1 }}.</span><input v-model="item.text" class="input" :aria-label="`${t('task.left')} ${i + 1}`" maxlength="4000" /><button class="btn btn-secondary btn-sm" type="button" :disabled="i === 0" :aria-label="t('task.up')" @click="reorder(i, -1)"><AppIcon name="chevron-up" :size="18" /></button><button class="btn btn-secondary btn-sm" type="button" :disabled="i === task.items.length - 1" :aria-label="t('task.down')" @click="reorder(i, 1)"><AppIcon name="chevron-down" :size="18" /></button><button class="btn btn-quiet" type="button" :disabled="task.items.length <= 2" :aria-label="t('task.remove')" @click="removeItem(item.id)"><AppIcon name="x" :size="18" /></button></div><button class="btn btn-secondary btn-sm" type="button" :disabled="task.items.length >= 50" @click="addItem">{{ t('task.addItem') }}</button>
     </template>
+    <TaskQualityHints :hints="(hints || []).filter(hint => hint.field === 'explanation')" :disabled="disabled" @explain="focusExplanation" />
     <template v-if="task.kind !== 'short_text' && task.kind !== 'long_text'"><label class="field-label" for="task-explanation">{{ t('task.explanation') }}</label><textarea id="task-explanation" class="textarea" :value="task.explanation || ''" rows="2" maxlength="4000" @input="task.explanation = ($event.target as HTMLTextAreaElement).value || undefined" /></template>
   </div>
 </template>

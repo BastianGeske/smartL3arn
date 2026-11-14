@@ -1,0 +1,38 @@
+{
+  "case": "rounding",
+  "variant": "baseline",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:18:53.611Z",
+  "elapsedMs": 13843,
+  "usage": {
+    "prompt_tokens": 4178,
+    "completion_tokens": 1642,
+    "total_tokens": 5820,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.049552,
+      "upstream_inference_prompt_cost": 0.016712,
+      "upstream_inference_completions_cost": 0.03284
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 543,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 3,
+  "schemaError": null,
+  "content": "{\"name\":\"rounding\",\"cards\":[{\"front\":\"Ein Körper bewegt sich gleichförmig mit \\\\(v = 2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}}\\\\) für \\\\(t = 3\\\\,\\\\mathrm{s}\\\\). Berechne die zurückgelegte Strecke \\\\(s\\\\) exakt (ohne Rundung). Gib das Ergebnis in der Einheit m an.\",\"back\":\"\\\\(s = v \\\\cdot t = 2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}} \\\\cdot 3\\\\,\\\\mathrm{s} = 7{,}5\\\\,\\\\mathrm{m}\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"quantity\",\"pairs\":[{\"value\":\"7.5\",\"unit\":\"m\"}]},\"solutionSteps\":[{\"kind\":\"text\",\"value\":\"Bei gleichförmiger Bewegung gilt s = v · t.\"},{\"kind\":\"math\",\"value\":\"s=v\\\\cdot t=2.5\\\\,\\\\mathrm{\\\\tfrac{m}{s}}\\\\cdot 3\\\\,\\\\mathrm{s}=7.5\\\\,\\\\mathrm{m}\"}]}},{\"front\":\"Berechne \\\\(10 : 3\\\\) und runde das Ergebnis auf zwei Nachkommastellen.\",\"back\":\"\\\\(10 : 3 = 3{,}333\\\\ldots \\\\approx 3{,}33\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"number\",\"value\":\"3.33\",\"tolerance\":\"0.005\"},\"solutionSteps\":[{\"kind\":\"math\",\"value\":\"10:3=3.333\\\\ldots\"},{\"kind\":\"text\",\"value\":\"Die dritte Nachkommastelle ist 3 und damit kleiner als 5, also wird abgerundet.\"},{\"kind\":\"math\",\"value\":\"3.333\\\\ldots\\\\approx 3.33\"}],\"explanation\":\"Verlangt sind zwei Nachkommastellen. Die absolute Toleranz von 0,005 entspricht dieser Rundungsgenauigkeit.\"}},{\"front\":\"Wahr oder falsch: Bei der Rechnung \\\\(s = 2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}} \\\\cdot 3\\\\,\\\\mathrm{s}\\\\) muss das Ergebnis gerundet werden, weil es nicht exakt angegeben werden kann.\",\"back\":\"Falsch. \\\\(2{,}5 \\\\cdot 3 = 7{,}5\\\\) ist exakt; die Strecke beträgt genau \\\\(7{,}5\\\\,\\\\mathrm{m}\\\\).\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"\\\\(2{,}5 \\\\cdot 3 = 7{,}5\\\\) ergibt einen exakten, endlichen Dezimalwert: \\\\(s = 7{,}5\\\\,\\\\mathrm{m}\\\\). Eine Rundung ist nur nötig, wenn das Ergebnis wie bei \\\\(10 : 3 = 3{,}333\\\\ldots\\\\) nicht abbricht oder eine bestimmte Genauigkeit verlangt wird.\"}}]}"
+}

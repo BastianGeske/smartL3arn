@@ -26,6 +26,7 @@ export const useStudyStore = defineStore('study', () => {
   const practiceSession = ref(false)
   const currentPurpose = computed(() => phase.value === 'learning' && purposes.value[currentCard.value?.id || ''] !== 'practice' ? 'relearning' : purposes.value[currentCard.value?.id || ''])
   const sessionStats = ref<SessionStats>(emptySessionStats())
+  let sessionSaved = false
 
   const deck = computed(() => deckId.value ? library.deckById(deckId.value) : undefined)
   const currentQueue = computed(() => (
@@ -41,6 +42,7 @@ export const useStudyStore = defineStore('study', () => {
   ))
 
   function start(nextDeckId: string): boolean {
+    if (library.transactionBusy) return false
     const nextDeck = library.deckById(nextDeckId)
     if (!nextDeck?.cards.length) return false
     deckId.value = nextDeckId
@@ -53,6 +55,7 @@ export const useStudyStore = defineStore('study', () => {
     index.value = 0
     flipped.value = false
     sessionStats.value = emptySessionStats()
+    sessionSaved = false
     return true
   }
 
@@ -91,16 +94,22 @@ export const useStudyStore = defineStore('study', () => {
 
     advanceReady(currentQueue.value, index.value, id => practiceReady(currentDeck, id))
 
-    if (complete.value) {
-      currentDeck.sessions ||= []
-      currentDeck.sessions.push({ date: todayStr(), ...sessionStats.value, practice: practiceSession.value })
-      if (currentDeck.sessions.length > 90) {
-        currentDeck.sessions = currentDeck.sessions.slice(-90)
-      }
-    }
-
+    const finished = complete.value
     flipped.value = false
+    if (finished) await saveSessions()
+
     // Keep unsaved progress in memory; the global persistence notice stays visible.
+    if (!finished) await library.persist().catch(() => undefined)
+  }
+
+  async function saveSessions(): Promise<void> {
+    const currentDeck = deck.value
+    if (!currentDeck || sessionSaved || !sessionStats.value.reviewed) return
+    currentDeck.sessions ||= []
+    currentDeck.sessions.push({ date: todayStr(), ...sessionStats.value, practice: practiceSession.value })
+    if (currentDeck.sessions.length > 90) currentDeck.sessions = currentDeck.sessions.slice(-90)
+    sessionSaved = true
+    // Keep history in memory on failure, without appending it again on retry.
     await library.persist().catch(() => undefined)
   }
 
@@ -118,6 +127,7 @@ export const useStudyStore = defineStore('study', () => {
     currentCard,
     complete,
     start,
+    saveSessions,
     flip,
     rate,
   }

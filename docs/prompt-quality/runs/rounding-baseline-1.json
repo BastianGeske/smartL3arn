@@ -1,0 +1,38 @@
+{
+  "case": "rounding",
+  "variant": "baseline",
+  "run": 1,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:18:27.344Z",
+  "elapsedMs": 13706,
+  "usage": {
+    "prompt_tokens": 4178,
+    "completion_tokens": 1535,
+    "total_tokens": 5713,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.047412,
+      "upstream_inference_prompt_cost": 0.016712,
+      "upstream_inference_completions_cost": 0.0307
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 515,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 3,
+  "schemaError": null,
+  "content": "{\"name\":\"rounding\",\"cards\":[{\"front\":\"Bei gleichförmiger Bewegung gilt \\\\(s = v \\\\cdot t\\\\). Berechne die Strecke \\\\(s\\\\) für \\\\(v = 2{,}5\\\\,\\\\mathrm{m/s}\\\\) und \\\\(t = 3\\\\,\\\\mathrm{s}\\\\). Gib das Ergebnis exakt in der Einheit m an.\",\"back\":\"\\\\(s = 7{,}5\\\\,\\\\mathrm{m}\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"quantity\",\"pairs\":[{\"value\":\"7.5\",\"unit\":\"m\"}]},\"solutionSteps\":[{\"kind\":\"text\",\"value\":\"Formel der gleichförmigen Bewegung anwenden und Werte einsetzen.\"},{\"kind\":\"math\",\"value\":\"s=v\\\\cdot t=2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}}\\\\cdot 3\\\\,\\\\mathrm{s}=7{,}5\\\\,\\\\mathrm{m}\"}]}},{\"front\":\"Berechne \\\\(10 : 3\\\\) und runde das Ergebnis auf zwei Nachkommastellen. Akzeptiert wird eine absolute Abweichung von höchstens \\\\(0{,}005\\\\) vom korrekt gerundeten Wert.\",\"back\":\"\\\\(10 : 3 \\\\approx 3{,}33\\\\)\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"number\",\"value\":\"3.33\",\"tolerance\":\"0.005\"},\"solutionSteps\":[{\"kind\":\"math\",\"value\":\"10:3=3{,}333\\\\ldots\"},{\"kind\":\"text\",\"value\":\"Die dritte Nachkommastelle ist 3, also wird abgerundet.\"},{\"kind\":\"math\",\"value\":\"3{,}333\\\\ldots\\\\approx 3{,}33\"}],\"explanation\":\"Die Toleranz von 0,005 entspricht einer halben Einheit der zweiten Nachkommastelle und deckt damit genau die Rundung auf zwei Nachkommastellen ab.\"}},{\"front\":\"Für \\\\(10 : 3\\\\), gerundet auf zwei Nachkommastellen, gilt der Sollwert \\\\(3{,}33\\\\) mit einer absoluten Toleranz von \\\\(0{,}005\\\\). Wird die Antwort \\\\(3{,}3\\\\) akzeptiert?\",\"back\":\"Falsch. \\\\(3{,}3\\\\) liegt außerhalb der Toleranz.\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Akzeptiert werden Werte zwischen \\\\(3{,}325\\\\) und \\\\(3{,}335\\\\). \\\\(3{,}3\\\\) weicht um \\\\(0{,}03\\\\) vom Sollwert ab. Diese Abweichung ist größer als \\\\(0{,}005\\\\). Außerdem hat \\\\(3{,}3\\\\) nur eine Nachkommastelle statt der verlangten zwei.\"}}]}"
+}

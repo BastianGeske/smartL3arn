@@ -1,0 +1,38 @@
+{
+  "case": "synonyms",
+  "variant": "baseline",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:17:38.317Z",
+  "elapsedMs": 16048,
+  "usage": {
+    "prompt_tokens": 4171,
+    "completion_tokens": 1877,
+    "total_tokens": 6048,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.054224,
+      "upstream_inference_prompt_cost": 0.016684,
+      "upstream_inference_completions_cost": 0.03754
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1050,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"synonyms\",\"cards\":[{\"front\":\"Ergänze den Fachbegriff aus dem gegebenen Lernstoff: Eine eindeutige, endliche Folge von Anweisungen zur Lösung eines Problems heißt {{term}}.\",\"back\":\"Algorithmus (gleichbedeutend: Rechenvorschrift)\",\"task\":{\"kind\":\"cloze\",\"gaps\":[{\"id\":\"term\",\"kind\":\"text\",\"answer\":\"Algorithmus\",\"alternatives\":[\"Rechenvorschrift\",\"ein Algorithmus\",\"eine Rechenvorschrift\"]}]}},{\"front\":\"Wie heißt laut gegebenem Lernstoff ein Platzhalter für einen gespeicherten veränderlichen Wert? Nenne den Fachbegriff und die im Kontext akzeptierte alternative Bezeichnung.\",\"back\":\"Variable; die akzeptierte alternative Bezeichnung lautet Veränderliche.\",\"task\":{\"kind\":\"short_text\"}},{\"front\":\"Welche Bezeichnung ist im gegebenen Lernstoff gleichbedeutend mit „Algorithmus“?\",\"back\":\"Rechenvorschrift\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"rechenvorschrift\",\"text\":\"Rechenvorschrift\"},{\"id\":\"variable\",\"text\":\"Variable\"},{\"id\":\"veraenderliche\",\"text\":\"Veränderliche\"},{\"id\":\"platzhalter\",\"text\":\"Platzhalter\"}],\"correctIds\":[\"rechenvorschrift\"],\"explanation\":\"Im Lernstoff sind Algorithmus und Rechenvorschrift ausdrücklich gleichbedeutend. Variable und Veränderliche bezeichnen dagegen einen Platzhalter für einen gespeicherten veränderlichen Wert.\"}},{\"front\":\"Wahr oder falsch? Im gegebenen Lernstoff ist „Veränderliche“ eine alternative Bezeichnung für einen Algorithmus.\",\"back\":\"Falsch\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"„Veränderliche“ ist im Lernstoff eine akzeptierte alternative Bezeichnung für eine Variable, also für einen Platzhalter für einen gespeicherten veränderlichen Wert. Gleichbedeutend mit Algorithmus ist dagegen Rechenvorschrift.\"}}]}"
+}

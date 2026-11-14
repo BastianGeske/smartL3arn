@@ -1,4 +1,4 @@
-import { onBeforeUnmount, watch, type ComputedRef } from 'vue'
+import { nextTick, onBeforeUnmount, watch, type ComputedRef } from 'vue'
 
 /** Keep keyboard navigation inside the open dialog and restore its trigger. */
 export function useDialogKeyboard(editor: ComputedRef<unknown>) {
@@ -14,7 +14,7 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
       const closed = element.closest('details:not([open])')
       if (closed && !closed.querySelector('summary')?.contains(element)) return false
       const style = getComputedStyle(element)
-      return element.getClientRects().length > 0 && style.visibility !== 'hidden' && style.display !== 'none' && style.opacity !== '0'
+      return element.getClientRects().length > 0 && style.visibility !== 'hidden' && style.display !== 'none' && (style.opacity !== '0' || element.matches('.task-match-control > select'))
     })
     controls.sort((left, right) => left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
     const first = controls[0]
@@ -33,6 +33,10 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
     } else {
       document.removeEventListener('keydown', trap)
       if (trigger?.isConnected) trigger.focus()
+      // Saving can remove a resolved import item that originally opened this dialog.
+      void nextTick(() => {
+        if (!editor.value && (!trigger?.isConnected || trigger === document.body)) document.getElementById('import-quality-title')?.focus()
+      })
     }
   }, { flush: 'sync' })
   onBeforeUnmount(() => document.removeEventListener('keydown', trap))

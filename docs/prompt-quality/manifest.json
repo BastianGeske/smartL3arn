@@ -1,0 +1,240 @@
+{
+  "model": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "runs": 54,
+  "files": [
+    {
+      "path": "cases.json",
+      "sha256": "1a7349d9c4377784baf55d62e1ea75cfe54549e0dd4632f787ffab6ba6e26975"
+    },
+    {
+      "path": "prompts/baseline.md",
+      "sha256": "7f4ec6183c526740dcd3e47e7b95eca2baa680f65e9401af1ae106b7dbe0222a"
+    },
+    {
+      "path": "prompts/final.md",
+      "sha256": "cd9bba2565c3f0565c0cc553a53a09067550569aba47521ce6c6835e475a18b1"
+    },
+    {
+      "path": "prompts/initial-revised.md",
+      "sha256": "f6fa42c1bfdf1b45b208e40934e8f757b14d32a88553236183d06aec79d02ddc"
+    },
+    {
+      "path": "runs/final-hierarchy-revised-1.json",
+      "sha256": "b1e9ce2d34c6fb58b1db3f145e01c5faa44e486758b2208e7681884946029d6f"
+    },
+    {
+      "path": "runs/final-hierarchy-revised-2.json",
+      "sha256": "58ffbf00c4053182ee0c8159d8ba5e476db1692e1dd2344476aa43c87d6510eb"
+    },
+    {
+      "path": "runs/final-hierarchy-revised-3.json",
+      "sha256": "1871424e4df1f8069ff4a6f93bbcb3f8107cdc3cba877083bad2ca93fc1f1c62"
+    },
+    {
+      "path": "runs/final-ide-revised-1.json",
+      "sha256": "240e353012b780aa0aecfd7cfce393d244736b5d6d71326e25878a0bb21326d3"
+    },
+    {
+      "path": "runs/final-ide-revised-2.json",
+      "sha256": "3ab2afe3f61576732ca0f1341dae5e40b861a983b9ca4d321961dcf1e1f7260b"
+    },
+    {
+      "path": "runs/final-ide-revised-3.json",
+      "sha256": "55621aeafac8eddc4d7e4d51f3d98524ca0a6fe5e5c32122cc2040692f182ade"
+    },
+    {
+      "path": "runs/final-parallel-revised-1.json",
+      "sha256": "1b05be05bf58426981e1f8992d12271a35d4c2fe9b98aee4ebb332bc74c8b4ed"
+    },
+    {
+      "path": "runs/final-parallel-revised-2.json",
+      "sha256": "151605219c39972ed5ba0e2a0db57e2b7edb01e70c0aa2e198bf1b84570ed95e"
+    },
+    {
+      "path": "runs/final-parallel-revised-3.json",
+      "sha256": "1d7f3563b9367b09419c2e7a54ba1388a7260fb3a06e84dbc93cc069f159141e"
+    },
+    {
+      "path": "runs/final-rounding-revised-1.json",
+      "sha256": "b74732d1a967724eb41b624d9f41c574fd56a1c5536c6ba050fab86832a2e7b0"
+    },
+    {
+      "path": "runs/final-rounding-revised-2.json",
+      "sha256": "f820de994895aca1566d805f53dff59a62c0ba121c22e89c9531d3a17e627bca"
+    },
+    {
+      "path": "runs/final-rounding-revised-3.json",
+      "sha256": "0d9ac8a2ea12b814ce3b0e42cddf046463122bc496344e68a91a021913e1a76c"
+    },
+    {
+      "path": "runs/final-sparse-revised-1.json",
+      "sha256": "e44bc09894b535af10846b26de284b45bfa163685407536adcb1e8d3e3e92f52"
+    },
+    {
+      "path": "runs/final-sparse-revised-2.json",
+      "sha256": "c71da7d7cb3f2c58e2b8c77444d3eefa5f1d1a56d6f92d54a27e6f5737ffe64c"
+    },
+    {
+      "path": "runs/final-sparse-revised-3.json",
+      "sha256": "078725995ddd083ba0841b4bc34ea613a30d188ca33bc1e34c26b1537b85ec2b"
+    },
+    {
+      "path": "runs/final-synonyms-revised-1.json",
+      "sha256": "b8652d5931cf9efc0a57870ea1d9e01c17770b3672c31559062b421dc0ef5a8a"
+    },
+    {
+      "path": "runs/final-synonyms-revised-2.json",
+      "sha256": "647d75c5cd36eb71cb70235f82f885ca174f0e63b0533b9483f91ebf504f3693"
+    },
+    {
+      "path": "runs/final-synonyms-revised-3.json",
+      "sha256": "69256ea63f28599e8ec9fde255ebcd11eb06fb85d5489c7e33851caaa9ca6676"
+    },
+    {
+      "path": "runs/hierarchy-baseline-1.json",
+      "sha256": "69d374053c0bc6c24f38cac7933076cb8528cb25f34489b531b18da07a581828"
+    },
+    {
+      "path": "runs/hierarchy-baseline-2.json",
+      "sha256": "d8b535a43ab2e538f554e827e99000c2d37dddb7c8cb87bbf201896f0beea0e1"
+    },
+    {
+      "path": "runs/hierarchy-baseline-3.json",
+      "sha256": "5958c36a728491339888aa4a25f88185056ac679e8180f7c98ea357fe78760d2"
+    },
+    {
+      "path": "runs/hierarchy-revised-1.json",
+      "sha256": "1a0fef97a40b6d29cdc5585159a117ad9db38746539f1b6bd21f7a84793a60d0"
+    },
+    {
+      "path": "runs/hierarchy-revised-2.json",
+      "sha256": "2d3a472d1e03194a5675217a1e53e7bf21e5c964d43541c0a3bb96095e5aa746"
+    },
+    {
+      "path": "runs/hierarchy-revised-3.json",
+      "sha256": "ff07f0b8de8d8eddbe2dbeaec68ba07860a9a25ef90d30e8edef4b5aa51bf819"
+    },
+    {
+      "path": "runs/ide-baseline-1.json",
+      "sha256": "8d2d58c274c2febd6fb3c4a35da15d8c516e7c7f4ee8365d0ff4aaaff6dfefc2"
+    },
+    {
+      "path": "runs/ide-baseline-2.json",
+      "sha256": "418aae054d4a92e88e5f7b2fb72af7ab256bf9dd6171ea601985b4c667305ab0"
+    },
+    {
+      "path": "runs/ide-baseline-3.json",
+      "sha256": "2419a73e21bc3342487e90badf5d55430eb5c5a251bc36ef8a3ac4a50a3af404"
+    },
+    {
+      "path": "runs/ide-revised-1.json",
+      "sha256": "57d235fbdc4c7ea46009a77363f4472c373a1dc88f3defa8a979f8f8203de9af"
+    },
+    {
+      "path": "runs/ide-revised-2.json",
+      "sha256": "3d38df1c4ac081461b2bd6f2ef23f9d02da39d4faaa5acc617464fd7478e5a2b"
+    },
+    {
+      "path": "runs/ide-revised-3.json",
+      "sha256": "b5daa9a7df0ecba3cb73409ff4f2f747d85b45ce4f427635d79d8a10b7a56883"
+    },
+    {
+      "path": "runs/parallel-baseline-1.json",
+      "sha256": "645cbb066975bc0edd457afdb267166e3e2a44c5c1a5b3e774f38a442e9172f4"
+    },
+    {
+      "path": "runs/parallel-baseline-2.json",
+      "sha256": "02eac5504458fef3da2eb67fcae8fe4c33a05fc9be0a42c485db6eddb88b9584"
+    },
+    {
+      "path": "runs/parallel-baseline-3.json",
+      "sha256": "dfc37a878f4e8b581e506610fb0097b1d6c9b8f6af6c2d60891bede0a3a86177"
+    },
+    {
+      "path": "runs/parallel-revised-1.json",
+      "sha256": "a4e7d7ee121bca4ba841883e2ec1df5831cb1f0eeff497eec31366e6075e702a"
+    },
+    {
+      "path": "runs/parallel-revised-2.json",
+      "sha256": "44ffece16e1350958f5a1bf32469bb7047c896708f626a04cf1f272cb370966a"
+    },
+    {
+      "path": "runs/parallel-revised-3.json",
+      "sha256": "f8e28ba9ffb1f314e072f53c8773a0903ed84e620df75e2c4c370ef2ba3d132c"
+    },
+    {
+      "path": "runs/rounding-baseline-1.json",
+      "sha256": "ea6fd9bafcf90a8391a62570d57c9d7b3bbe3aff55eeb3f6cc8635ab5ee8dbbc"
+    },
+    {
+      "path": "runs/rounding-baseline-2.json",
+      "sha256": "ebfde5a905a97a0f2a62b2da17448c8922363f49a27ec275534445b6687bbde6"
+    },
+    {
+      "path": "runs/rounding-baseline-3.json",
+      "sha256": "b51a8de2d4b2015ac2dddfc84b6f156513130ccf780bed01e9cc6f89798a7420"
+    },
+    {
+      "path": "runs/rounding-revised-1.json",
+      "sha256": "d30ba354cdc13adffdc45d4fff4fdadf5a6180d5345ebfc7fb6580ff1ed8e88f"
+    },
+    {
+      "path": "runs/rounding-revised-2.json",
+      "sha256": "2c6a4b412f01433225575f83ee7e003452b68c5207d2dcb595e45322faf488a5"
+    },
+    {
+      "path": "runs/rounding-revised-3.json",
+      "sha256": "1cbb3e35689d9182fd52aad7c8c6433ec7c9613320ef06f224696450c99a3149"
+    },
+    {
+      "path": "runs/sparse-baseline-1.json",
+      "sha256": "05eb83b9428de60535b28d4a55de40a725257c9e91fb96e8273f0424a5b66c10"
+    },
+    {
+      "path": "runs/sparse-baseline-2.json",
+      "sha256": "924e26247d8b1aac954d7a8e352dd93ae1ac62c3a2b60c483c3b3bb4de639684"
+    },
+    {
+      "path": "runs/sparse-baseline-3.json",
+      "sha256": "9f86f5ae4043452c43ce6710321994adcb3f2d2ddb8f48df1fcac2c76cd924e0"
+    },
+    {
+      "path": "runs/sparse-revised-1.json",
+      "sha256": "edb82fe14dc60b0bd439179513232cbf66a3b4bd8894c4831165ea2e2acd59f5"
+    },
+    {
+      "path": "runs/sparse-revised-2.json",
+      "sha256": "21459707f33c454f722a411b9acc0516783cda1a02a788a6851e755fce8560a8"
+    },
+    {
+      "path": "runs/sparse-revised-3.json",
+      "sha256": "be6cfd746b04af50a4d3ca21186652fb165929e18a723ecb1fa64c0b321ad1a5"
+    },
+    {
+      "path": "runs/synonyms-baseline-1.json",
+      "sha256": "304cd060155921b801ce113fe4239a3603815aea2760e7d27831aefb97b2b576"
+    },
+    {
+      "path": "runs/synonyms-baseline-2.json",
+      "sha256": "736f774caa4addc844a66f640986ca6497f7ee5e466871cc93ed4356fe32ff89"
+    },
+    {
+      "path": "runs/synonyms-baseline-3.json",
+      "sha256": "8a135f6f55968e936a786c2a9673be90035d66c13d9bd61a6bf544e91f5002d7"
+    },
+    {
+      "path": "runs/synonyms-revised-1.json",
+      "sha256": "e396e9ee4a55d26349ccf1a298cf6e60133d41645a450d1a0bf730a3080a4f9c"
+    },
+    {
+      "path": "runs/synonyms-revised-2.json",
+      "sha256": "0fc6ae38b01c6e6f11ef8a9e690b2ac56d971a84a57b0155a5ff110696a3b5fc"
+    },
+    {
+      "path": "runs/synonyms-revised-3.json",
+      "sha256": "773e8319080f40c5db97bda6b6a3f501c415f60a83d39ea734d26acb7336c5f2"
+    }
+  ]
+}

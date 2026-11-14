@@ -1,7 +1,7 @@
 {
   "name": "smartl3arn",
-  "version": "1.0.7",
-  "nativeBuildNumber": 6,
+  "version": "1.0.8",
+  "nativeBuildNumber": 7,
   "description": "smartL3arn flashcard app with evidence-based learning techniques",
   "main": "main.js",
   "scripts": {
@@ -29,7 +29,8 @@
     "ios": "npm run cap:sync && cap open ios",
     "cap:copy:android": "npm run version:sync && npm run build:web && cap copy android",
     "cap:sync:android": "npm run cap:copy:android && cap sync android",
-    "android": "npm run cap:sync:android && cap open android"
+    "android": "npm run cap:sync:android && cap open android",
+    "test:quality:ui": "electron scripts/check-task-quality-electron.cjs"
   },
   "build": {
     "appId": "com.smartl3arn.app",

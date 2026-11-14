@@ -12,6 +12,7 @@ import {
   evaluationBand,
 } from '../domain/study/answerSimilarity'
 import type { ConfidenceLevel, Rating } from '../domain/types'
+import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
 import { useSmartStudyStore } from '../stores/smartStudy'
 import { Capacitor } from '@capacitor/core'
@@ -24,6 +25,7 @@ const { t } = useI18n()
 
 const router = useRouter()
 const settings = useSettingsStore()
+const library = useLibraryStore()
 const smart = useSmartStudyStore()
 
 const confidences: { value: ConfidenceLevel; label: TranslationKey }[] = [
@@ -71,6 +73,18 @@ const usesAI = computed(() => {
 const answerDisplay = computed(() => smart.currentCard?.task?.kind === 'calculation' && smart.currentCard.task.answer.kind === 'formula' && smart.session?.typedAnswer ? `\\(${smart.session.typedAnswer}\\)` : smart.session?.typedAnswer || '')
 
 onMounted(async () => {
+  // Replaced cards cannot be resumed from a dormant session's old queue.
+  if (smart.session) {
+    const referencedDeckIds = new Set(smart.session.queue.map(item => item.deckId))
+    const cardIdsByDeck = new Map(library.decks
+      .filter(deck => referencedDeckIds.has(deck.id))
+      .map(deck => [deck.id, new Set(deck.cards.map(card => card.id))]))
+    if (smart.session.queue.some(item => !cardIdsByDeck.get(item.deckId)?.has(item.cardId))) {
+      smart.stopTimer()
+      await smart.saveSessions()
+      smart.session = null
+    }
+  }
   if (!smart.session && !(await smart.start())) {
     await router.replace({ name: 'smart-setup' })
     return
@@ -312,7 +326,7 @@ async function exit(): Promise<void> {
                 :ai="usesAI"
                 :mode-label="t('smart.reviewAnswer')"
               />
-              <StudyCardBody :card="smart.currentCard" side="question" />
+              <StudyCardBody :card="smart.currentCard" side="question" interactive />
             </section>
             <section class="smart-card-block smart-card-back" tabindex="-1" :aria-label="t('study.answer')">
               <StudyCardBody :card="smart.currentCard" side="answer" :label="t('smart.correctAnswer')" />
@@ -332,7 +346,7 @@ async function exit(): Promise<void> {
               <span class="smart-feedback-label">{{ t('smart.feedback') }}</span>
               <span class="smart-feedback-text">{{ smart.session.evaluation.feedback }}</span>
             </div>
-            <div class="smart-feedback-row">
+            <div v-if="!smart.session.evaluation.parts?.length" class="smart-feedback-row">
               <span class="smart-feedback-label">{{ t('smart.youWrote') }}</span>
               <span class="smart-feedback-text">
                 <MathContent v-if="smart.session.typedAnswer" :text="answerDisplay" />

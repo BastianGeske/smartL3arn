@@ -161,6 +161,8 @@ npm run typecheck  # Vue + TypeScript validation
 npm test           # Electron service tests, then Vitest domain/import tests
 npm run build:web  # typecheck and build; required before the Electron smoke test
 npm run test:smoke # hidden Electron flow test (requires a desktop session)
+npm run test:tasks:ui # all answer formats in an isolated Electron profile
+npm run test:quality:ui # import guidance, editing, splitting and study regression checks
 ```
 
 Regression coverage includes CSV export/import, header handling and malformed CSV, JSON learning-data restoration, exact numeric answers, scheduler previews, OpenRouter timeouts, credential resolution, and API usage accounting. The smoke test uses example decks, an in-memory partition, and mocked IPC; it does not change your real deck database or call OpenRouter.
@@ -440,7 +442,7 @@ Optional deck-level `cardStats`, `sessions`, and `smartSessionSeq` are restored 
 ### AI prompt for high-quality flashcards
 
 The complete, copyable **[German flashcard prompt template](docs/flashcard-prompt.md)**
-was checked against the current task schema and importer on **9 November 2026**.
+was checked against the current task schema and importer on **13 November 2026**.
 Replace its placeholders with your material, learning goal, card count, and local
 or AI evaluation preference. Save the generated JSON as a UTF-8 `.json` file and
 use **Import JSON** on Home.
@@ -449,6 +451,11 @@ The template covers all nine task types and the four calculation formats, includ
 text/numeric cloze alternatives, explicit accepted units, justified rounding
 tolerances, LaTeX, reference working steps, and structured explanations. It asks for
 a suitable mix based on the material rather than forcing every type into each deck.
+The [54-run prompt comparison](docs/prompt-quality/README.md) records the six synthetic source cases and frozen outputs.
+It chooses an independently assessable learning goal before selecting a task type,
+keeps unrelated facts in separate cards, and includes a final quality review.
+See the [task quality implementation plan](docs/task-quality-implementation.md) for
+the rules, editor/import guidance, and controlled splitting of matching cards.
 Its examples use actual JSON objects rather than pseudo-values such as `"text" or "number"`.
 
 To use interactive answer controls, enable **Typed recall** in **Smart Study**.

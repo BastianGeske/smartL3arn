@@ -1,0 +1,38 @@
+{
+  "case": "rounding",
+  "variant": "revised",
+  "run": 2,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:23:49.396Z",
+  "elapsedMs": 5915,
+  "usage": {
+    "prompt_tokens": 7923,
+    "completion_tokens": 683,
+    "total_tokens": 8606,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.045352,
+      "upstream_inference_prompt_cost": 0.031692,
+      "upstream_inference_completions_cost": 0.01366
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 168,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 2,
+  "schemaError": null,
+  "content": "{\"name\":\"rounding\",\"cards\":[{\"front\":\"Bei gleichförmiger Bewegung gilt \\\\(s = v \\\\cdot t\\\\). Berechne die Strecke \\\\(s\\\\) für \\\\(v = 2{,}5\\\\,\\\\mathrm{m/s}\\\\) und \\\\(t = 3\\\\,\\\\mathrm{s}\\\\). Gib das Ergebnis in der Einheit m an.\",\"back\":\"7,5 m\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"quantity\",\"pairs\":[{\"value\":\"7.5\",\"unit\":\"m\"}]},\"solutionSteps\":[{\"kind\":\"math\",\"value\":\"s=v\\\\cdot t=2{,}5\\\\,\\\\mathrm{\\\\tfrac{m}{s}}\\\\cdot 3\\\\,\\\\mathrm{s}=7{,}5\\\\,\\\\mathrm{m}\"}]}},{\"front\":\"Berechne \\\\(10 : 3\\\\) und runde das Ergebnis auf zwei Nachkommastellen.\",\"back\":\"3,33\",\"task\":{\"kind\":\"calculation\",\"answer\":{\"kind\":\"number\",\"value\":\"3.33\",\"tolerance\":\"0.005\"},\"solutionSteps\":[{\"kind\":\"math\",\"value\":\"10:3=3{,}333\\\\ldots\"},{\"kind\":\"text\",\"value\":\"Die dritte Nachkommastelle ist 3, also wird abgerundet: 3,33.\"}],\"explanation\":\"Akzeptiert wird 3,33 mit einer absoluten Toleranz von 0,005.\"}}]}"
+}

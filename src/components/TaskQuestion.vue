@@ -19,7 +19,16 @@ const matching = computed(() => props.card.task?.kind === 'matching' ? { left: p
     <MathContent :text="card.task?.kind === 'cloze' ? card.front.replace(/\{\{[\w-]+\}\}/g, '___') : card.front" />
     <template v-if="!interactive">
       <ul v-if="items.length" class="task-readonly-items"><li v-for="(item, i) in items" :key="i"><MathContent :text="item" /></li></ul>
-      <div v-if="matching" class="task-matching-readonly"><ul><li v-for="(item, i) in matching.left" :key="i"><MathContent :text="item" /></li></ul><ul><li v-for="(item, i) in matching.right" :key="i"><MathContent :text="item" /></li></ul></div>
+      <div v-if="matching" class="task-matching-readonly">
+        <div>
+          <span class="task-matching-heading">{{ t('task.matchingTerms') }}</span>
+          <ul><li v-for="(item, i) in matching.left" :key="i"><MathContent :text="item" /></li></ul>
+        </div>
+        <div>
+          <span class="task-matching-heading">{{ t('task.matchingOptions') }}</span>
+          <ul><li v-for="(item, i) in matching.right" :key="i"><MathContent :text="item" /></li></ul>
+        </div>
+      </div>
       <p v-if="card.task?.kind === 'true_false'">{{ t('task.true') }} / {{ t('task.false') }}</p>
     </template>
   </div>

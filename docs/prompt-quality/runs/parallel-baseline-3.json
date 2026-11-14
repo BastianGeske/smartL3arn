@@ -1,0 +1,38 @@
+{
+  "case": "parallel",
+  "variant": "baseline",
+  "run": 3,
+  "requestedModel": "anthropic/claude-opus-5.5",
+  "returnedModel": "anthropic/claude-opus-5.5",
+  "temperature": 0.2,
+  "maxTokens": 3500,
+  "date": "2026-11-13T07:15:55.642Z",
+  "elapsedMs": 20327,
+  "usage": {
+    "prompt_tokens": 4117,
+    "completion_tokens": 2086,
+    "total_tokens": 6203,
+    "cost": 0,
+    "is_byok": true,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.058188,
+      "upstream_inference_prompt_cost": 0.016468,
+      "upstream_inference_completions_cost": 0.04172
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 784,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "cards": 4,
+  "schemaError": null,
+  "content": "{\"name\":\"parallel\",\"cards\":[{\"front\":\"Ablauf vor einem Workshop: Zuerst wird der Termin festgelegt. Danach erfolgen Raumreservierung und Materialbestellung, anschließend werden die Einladungen verschickt. Erkläre, warum Raumreservierung und Materialbestellung in beliebiger Reihenfolge erledigt werden können.\",\"back\":\"Beide Schritte hängen nur vom festgelegten Termin ab, nicht voneinander. Daher sind sie unabhängig und ihre Reihenfolge ist beliebig. Erst die Einladungen hängen von beiden ab: Sie werden erst verschickt, wenn Raumreservierung und Materialbestellung abgeschlossen sind.\",\"task\":{\"kind\":\"long_text\"}},{\"front\":\"Vor einem Workshop wird zuerst der Termin festgelegt. Danach folgen Raumreservierung und Materialbestellung. Die Einladungen werden erst verschickt, wenn beide abgeschlossen sind. Welche Schritte dürfen direkt nach der Terminfestlegung erfolgen?\",\"back\":\"Raumreservierung und Materialbestellung\",\"task\":{\"kind\":\"multiple_choice\",\"options\":[{\"id\":\"raum\",\"text\":\"Raumreservierung\"},{\"id\":\"material\",\"text\":\"Materialbestellung\"},{\"id\":\"einladung\",\"text\":\"Einladungen verschicken\"}],\"correctIds\":[\"raum\",\"material\"],\"explanation\":\"Raumreservierung und Materialbestellung setzen nur den festgelegten Termin voraus. Die Einladungen erfordern zusätzlich, dass Raumreservierung und Materialbestellung abgeschlossen sind.\"}},{\"front\":\"Vor einem Workshop wird zuerst der Termin festgelegt. Danach folgen Raumreservierung und Materialbestellung, anschließend werden die Einladungen verschickt. Wahr oder falsch: Die Materialbestellung darf erst erfolgen, wenn die Raumreservierung abgeschlossen ist.\",\"back\":\"Falsch\",\"task\":{\"kind\":\"true_false\",\"correct\":false,\"explanation\":\"Raumreservierung und Materialbestellung sind voneinander unabhängig und können in beliebiger Reihenfolge erfolgen. Beide setzen nur den festgelegten Termin voraus.\"}},{\"front\":\"Für einen Workshop gilt: Zuerst wird der Termin festgelegt. Danach können Raumreservierung und Materialbestellung unabhängig voneinander erfolgen. Einladungen werden erst verschickt, wenn beide abgeschlossen sind. Jemand plant: Termin festlegen, Raum reservieren, Einladungen verschicken, Material bestellen. Welcher Fehler steckt in diesem Plan?\",\"back\":\"Die Einladungen werden verschickt, bevor die Materialbestellung abgeschlossen ist.\",\"task\":{\"kind\":\"single_choice\",\"options\":[{\"id\":\"einladung_zu_frueh\",\"text\":\"Die Einladungen werden verschickt, bevor die Materialbestellung abgeschlossen ist.\"},{\"id\":\"raum_vor_material\",\"text\":\"Der Raum wird vor der Materialbestellung reserviert.\"},{\"id\":\"termin_zuerst\",\"text\":\"Der Termin wird vor allen anderen Schritten festgelegt.\"}],\"correctIds\":[\"einladung_zu_frueh\"],\"explanation\":\"Die Einladungen setzen den Abschluss von Raumreservierung und Materialbestellung voraus. Dass der Raum vor dem Material reserviert wird, ist erlaubt, weil beide Schritte voneinander unabhängig sind. Den Termin zuerst festzulegen, ist sogar vorgeschrieben.\"}}]}"
+}

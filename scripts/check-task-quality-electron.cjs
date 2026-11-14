@@ -1,0 +1,111 @@
+'use strict'
+const { app, BrowserWindow, ipcMain } = require('electron')
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict')
+const root = path.join(__dirname, '..'), output = path.join(root, 'design-evidence/task-quality')
+let rejectSave = false
+app.disableHardwareAcceleration()
+app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'smartl3arn-quality-')))
+ipcMain.handle('db:load', () => ({ decks: [] }))
+ipcMain.handle('db:save', () => { if (rejectSave) throw new Error('Simulated storage failure') })
+ipcMain.handle('ai:status', () => ({ available: false }))
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+app.whenReady().then(async () => {
+ fs.mkdirSync(output, { recursive: true })
+ const win = new BrowserWindow({ show: false, width: 1100, height: 900, webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, partition: `quality-${process.pid}`, backgroundThrottling: false } })
+ const errors = [], captures = []
+ win.webContents.on('console-message', event => { if (event.level === 'error' && !event.message.includes('Simulated storage failure')) errors.push(event.message) })
+ win.webContents.session.webRequest.onBeforeRequest({ urls: ['https://*/*', 'http://*/*'] }, (_details, cb) => cb({ cancel: true }))
+ const run = code => win.webContents.executeJavaScript(code)
+ const store = id => `document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get(${JSON.stringify(id)})`
+ const until = async (code, msg) => { for (let n = 0; n < 100; n++) { if (await run(code)) return; await wait(40) } throw new Error(msg) }
+ const capture = async name => {
+  await wait(100)
+  assert.equal(await run('document.documentElement.scrollWidth > innerWidth'), false, `Page overflow ${name}`)
+  assert.equal(await run('Array.from(document.querySelectorAll(".modal")).some(e=>e.scrollWidth>e.clientWidth+1)'), false, `Modal overflow ${name}`)
+  fs.writeFileSync(path.join(output, name + '.png'), (await win.webContents.capturePage()).toPNG()); captures.push(name)
+ }
+ const fill = async (selector, value) => { await run(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))})()`); await wait(30) }
+ const click = async selector => { await run(`document.querySelector(${JSON.stringify(selector)}).click()`); await wait(50) }
+ await win.loadFile(path.join(root, 'web-dist/index.html'))
+ await until(`${store('library')}?.ready`, 'App not ready')
+ await run("localStorage.setItem('smartl3arn_language','de');window.dispatchEvent(new StorageEvent('storage',{key:'smartl3arn_language'}))")
+ const matching = { id: 'matching', front: 'Ordne die Funktionen ihren Werkzeugen zu.', back: 'Matching', interval: 20, repetitions: 8, task: { kind: 'matching', pairs: Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, left: `Werkzeug ${i + 1}`, right: `Funktion ${i + 1}: eine ausreichend lange Beschreibung, die auch auf kleinen Bildschirmen vollständig lesbar bleiben muss.` })) } }
+ for (const width of [1100, 390, 320]) for (const dark of [false, true]) {
+  const prefix = `${width}-${dark ? 'dark' : 'light'}`
+  win.setContentSize(width, width === 1100 ? 900 : width === 390 ? 844 : 700)
+  await run(`document.body.classList.toggle('dark',${dark});location.hash='#/';${store('library')}.data={decks:[]}`)
+  await wait(100)
+  const data = { name: 'Import mit Qualitätshinweisen', cards: [matching, { id: 'choice', front: 'Welche Aussage trifft zu?', back: 'A', task: { kind: 'multiple_choice', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], correctIds: ['a'] } }], cardStats: { matching: { reviews: 8, again: 1, hard: 2 } } }
+  await run(`(()=>{const e=document.querySelector('input[type="file"][accept=".json"]');const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(JSON.stringify(data))}], 'quality.json',{type:'application/json'}));e.files=dt.files;e.dispatchEvent(new Event('change',{bubbles:true}))})()`)
+  await until('Boolean(document.querySelector(".import-quality-summary"))', 'Import summary missing')
+  await click('.import-quality-summary summary')
+  assert.equal(await run('document.querySelectorAll(".quality-card-link").length'), 2)
+  await run('document.querySelector(".import-quality-summary").scrollIntoView({block:"start"})')
+  await capture(prefix + '-import')
+  // Leave a dormant standard queue to verify returning after replacement.
+  await run(`${store('study')}.start(${store('library')}.decks[0].id)`)
+  await click('.quality-card-link')
+  await until('Boolean(document.querySelector(".modal"))', 'Editor missing')
+  assert.equal(await run('Boolean(document.querySelector("[data-quality-code=matchingSize]"))'), true)
+  await run('document.querySelector("[data-quality-code=matchingSize]").scrollIntoView({block:"center"})')
+  await capture(prefix + '-editor-hint')
+  await click('.split-entry button')
+  await until('Boolean(document.querySelector("#split-context"))', 'Split editor missing')
+  assert.equal(await run('document.querySelector(".modal-footer .btn-primary").disabled'), true)
+  await fill('#split-context', 'Werkzeuge der Beispiel-IDE')
+  await fill('#split-front-0', 'Welche Aufgabe hat Werkzeug 1 in der Beispiel-IDE?')
+  await click('.split-draft:nth-of-type(2) input[type=checkbox]')
+  await run('document.querySelector("#split-context").scrollIntoView({block:"start"})')
+  await capture(prefix + '-split')
+  // Abort preserves the library; opening a new split resets the selection.
+  await click('.modal-footer .btn-secondary')
+  assert.equal(await run(`${store('library')}.decks[0].cards.length`), 2)
+  await click('.split-entry button')
+  await fill('#split-context', 'Werkzeuge der Beispiel-IDE')
+  await fill('#split-front-0', 'Welche Aufgabe hat Werkzeug 1 in der Beispiel-IDE?')
+  // Save failure must preserve both drafts and the entire source/history.
+  rejectSave = true
+  await click('.modal-footer .btn-primary')
+  await until('Boolean(document.querySelector(".split-matching-editor [role=alert]"))', 'Failure not reported')
+  assert.equal(await run(`${store('library')}.decks[0].cards.length`), 2)
+  assert.equal(await run('document.querySelector("#split-front-0").value'), 'Welche Aufgabe hat Werkzeug 1 in der Beispiel-IDE?')
+  await run('document.querySelector(".split-matching-editor [role=alert]").scrollIntoView({block:"center"})')
+  await capture(prefix + '-failed-save')
+  rejectSave = false
+  await click('.modal-footer .btn-primary')
+  await until('!document.querySelector(".modal")', 'Split did not finish')
+  assert.equal(await run(`${store('library')}.decks[0].cards.length`), 8)
+  assert.equal(await run(`${store('library')}.decks[0].cardStats.matching.reviews`), 8)
+  assert.equal(await run(`${store('library')}.decks[0].cards.filter(c=>c.id!=='matching'&&c.id!=='choice').every(c=>c.interval===0&&c.repetitions===0&&!c.stability)`), true)
+  // Editing the source from the import report uses the correct retained IDs.
+  await click('.quality-card-link')
+  await click('.split-entry button')
+  await fill('#split-context', 'Werkzeuge der Beispiel-IDE')
+  await click('.split-replace input')
+  await click('.modal-footer .btn-primary')
+  await until('!document.querySelector(".modal")', 'Replace did not finish')
+  assert.equal(await run(`${store('library')}.decks[0].cards.some(c=>c.id==='matching')`), false)
+  assert.equal(await run(`Boolean(${store('library')}.decks[0].cardStats.matching)`), false)
+  await click('.quality-card-link')
+  assert.equal(await run('document.querySelectorAll("[data-quality-code]").length'), 2)
+  await click('[data-quality-code=singleCorrect] button')
+  assert.equal(await run('document.activeElement.id'), 'task-type')
+  await click('[data-quality-code=missingExplanation] button')
+  assert.equal(await run('document.activeElement.id'), 'task-explanation')
+  await fill('#task-explanation', 'A trifft zu; B trifft nicht zu.')
+  await click('.modal-footer .btn-primary')
+  await until('!document.querySelector(".modal")', 'Choice not saved')
+  assert.equal(await run('document.querySelectorAll(".quality-card-link").length'), 0)
+  assert.equal(await run('document.activeElement.id'), 'import-quality-title')
+  await capture(prefix + '-resolved')
+  await run(`location.hash='#/study/'+${store('library')}.decks[0].id`)
+  await until('Boolean(document.querySelector(".flashcard"))', 'Return to study failed')
+  assert.equal(await run(`${store('study')}.mainQueue.includes('matching')`), false)
+  assert.equal(await run(`Boolean(${store('study')}.currentCard)`), true)
+  await capture(prefix + '-study-after-split')
+ }
+ assert.deepEqual(errors, [])
+ fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify({ screenshots: captures.length, captures, errors }, null, 2))
+ console.log(JSON.stringify({ screenshots: captures.length, errors, output }))
+ win.destroy(); app.quit()
+}).catch(error => { console.error(error); app.exit(1) })

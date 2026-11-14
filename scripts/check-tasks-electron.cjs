@@ -36,6 +36,16 @@ function emptyResponse(task) {
 app.whenReady().then(async () => {
   const { normalizeDeck } = await import('../shared/data-validation.mjs')
   const deck = normalizeDeck(JSON.parse(fs.readFileSync(path.join(root, 'docs/task-types.example.json'), 'utf8')), { today: '2000-01-01' })
+  // Regression for the crowded matching rows and clipped selections reported in Screens.
+  const longMatching = normalizeDeck({ name: 'Spacing', cards: [{ front: 'Ordne die Funktionen den Bedienelementen zu.', back: 'Zuordnung der Funktionen', task: { kind: 'matching', pairs: [
+    { id: 'verify', left: 'Überprüfen (Häkchen)', right: 'Übersetzt den Sketch, ohne ihn auf das angeschlossene Board zu übertragen.' },
+    { id: 'upload', left: 'Hochladen (Pfeil)', right: 'Übersetzt den Sketch und überträgt ihn auf das angeschlossene Board.' },
+    { id: 'output', left: 'Ausgabe-Fenster', right: 'Meldet Fehler, Warnungen, Speicherbelegung und weitere Informationen zum Übersetzen und Hochladen.' },
+    { id: 'boards', left: 'Boardverwalter', right: 'Installiert und verwaltet die Unterstützung für verschiedene Mikrocontroller-Boards.' },
+    { id: 'libraries', left: 'Bibliotheksverwalter', right: 'Installiert, aktualisiert und verwaltet die verwendeten Bibliotheken.' },
+  ] } }] }, { today: '2000-01-01' }).cards[0]
+  longMatching.id = 'matching-long'
+  deck.cards.push(longMatching)
   fixture = { decks: [deck] }
   fs.mkdirSync(output, { recursive: true })
   const win = new BrowserWindow({ show: false, width: 1100, height: 820, webPreferences: {
@@ -99,6 +109,20 @@ app.whenReady().then(async () => {
         else if(task.kind==='matching')for(const p of task.pairs)await input(Array.from(area.querySelectorAll('label')).find(l=>l.textContent.includes(p.left)).querySelector('select'),p.id);
       })()`)
       await wait(50)
+      if (card.task.kind === 'matching') {
+        const layout = await run(`(()=>{const rows=Array.from(document.querySelectorAll('.task-match-row'));return {
+          gaps: rows.slice(1).map((row,i)=>row.getBoundingClientRect().top-rows[i].getBoundingClientRect().bottom),
+          values: Array.from(document.querySelectorAll('.task-match-value')).map(e=>({text:e.textContent.trim(),overflow:e.scrollWidth>e.clientWidth+1})),
+        }})()`)
+        assert.ok(layout.gaps.every(gap => gap >= 11), 'Matching rows need visible separation')
+        assert.deepEqual(layout.values.map(value => value.text), card.task.pairs.map(pair => pair.right))
+        assert.ok(layout.values.every(value => !value.overflow), 'Matching values must wrap without clipping')
+        await capture(`${width}-${card.id}-filled`)
+        if (card.id === 'matching-long') {
+          await run('document.querySelector(".task-matching").scrollIntoView({block:"start"})')
+          await capture(`${width}-${card.id}-controls`)
+        }
+      }
       if (card.task.kind === 'ordering') {
         for (let target = 0; target < card.task.correctOrder.length; target++) {
           const expected = card.task.items.find(item => item.id === card.task.correctOrder[target]).text
@@ -113,6 +137,13 @@ app.whenReady().then(async () => {
       if (card.id === 'formula' || ['short_text', 'long_text'].includes(card.task.kind)) assert.equal(result.self, true)
       else assert.equal(result.verdict, 'correct', `Incorrect evaluation: ${card.id}`)
       await capture(`${width}-${card.id}-feedback`)
+      if (card.task.kind === 'matching') {
+        assert.equal(await run('document.querySelectorAll(".task-solution-pairs > div").length'), card.task.pairs.length)
+        assert.ok(await run('parseFloat(getComputedStyle(document.querySelector(".smart-card-back .card-content")).fontSize)<=20'), 'Structured solutions need readable body sizing')
+        assert.equal(await run('Boolean(document.querySelector(".smart-card-front .task-matching-readonly"))'), false, 'Review must not repeat shuffled matching options')
+        await run('document.querySelector(".smart-card-back").scrollIntoView({block:"start"})')
+        await capture(`${width}-${card.id}-solution`)
+      }
       await route(`#/deck/${deck.id}`)
       await run(`${store('ui')}.editCard(${JSON.stringify(deck.id)},${JSON.stringify(card.id)})`)
       await until('Boolean(document.querySelector("#task-type"))', 'Editor did not open')

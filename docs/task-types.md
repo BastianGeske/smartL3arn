@@ -102,3 +102,33 @@ isoliertes Profil, Beispieldaten und eine simulierte KI. Aufnahmen liegen unter
 `npm run test:design` prüft zusätzlich alle Hauptansichten auf sieben Größen bis
 400 % Zoom, einschließlich Editor, Tastatur und Fehlermeldung gleichzeitig.
 Ergebnisse und geprüfte Screenshots stehen im [Design Review](design-review-task-types-2026-10-14.md).
+
+## Qualitätshinweise und Einzelkarten
+
+Der Karteneditor erklärt den Einsatz jedes Typs und zeigt bei technisch gültigen
+Karten redaktionelle Hinweise: mehr als fünf Zuordnungspaare, mehr als zwei
+Lücken, mehr als sechs Sortierelemente, fehlende Erklärungen bei Auswahl/Wahr-Falsch
+sowie Mehrfachauswahl mit nur einer oder ausschließlich richtigen Optionen.
+Diese Hinweise verhindern das Speichern nicht. Bei genau einer richtigen Option
+kann bewusst auf Einfachauswahl gewechselt werden; Optionen und richtige ID bleiben erhalten.
+
+Nach JSON-Import erscheint bei Bedarf eine zusammengefasste Liste betroffener
+Karten. Sie führt direkt zur Bearbeitung und aktualisiert sich nach Korrekturen.
+Die Liste ist ausblendbar und zeigt höchstens 20 betroffene Karten pro Seite.
+Die Hinweise sind keine fachliche Inhaltsprüfung; alte gültige Decks bleiben gültig.
+
+Gespeicherte Zuordnungen lassen sich außerhalb einer Lernsitzung über
+**In Einzelkarten aufteilen** im Karteneditor bearbeiten. Änderungen an der
+Originalkarte zuerst speichern. Einen gemeinsamen Kontext eingeben oder die
+Fragen einzeln formulieren, gewünschte Paare auswählen und Fragen/Antworten prüfen.
+Die gemeinsame Begründung bleibt in der Originalvorschau sichtbar; nur passende
+Teile sollten in einzelne Antworten übernommen werden.
+
+Die neuen Kurzantwortkarten bekommen eigene IDs und neue Lernstände. Das Original
+bleibt standardmäßig erhalten; Ersetzen ist eine ausdrückliche Auswahl und entfernt
+nur die Originalkarte und ihre zugehörigen Kartenstatistiken. Die Änderungen werden
+zusammen gespeichert. Bei einem Speicherfehler bleiben Bibliothek und Entwürfe erhalten.
+
+Die [Erstellungsvorlage](flashcard-prompt.md), der
+[Promptvergleich](prompt-quality/README.md) und der
+[Umsetzungsbericht](task-quality-validation.md) erläutern die Regeln und ihre Prüfung.

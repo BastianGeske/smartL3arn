@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import TaskResponse from './TaskResponse.vue'
 import MathContent from './MathContent.vue'
 import type { StudyResponse, TaskDefinition } from '../domain/types'
+import { t } from '../i18n'
 
 describe('task response controls', () => {
   it('emits selected stable IDs and keeps display order across a disabled retry', async () => {
@@ -63,8 +64,13 @@ describe('task response controls', () => {
     const values = { toString: 'toString', valueOf: 'valueOf' }
     const wrapper = mount(TaskResponse, { props: { task, front: 'Ordne zu.', modelValue: { kind: 'fields', values: Object.create(values) } } })
     expect(wrapper.findAll('select').map(select => (select.element as HTMLSelectElement).value)).toEqual(['', ''])
+    expect(wrapper.findAll('.task-match-value').map(value => value.text())).toEqual([t('task.select'), t('task.select')])
     await wrapper.setProps({ modelValue: { kind: 'fields', values } })
     expect(wrapper.findAll('select').map(select => (select.element as HTMLSelectElement).value)).toEqual(['toString', 'valueOf'])
+    expect(wrapper.findAll('.task-match-value').map(value => value.text())).toEqual(['A', 'B'])
+    expect(wrapper.findAll('select').map(select => wrapper.find(`[id="${select.attributes('aria-labelledby')}"]`).text())).toEqual(['X', 'Y'])
+    await wrapper.get('select').setValue('valueOf')
+    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual([{ kind: 'fields', values: { toString: 'valueOf', valueOf: 'valueOf' } }])
     wrapper.unmount()
   })
   it('moves ordering items using keyboard-accessible buttons', async () => {

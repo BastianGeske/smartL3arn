@@ -3333,7 +3333,17 @@ body.modal-open .modal-overlay:has(math-field) { padding-bottom: max(calc(12px +
 .task-cloze .gap-input { display: inline-block; width: clamp(90px, 30%, 180px); vertical-align: baseline; margin: 0 5px; }
 .task-cloze .task-number-input.gap-input { display: inline-flex; width: clamp(140px, 40%, 220px); max-width: 100%; vertical-align: middle; }
 .task-match-row > .math-content { flex: 1; min-width: 0; }
-.task-match-row > .select { flex: 1; min-width: 0; }
+.task-matching { display: grid; gap: 12px; }
+.task-match-row { align-items: start; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.task-match-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.task-match-row > .math-content { padding-top: 11px; font-size: 16px; line-height: 1.5; }
+.task-match-control { position: relative; flex: 1.4; min-width: 0; display: grid; }
+.task-match-control > .select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.task-match-value { min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font-size: 16px; line-height: 1.5; pointer-events: none; }
+.task-match-value > .math-content { flex: 1; min-width: 0; }
+.task-match-value > .icon { flex-shrink: 0; }
+.task-match-control:has(select:focus-visible) .task-match-value { outline: 2px solid var(--focus); outline-offset: 2px; }
+.task-match-control:has(select:disabled) .task-match-value { opacity: 0.6; }
 .task-ordering { display: grid; gap: 10px; list-style: decimal; padding-left: 24px; }
 .task-ordering li { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .task-ordering li > .math-content { display: block; margin-bottom: 8px; }
@@ -3341,8 +3351,28 @@ body.modal-open .modal-overlay:has(math-field) { padding-bottom: max(calc(12px +
 .task-question { min-width: 0; width: 100%; }
 .task-readonly-items > li { margin-bottom: 10px; }
 .task-matching-readonly { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
-.task-matching-readonly ul { list-style: none; }
-.task-matching-readonly li { padding: 6px 0; }
+.task-matching-readonly ul { list-style: none; margin: 0; padding: 0; }
+.task-matching-readonly li { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.task-matching-readonly li:last-child { border-bottom: 0; }
+.task-matching-heading { display: block; margin-bottom: 8px; color: var(--text-muted); font: 600 12px/1.5 var(--font-body); }
+/* Lists and paired answers need a reading layout rather than a large flashcard headline. */
+.card-content.card-content-structured,
+.smart-study-shell .smart-card-front .card-content.card-content-structured {
+  justify-content: flex-start; text-align: left; font-size: clamp(16px, var(--card-font-size), 20px); line-height: 1.6;
+  font-weight: 450; padding-top: 12px; white-space: normal;
+}
+.task-solution { width: 100%; min-width: 0; }
+.smart-card-pair { gap: 16px; }
+.smart-study-shell .smart-card-front.compact .card-content.card-content-structured { font-size: 16px; }
+.task-solution-pairs { margin: 0; }
+.task-solution-pairs > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.task-solution-pairs > div:first-child { padding-top: 0; }
+.task-solution-pairs > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.task-solution-pairs dt { font-weight: 600; }
+.task-solution-pairs dd { margin: 0; }
+.task-solution-list { margin: 0; padding-left: 24px; }
+.task-solution-list li { padding: 6px 0 6px 4px; }
+.task-solution-explanation { display: block; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .fraction-input { display: grid; gap: 6px; max-width: 220px; }
 .fraction-input > input { text-align: center; }
 .fraction-input .input { text-align: center; }
@@ -3366,8 +3396,9 @@ body.modal-open .modal-overlay:has(math-field) { padding-bottom: max(calc(12px +
 .latex-input { font-family: ui-monospace, monospace; }
 .working-steps { margin-bottom: 12px; }
 .working-step { min-width: 0; display: grid; gap: 8px; }
-.task-part-feedback { display: grid; gap: 10px; list-style: none; padding: 0; }
-.task-part-feedback li { display: grid; gap: 4px; }
+.task-part-feedback { display: grid; gap: 12px; list-style: none; padding: 0; margin-top: 12px; }
+.task-part-feedback li { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 14px; line-height: 1.6; }
+.task-part-feedback li > span:last-child { color: var(--text); }
 .task-part-feedback .is-correct { color: var(--good); }
 .task-part-feedback .is-incorrect { color: var(--danger); }
 .task-self-assessment { background: var(--surface-2); border: 1px solid var(--border); }
@@ -3376,8 +3407,39 @@ body.modal-open .modal-overlay:has(math-field) { padding-bottom: max(calc(12px +
 @media (max-width: 719px) {
   .task-matching-readonly { gap: 12px; font-size: clamp(16px, 4.5vw, 20px); }
   .task-match-row { flex-direction: column; align-items: stretch; }
+  .task-match-row > .math-content { padding-top: 0; }
+  .task-match-control { flex: auto; }
+  .task-solution-pairs > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .task-edit-row { flex-wrap: wrap; }
   .task-edit-row > .input, .task-edit-row > .select { flex-basis: calc(40% - 10px); }
   .mathfield-container math-field { font-size: 22px; }
   .math-input-modes .segment-button { min-height: 44px; }
+}
+
+/* Editorial guidance uses the existing form and workspace surfaces. */
+.task-quality-hints { list-style: none; margin: 0; padding: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-2); color: var(--text); font-size: 13px; line-height: 1.55; }
+.task-quality-hints li { display: grid; justify-items: start; gap: 8px; }
+.task-quality-hints li + li { margin-top: 12px; }
+.import-quality-summary { margin-bottom: 24px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); min-width: 0; }
+.import-quality-summary .section-heading { margin-bottom: 8px; }
+.import-quality-summary h2 { font-size: 18px; }
+.import-quality-summary summary { margin-top: 12px; cursor: pointer; min-height: 44px; display: list-item; padding-block: 10px; }
+.quality-import-cards { display: grid; gap: 16px; list-style: none; padding: 0; margin: 12px 0; }
+.quality-import-cards > li { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); min-width: 0; }
+.quality-import-cards ul { padding-left: 20px; font-size: 13px; line-height: 1.55; }
+.quality-card-link { white-space: normal; text-align: left; justify-content: flex-start; overflow-wrap: anywhere; }
+.split-entry { margin-right: auto; display: grid; gap: 4px; }
+.split-drafts { display: grid; gap: 12px; }
+.split-drafts > .input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+.split-draft { border: 1px solid var(--border); border-radius: var(--radius-control); padding: 12px; min-width: 0; }
+.split-draft legend { max-width: 100%; padding: 0 4px; overflow-wrap: anywhere; }
+.split-draft legend label, .split-replace { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding-block: 8px; line-height: 1.5; }
+.split-draft input[type="checkbox"], .split-replace input { flex: 0 0 20px; width: 20px; height: 20px; accent-color: var(--primary); }
+.split-draft .field-label { display: block; margin: 8px 0; }
+.split-matching-editor .task-solution { margin-top: 12px; font-size: 16px; line-height: 1.6; }
+.split-matching-editor .task-solution-pairs { white-space: normal; }
+@media (max-width: 719px) {
+  .card-editor-modal .modal-footer { flex-wrap: wrap; }
+  .split-entry { width: 100%; }
+  .import-quality-summary { padding: 14px; }
 }
