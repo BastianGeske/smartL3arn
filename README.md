@@ -110,6 +110,7 @@ Typical use cases:
 - TXT and CSV import (comma or tab delimited)
 - Two import entry points on Home: "Import JSON" and "Import TXT / CSV" both create a new deck
 - "Import TXT / CSV" inside a deck appends cards to the open deck
+- **Update / add via JSON** inside a deck previews updates to existing cards and new additions, then saves them together while preserving existing learning progress. See [JSON supplements (German guide)](docs/json-supplements.md).
 - JSON, CSV, and Anki-compatible TXT export per deck; **Export All** creates a full JSON backup, including task definitions
 - JSON deck and backup restoration preserve scheduling, statistics, explanations, and session history
 - CSV header detection, quoted multiline fields, escaped quotes, and UTF-8 BOM support
@@ -433,11 +434,15 @@ Three shapes are accepted by **Import JSON** on Home.
 | `difficulty` | number | no | unset | FSRS difficulty |
 | `lastReview` | string | no | unset | Last review date, `YYYY-MM-DD` |
 
-Cards require non-empty `front` and `back` strings (up to 20,000 characters each). Invalid card data, unknown task types, or invalid task configurations reject the import rather than silently skipping cards. Unknown card fields are ignored. Valid, unique card IDs are retained in deck objects, full backups, and bare arrays; missing, invalid, or duplicate IDs are regenerated. Deck objects and full backups can also restore `cardStats` for retained card IDs. Deck IDs are always regenerated, and imports add decks rather than merging existing ones.
+Cards require non-empty `front` and `back` strings (up to 20,000 characters each). Invalid card data, unknown task types, or invalid task configurations reject the import rather than silently skipping cards. Unknown card fields are ignored. Valid, unique card IDs are retained in deck objects, full backups, and bare arrays; missing, invalid, or duplicate IDs are regenerated. Deck objects and full backups can also restore `cardStats` for retained card IDs. Deck IDs are always regenerated, and imports from Home add decks rather than merging existing ones.
 
 For structured tasks, `task` defines the correct solution and the importer regenerates readable `back` content from it. Put solution explanations in `task.explanation` and calculation working in `task.solutionSteps`; text tasks (`short_text` / `long_text`) continue to use `back` as the reference answer. JSON imports are limited to 10 MiB, 100,000 cards in total, and 1,000 decks in a full backup.
 
 Optional deck-level `cardStats`, `sessions`, and `smartSessionSeq` are restored from deck objects and full backups. This retains review/failure statistics, elaborations, extra-practice flags, and learning history alongside the card scheduling fields.
+
+To revise an existing deck, open it and choose **Deck actions → Update / add via JSON**. Supply a card array or a single object with a `cards` array. Entries match by `id`, or by exact `front` when no ID is supplied. Existing entries may omit unchanged fields; new entries require `front` and `back`. Provided content replaces the corresponding field, and a provided `task` replaces the whole task definition (`null` removes it). Unmatched entries become new cards. Review the before/after preview, then choose **Apply changes**. Updates preserve scheduling, statistics and deck history; additions start fresh. This flow never deletes cards or imports learning history. Ambiguous or duplicate targets reject the whole file. Full backups still belong to the Home import. See the [guide and example](docs/json-supplements.md).
+
+For AI-generated updates, use the standalone **[German update prompt template](docs/flashcard-update-prompt.md)** with the existing deck’s JSON export and your requested changes. It preserves IDs for updates, omits IDs for additions, and outputs only changed or new cards. Import the result inside the existing deck through **Update / add via JSON**; if it returns `{"cards":[]}`, there is nothing to import.
 
 ### AI prompt for high-quality flashcards
 

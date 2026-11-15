@@ -4,12 +4,13 @@ import { todayStr } from '../domain/dates'
 import { checkDataSize, MAX_CARDS, MAX_FILE_BYTES, normalizeDeck } from '../../shared/data-validation.mjs'
 import type { AppData, Card, Deck } from '../domain/types'
 import { TaskValidationError } from '../../shared/tasks.mjs'
+import { SupplementError } from '../domain/jsonSupplement'
 
 export class ImportError extends Error {
   constructor(readonly key: TranslationKey) { super(t(key)) }
 }
 export function importErrorKey(error: unknown): TranslationKey {
-  return error instanceof ImportError ? error.key : 'notifications.importFailed'
+  return error instanceof ImportError || error instanceof SupplementError ? error.key : 'notifications.importFailed'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,6 +28,12 @@ async function readImportFile(file: File): Promise<string> {
   const content = await file.text()
   try { checkDataSize(content) } catch { throw new ImportError('import.tooLarge') }
   return content
+}
+
+export async function readJsonSupplement(file: File): Promise<unknown> {
+  const content = await readImportFile(file)
+  try { return JSON.parse(content.replace(/^\uFEFF/, '')) }
+  catch { throw new ImportError('import.parseError') }
 }
 
 export async function importJsonFile(file: File): Promise<Deck[]> {

@@ -35,7 +35,10 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
       if (trigger?.isConnected) trigger.focus()
       // Saving can remove a resolved import item that originally opened this dialog.
       void nextTick(() => {
-        if (!editor.value && (!trigger?.isConnected || trigger === document.body)) document.getElementById('import-quality-title')?.focus()
+        if (editor.value) return
+        // The dialog's parent may only remove background inertness during this render.
+        if (trigger?.isConnected && trigger !== document.body) trigger.focus()
+        else document.getElementById('import-quality-title')?.focus()
       })
     }
   }, { flush: 'sync' })

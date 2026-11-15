@@ -11,6 +11,7 @@ import { todayStr } from '../domain/dates'
 import { t } from '../i18n'
 import { defaultCover } from '../domain/deckCovers'
 import { isDeckCoverId, type DeckCoverId } from '../../shared/deck-covers.mjs'
+import { planJsonSupplement, supplementSource, SupplementError } from '../domain/jsonSupplement'
 
 export const useLibraryStore = defineStore('library', () => {
   const data = ref<AppData>({ decks: [] })
@@ -206,7 +207,36 @@ export const useLibraryStore = defineStore('library', () => {
     } finally { transactionBusy.value = false }
   }
 
+  async function applyJsonSupplement(deckId: string, payload: unknown, expectedSource: string): Promise<void> {
+    assertWritable()
+    const ui = useUiStore()
+    if (ui.studyActive) throw new SupplementError('supplement.studyActive')
+    transactionBusy.value = true
+    try {
+      await pendingSave.catch(() => undefined)
+      if (loadFailed) throw new Error(t('common.loadError'))
+      if (ui.studyActive) throw new SupplementError('supplement.studyActive')
+      const next: AppData = JSON.parse(JSON.stringify(data.value))
+      const deck = next.decks.find(deck => deck.id === deckId)
+      if (!deck || supplementSource(deck) !== expectedSource) throw new SupplementError('supplement.stale')
+      const plan = planJsonSupplement(deck, payload)
+      if (!plan.changes.length) return
+      deck.cards = plan.cards
+      const normalized = normalizeAppData(next, todayStr())
+      try { await repository.save(normalized) }
+      catch (error) {
+        saveError.value = error instanceof Error ? error.message : String(error)
+        persistenceIssue.value = 'save'
+        throw error
+      }
+      data.value = normalized
+      saveError.value = null
+      persistenceIssue.value = null
+    } finally { transactionBusy.value = false }
+  }
+
   return {
+    applyJsonSupplement,
     data,
     transactionBusy,
     splitMatchingCard,

@@ -5,6 +5,10 @@ Quellcode abgeglichen. Platzhalter ersetzen und den gesamten Textblock kopieren.
 Die erzeugte Antwort als UTF-8-Datei mit der Endung `.json` speichern und auf der
 Startseite über **JSON importieren** einlesen.
 
+Für einen vorhandenen Stapel verwende die separate
+[Aktualisierungsvorlage](flashcard-update-prompt.md). Sie übernimmt bestehende
+Karten-IDs und erzeugt nur Änderungen und Ergänzungen für den Import im Stapel.
+
 Für interaktive Aufgaben in **Smart Study** die Technik **Antwort eintippen**
 aktivieren. Konfidenz, Warum-Frage, Interleaving, Sitzungsdauer und lokale oder
 KI-Bewertung werden in der App eingestellt; sie sind keine importierbaren

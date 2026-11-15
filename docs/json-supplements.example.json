@@ -1,0 +1,13 @@
+{
+  "cards": [
+    {
+      "id": "short",
+      "back": "Berlin ist die Hauptstadt Deutschlands und zugleich ein eigenes Bundesland."
+    },
+    {
+      "front": "Wie heißt die Hauptstadt Frankreichs?",
+      "back": "Paris",
+      "task": { "kind": "short_text" }
+    }
+  ]
+}

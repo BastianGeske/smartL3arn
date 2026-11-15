@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useI18n, type TranslationKey } from '../i18n'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import AppMenu from '../components/AppMenu.vue'
+import JsonSupplementModal from '../components/JsonSupplementModal.vue'
+import ImportQualitySummary from '../components/ImportQualitySummary.vue'
+import { planJsonSupplement, type SupplementPlan } from '../domain/jsonSupplement'
 import { calcStreak, isDue, todayStr } from '../domain/dates'
 import {
   deckFilename,
@@ -12,7 +15,7 @@ import {
   deckToCsv,
 } from '../domain/importExport'
 import type { Card } from '../domain/types'
-import { importErrorKey, cardsFromTextFile } from '../services/importer'
+import { importErrorKey, cardsFromTextFile, readJsonSupplement } from '../services/importer'
 import { saveExport } from '../services/native'
 import { useLibraryStore } from '../stores/library'
 import { useStudyStore } from '../stores/study'
@@ -31,9 +34,14 @@ const filter = ref('')
 const sortColumn = ref<SortColumn>('dueDate')
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const importInput = ref<HTMLInputElement>()
+const supplementInput = ref<HTMLInputElement>()
+const readingSupplement = ref(false)
+const supplementPreview = ref<{ payload: unknown; plan: SupplementPlan; filename: string } | null>(null)
+const showImportQuality = ref(false)
 
 const deckId = computed(() => String(route.params.deckId || ''))
 const deck = computed(() => library.deckById(deckId.value))
+watch(deckId, () => { supplementPreview.value = null; showImportQuality.value = false })
 const dueCount = computed(() => deck.value?.cards.filter((card) => isDue(card)).length || 0)
 const newCount = computed(() => deck.value?.cards.filter(
   (card) => !card.lastReview && !card.stability && !card.repetitions,
@@ -145,6 +153,25 @@ async function exportDeck(format: 'json' | 'csv' | 'txt'): Promise<void> {
   } catch { ui.showError('notifications.exportFailed') }
 }
 
+async function previewSupplement(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  const targetId = deckId.value
+  if (!file || !deck.value || readingSupplement.value) return
+  readingSupplement.value = true
+  try {
+    const payload = await readJsonSupplement(file)
+    if (deckId.value !== targetId || !deck.value) return
+    supplementPreview.value = { payload, plan: planJsonSupplement(deck.value, payload), filename: file.name }
+  } catch (error) { ui.showError(importErrorKey(error)) }
+  finally { input.value = ''; readingSupplement.value = false }
+}
+
+function supplementApplied(): void {
+  supplementPreview.value = null
+  showImportQuality.value = true
+}
+
 const sortFields: [SortColumn, TranslationKey][] = [
   ['front', 'common.front'],
   ['back', 'common.back'],
@@ -155,7 +182,7 @@ const sortFields: [SortColumn, TranslationKey][] = [
 </script>
 
 <template>
-  <div v-if="deck" class="app-shell">
+  <div v-if="deck" class="app-shell" :inert="supplementPreview ? true : undefined">
     <AppBar active="library" :title="t('browse.title')" />
     <main class="workspace">
       <button class="back-link" type="button" @click="router.push('/')">
@@ -216,6 +243,9 @@ const sortFields: [SortColumn, TranslationKey][] = [
             <button class="menu-item" type="button" @click="importInput?.click()">
               <AppIcon name="upload" :size="16" /><span>{{ t('import.text') }}</span>
             </button>
+            <button class="menu-item" type="button" :disabled="readingSupplement || library.transactionBusy" @click="supplementInput?.click()">
+              <AppIcon name="file-json" :size="16" /><span>{{ t('supplement.import') }}</span>
+            </button>
             <div class="menu-divider" />
             <button class="menu-item" type="button" @click="exportDeck('json')">
               <AppIcon name="file-json" :size="16" /><span>{{ t('import.exportJson') }}</span>
@@ -233,7 +263,10 @@ const sortFields: [SortColumn, TranslationKey][] = [
 
             </AppMenu>
         <input ref="importInput" class="file-input" type="file" accept=".txt,.csv,.tsv" @change="importCards">
+        <input ref="supplementInput" class="file-input" type="file" accept=".json" @change="previewSupplement">
       </div>
+
+      <ImportQualitySummary v-if="showImportQuality" :deck-ids="[deckId]" @dismiss="showImportQuality = false" />
 
       <div class="table-wrapper">
         <p v-if="deck.cards.some(structured)" class="task-export-note">{{ t('task.exportText') }}</p>
@@ -312,4 +345,5 @@ const sortFields: [SortColumn, TranslationKey][] = [
       </div>
     </main>
   </div>
+  <JsonSupplementModal :deck-id="deckId" :preview="supplementPreview" @close="supplementPreview = null" @applied="supplementApplied" />
 </template>

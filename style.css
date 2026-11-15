@@ -3421,6 +3421,15 @@ body.modal-open .modal-overlay:has(math-field) { padding-bottom: max(calc(12px +
 .task-quality-hints li { display: grid; justify-items: start; gap: 8px; }
 .task-quality-hints li + li { margin-top: 12px; }
 .import-quality-summary { margin-bottom: 24px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); min-width: 0; }
+.json-supplement-modal { width: min(100%, 740px); }
+.supplement-filename { overflow-wrap: anywhere; }
+.supplement-changes { list-style: none; padding: 0; margin: 20px 0 0; }
+.supplement-changes > li { padding: 16px 0; border-top: 1px solid var(--border); }
+.supplement-content { padding: 12px; margin-top: 8px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
+.supplement-content h3 { font-size: 13px; margin-bottom: 8px; color: var(--text-muted); }
+.supplement-content p { white-space: pre-wrap; margin-bottom: 8px; }
+.supplement-content pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.supplement-content summary { cursor: pointer; padding-block: 8px; }
 .import-quality-summary .section-heading { margin-bottom: 8px; }
 .import-quality-summary h2 { font-size: 18px; }
 .import-quality-summary summary { margin-top: 12px; cursor: pointer; min-height: 44px; display: list-item; padding-block: 10px; }

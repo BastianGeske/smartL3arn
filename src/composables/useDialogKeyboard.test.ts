@@ -1,10 +1,28 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, nextTick, ref } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { useDialogKeyboard } from './useDialogKeyboard'
 
 let wrapper: VueWrapper | undefined
 afterEach(() => { wrapper?.unmount(); wrapper = undefined; document.body.innerHTML = ''; vi.restoreAllMocks() })
+
+it('restores focus after the background becomes interactive again', async () => {
+  document.body.innerHTML = '<button id="trigger">Open</button>'
+  const trigger = document.getElementById('trigger')!
+  trigger.focus()
+  const open = ref(false)
+  wrapper = mount(defineComponent({ setup() { useDialogKeyboard(computed(() => open.value)); return () => null } }), { attachTo: document.body })
+  open.value = true
+  let backgroundInert = true
+  const originalFocus = trigger.focus.bind(trigger)
+  vi.spyOn(trigger, 'focus').mockImplementation(() => { if (!backgroundInert) originalFocus() })
+  trigger.blur()
+  open.value = false
+  expect(document.activeElement).not.toBe(trigger)
+  backgroundInert = false
+  await nextTick()
+  expect(document.activeElement).toBe(trigger)
+})
 
 it('includes math fields and summaries but skips collapsed preview controls when trapping modal focus', () => {
   vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList)

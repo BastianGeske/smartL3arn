@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { cardsFromTextFile, importJsonFile, importTextFile } from './importer'
+import { cardsFromTextFile, importJsonFile, importTextFile, readJsonSupplement } from './importer'
 import { setLanguage, t } from '../i18n'
 import { createCard, deckToAnkiText, deckToCsv } from '../domain/importExport'
 
 describe('JSON import', () => {
+  it('reads supplementary JSON including a BOM without normalizing partial updates', async () => {
+    const payload = [{ id: 'existing', back: 'More detail' }]
+    expect(await readJsonSupplement(new File(['\uFEFF' + JSON.stringify(payload)], 'extra.json'))).toEqual(payload)
+    await expect(readJsonSupplement(new File(['{bad'], 'extra.json'))).rejects.toMatchObject({ key: 'import.parseError' })
+    const oversized = new File(['[]'], 'extra.json')
+    Object.defineProperty(oversized, 'size', { value: 10 * 1024 * 1024 + 1 })
+    await expect(readJsonSupplement(oversized)).rejects.toMatchObject({ key: 'import.tooLarge' })
+  })
   it('preserves card IDs and matching statistics when restoring a full backup', async () => {
     const file = new File([JSON.stringify({
       decks: [{
