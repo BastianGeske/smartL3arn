@@ -1,0 +1,197 @@
+{
+  "format": "smartL3arn.learningPath",
+  "schemaVersion": 1,
+  "id": "prozentrechnung",
+  "version": 1,
+  "title": "Prozentrechnung im Alltag",
+  "chapters": [
+    {
+      "id": "grundwert",
+      "title": "Den Anteil berechnen",
+      "objectives": [
+        {
+          "id": "anteil",
+          "goal": "Den Prozentwert aus Grundwert und Prozentsatz berechnen.",
+          "evidence": "Ein neuer Grundwert lässt sich mit dem angegebenen Anteil multiplizieren.",
+          "source": "Beispielmaterial · Anteil vom Ganzen: W = G × p / 100.",
+          "explanation": "Der Grundwert bezeichnet das Ganze. Ein Prozent ist ein Hundertstel davon. Multipliziere den Grundwert mit dem Prozentsatz und teile durch 100.",
+          "example": "Eine Kiste enthält 120 Äpfel. 15 % sind grün. 10 % entsprechen 12 Äpfeln und 5 % weiteren 6. Zusammen sind das 18 grüne Äpfel.",
+          "practice": {
+            "id": "a-uebung",
+            "question": "40 Personen sind im Chor. 15 % singen im Bass. Wie viele sind das?",
+            "task": {
+              "kind": "calculation",
+              "answer": {
+                "kind": "number",
+                "value": "6"
+              }
+            },
+            "hint": "Bestimme zuerst 10 % und dann 5 % von 40.",
+            "solution": "4 + 2 = 6 Personen.",
+            "feedback": "15 ist ein Prozentsatz. Rechne ihn in einen Anteil von 40 um."
+          },
+          "checks": [
+            {
+              "id": "a-check1",
+              "question": "In einem Regal stehen 75 Bücher. Wie viele Bücher entsprechen 20 %?",
+              "task": {
+                "kind": "calculation",
+                "answer": {
+                  "kind": "number",
+                  "value": "15"
+                }
+              },
+              "hint": "Ein Fünftel entspricht 20 %.",
+              "solution": "75 × 20 / 100 = 15 Bücher.",
+              "feedback": "Setze die Gesamtzahl der Bücher als Grundwert ein."
+            },
+            {
+              "id": "a-check2",
+              "question": "Eine Fahrt ist 180 km lang. Wie viele Kilometer sind 15 % der Strecke?",
+              "task": {
+                "kind": "calculation",
+                "answer": {
+                  "kind": "number",
+                  "value": "27"
+                }
+              },
+              "hint": "10 % und 5 % der Strecke ergeben zusammen 15 %.",
+              "solution": "180 × 0,15 = 27 km.",
+              "feedback": "Gesucht ist die Teilstrecke in Kilometern. Multipliziere den Anteil mit der gesamten Strecke."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bezugswechsel",
+      "title": "Wenn der Grundwert wechselt",
+      "objectives": [
+        {
+          "id": "wechsel",
+          "goal": "Bei einer Änderung den passenden Grundwert wählen und die prozentuale Änderung berechnen.",
+          "evidence": "Aus Ausgangs- und Endwert die Bezugsgröße und den richtigen Prozentsatz angeben.",
+          "source": "Beispielmaterial · Relative Änderung: Differenz geteilt durch Ausgangswert.",
+          "explanation": "Bei einer Preisänderung ist der Preis vor diesem Schritt der Grundwert. Ändert sich der Preis erneut, bestimmt dieser neue Ausgangswert den Prozentsatz.",
+          "example": "Ein Preis fällt von 80 € auf 60 €. Der Rückgang beträgt 20 / 80 = 25 %. Steigt er wieder von 60 € auf 80 €, beträgt der Anstieg 20 / 60 = 1/3, also 33⅓ %. Beide Beträge sind gleich groß. Ihre Bezugsgrößen unterscheiden sich.",
+          "practice": {
+            "id": "w-uebung",
+            "question": "Ein Preis steigt von 50 auf 60. Der Grundwert beträgt {{basis}}. Der Zuwachs beträgt {{prozent}} % (Brüche sind möglich).",
+            "task": {
+              "kind": "cloze",
+              "gaps": [
+                {
+                  "id": "basis",
+                  "kind": "number",
+                  "answer": "50"
+                },
+                {
+                  "id": "prozent",
+                  "kind": "number",
+                  "answer": "20"
+                }
+              ]
+            },
+            "hint": "Welche Größe lag unmittelbar vor dem Anstieg vor?",
+            "solution": "10 / 50 × 100 = 20 %. Der Preis vor dem Anstieg betrug 50 €.",
+            "feedback": "Prüfe den Nenner. Teile die Differenz durch den Wert unmittelbar vor der Änderung und multipliziere mit 100."
+          },
+          "checks": [
+            {
+              "id": "w-check1",
+              "question": "Die Teilnehmerzahl steigt von 80 auf 100. Der Grundwert beträgt {{basis}}. Der Zuwachs beträgt {{prozent}} % (Brüche sind möglich).",
+              "task": {
+                "kind": "cloze",
+                "gaps": [
+                  {
+                    "id": "basis",
+                    "kind": "number",
+                    "answer": "80"
+                  },
+                  {
+                    "id": "prozent",
+                    "kind": "number",
+                    "answer": "25"
+                  }
+                ]
+              },
+              "hint": "Welche Größe lag unmittelbar vor dem Anstieg vor?",
+              "solution": "20 / 80 × 100 = 25 %. Vor dem Anstieg waren es 80 Personen.",
+              "feedback": "Prüfe den Nenner. Teile die Differenz durch den Wert unmittelbar vor der Änderung und multipliziere mit 100.",
+              "written": {
+                "question": "Die Teilnehmerzahl steigt von 80 auf 100. Wie groß ist der prozentuale Zuwachs? Begründe deine Bezugsgröße.",
+                "reference": "20 / 80 × 100 = 25 %. Vor dem Anstieg waren es 80 Personen.",
+                "criteria": [
+                  {
+                    "id": "bezug",
+                    "description": "Der Wert vor dem Anstieg dient als Bezugsgröße."
+                  },
+                  {
+                    "id": "rechnung",
+                    "description": "Der prozentuale Zuwachs ist richtig bestimmt."
+                  }
+                ],
+                "paraphrase": "Am Anfang waren es 80. Darauf beziehe ich die Differenz. Das sind 25 Prozent.",
+                "partial": "Ich verwende 80 als Ausgangswert.",
+                "misconception": "Ich teile die Differenz durch 100, weil der Endwert die neue Gesamtmenge ist."
+              }
+            },
+            {
+              "id": "w-check2",
+              "question": "Ein Fahrpreis steigt von 30 auf 42. Der Grundwert beträgt {{basis}}. Der Zuwachs beträgt {{prozent}} % (Brüche sind möglich).",
+              "task": {
+                "kind": "cloze",
+                "gaps": [
+                  {
+                    "id": "basis",
+                    "kind": "number",
+                    "answer": "30"
+                  },
+                  {
+                    "id": "prozent",
+                    "kind": "number",
+                    "answer": "40"
+                  }
+                ]
+              },
+              "hint": "Welche Größe lag unmittelbar vor dem Anstieg vor?",
+              "solution": "12 / 30 × 100 = 40 %. Der Ausgangspreis betrug 30 €.",
+              "feedback": "Prüfe den Nenner. Teile die Differenz durch den Wert unmittelbar vor der Änderung und multipliziere mit 100.",
+              "written": {
+                "question": "Ein Fahrpreis steigt von 30 auf 42. Wie groß ist der prozentuale Zuwachs? Begründe deine Bezugsgröße.",
+                "reference": "12 / 30 × 100 = 40 %. Der Ausgangspreis betrug 30 €.",
+                "criteria": [
+                  {
+                    "id": "bezug",
+                    "description": "Der Wert vor dem Anstieg dient als Bezugsgröße."
+                  },
+                  {
+                    "id": "rechnung",
+                    "description": "Der prozentuale Zuwachs ist richtig bestimmt."
+                  }
+                ],
+                "paraphrase": "Am Anfang waren es 30. Darauf beziehe ich die Differenz. Das sind 40 Prozent.",
+                "partial": "Ich verwende 30 als Ausgangswert.",
+                "misconception": "Ich teile die Differenz durch 42, weil der Endwert die neue Gesamtmenge ist."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "reviewCards": [
+    {
+      "id": "wieder-anteil",
+      "objectiveId": "anteil",
+      "front": "Wie berechnest du 18 % von 250?",
+      "back": "250 × 18 / 100 = 45."
+    },
+    {
+      "id": "wieder-wechsel",
+      "objectiveId": "wechsel",
+      "front": "Ein Preis fällt von 100 € auf 80 €. Wie hoch ist der prozentuale Anstieg zurück auf 100 €?",
+      "back": "20 / 80 × 100 = 25 %. Der Grundwert für den Anstieg ist 80 €."
+    }
+  ]
+}

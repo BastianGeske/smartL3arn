@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { useI18n, type TranslationKey } from '../i18n'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import AppMenu from '../components/AppMenu.vue'
 import JsonSupplementModal from '../components/JsonSupplementModal.vue'
 import ImportQualitySummary from '../components/ImportQualitySummary.vue'
+import { useDeckPracticeCooldowns } from '../composables/useStudyAvailability'
 import { planJsonSupplement, type SupplementPlan } from '../domain/jsonSupplement'
-import { calcStreak, isDue, todayStr } from '../domain/dates'
+import { useCalendarStore } from '../stores/calendar'
+import { calcStreak, isDue } from '../domain/dates'
 import {
+  backupJson,
   deckFilename,
   deckToAnkiText,
   deckToCsv,
@@ -29,6 +32,7 @@ const route = useRoute()
 const router = useRouter()
 const library = useLibraryStore()
 const study = useStudyStore()
+const calendar = useCalendarStore()
 const ui = useUiStore()
 const filter = ref('')
 const sortColumn = ref<SortColumn>('dueDate')
@@ -41,8 +45,16 @@ const showImportQuality = ref(false)
 
 const deckId = computed(() => String(route.params.deckId || ''))
 const deck = computed(() => library.deckById(deckId.value))
-watch(deckId, () => { supplementPreview.value = null; showImportQuality.value = false })
-const dueCount = computed(() => deck.value?.cards.filter((card) => isDue(card)).length || 0)
+const cooldowns = useDeckPracticeCooldowns(() => deck.value ? [deck.value] : [])
+const nextPracticeAt = computed(() => cooldowns.value.get(deckId.value))
+let routeRevision = 0
+watch(deckId, () => {
+  routeRevision++
+  supplementPreview.value = null
+  showImportQuality.value = false
+}, { flush: 'sync' })
+onBeforeUnmount(() => { routeRevision++ })
+const dueCount = computed(() => deck.value?.cards.filter((card) => isDue(card, calendar.today)).length || 0)
 const newCount = computed(() => deck.value?.cards.filter(
   (card) => !card.lastReview && !card.stability && !card.repetitions,
 ).length || 0)
@@ -97,16 +109,15 @@ function diffLevel(difficulty: number): string {
 
 async function inlineEdit(card: Card, field: 'front' | 'back', event: FocusEvent): Promise<void> {
   if (structured(card)) return
-  const element = event.currentTarget as HTMLElement
-  const value = element.textContent?.trim() || ''
+  const element = event.currentTarget as HTMLTextAreaElement
+  const value = element.value.trim()
+  if (value === card[field]) return
   if (!value) {
-    element.textContent = card[field]
+    element.value = card[field]
     return
   }
-  try { await library.updateCard(deckId.value, card.id, {
-    front: field === 'front' ? value : card.front,
-    back: field === 'back' ? value : card.back,
-  }) } catch { element.textContent = card[field] }
+  try { await library.updateCard(deckId.value, card.id, { [field]: value }) }
+  catch { element.value = card[field] }
 }
 function structured(card: Card): boolean { return Boolean(card.task && !['short_text', 'long_text'].includes(card.task.kind)) }
 
@@ -127,10 +138,14 @@ async function importCards(event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file || !deck.value) return
   try {
+    const targetId = deckId.value
+    const revision = routeRevision
+    const stillTarget = () => revision === routeRevision && deckId.value === targetId && Boolean(deck.value)
     let imported: Card[]
     try { imported = await cardsFromTextFile(file) }
     catch (error) { ui.showError(importErrorKey(error)); return }
-    try { await library.addCards(deckId.value, imported) }
+    if (!stillTarget()) return
+    try { if (!await library.addCards(targetId, imported, stillTarget)) return }
     catch { return }
     ui.showToast('import.cards', { count: imported.length })
   } finally {
@@ -144,7 +159,7 @@ async function exportDeck(format: 'json' | 'csv' | 'txt'): Promise<void> {
   const base = deckFilename(value.name)
   try {
     if (format === 'json') {
-      await saveExport(`${base}.json`, JSON.stringify(value, null, 2), 'application/json')
+      await saveExport(`${base}.json`, backupJson(value), 'application/json')
     } else if (format === 'csv') {
       await saveExport(`${base}.csv`, deckToCsv(value), 'text/csv')
     } else {
@@ -162,7 +177,7 @@ async function previewSupplement(event: Event): Promise<void> {
   try {
     const payload = await readJsonSupplement(file)
     if (deckId.value !== targetId || !deck.value) return
-    supplementPreview.value = { payload, plan: planJsonSupplement(deck.value, payload), filename: file.name }
+    supplementPreview.value = { payload, plan: planJsonSupplement(deck.value, payload, library.cardCount), filename: file.name }
   } catch (error) { ui.showError(importErrorKey(error)) }
   finally { input.value = ''; readingSupplement.value = false }
 }
@@ -195,9 +210,12 @@ const sortFields: [SortColumn, TranslationKey][] = [
           <p class="page-subtitle">
             {{ t('browse.inDeck', { count: deck.cards.length }) }}
           </p>
+          <p v-if="nextPracticeAt !== undefined" class="page-subtitle">
+            {{ t('study.availableAfter', { time: new Date(nextPracticeAt).toLocaleString() }) }}
+          </p>
         </div>
         <div class="page-heading-actions">
-          <button v-if="deck.cards.length" class="btn btn-secondary" type="button" @click="startStudy">
+          <button v-if="deck.cards.length" class="btn btn-secondary" type="button" :disabled="nextPracticeAt !== undefined" @click="startStudy">
             <AppIcon name="play" :size="17" />
             <span>{{ dueCount > 0 ? t('browse.study', { count: dueCount }) : t('study.practice') }}</span>
           </button>
@@ -211,7 +229,7 @@ const sortFields: [SortColumn, TranslationKey][] = [
         <div><strong>{{ formatNumber(deck.cards.length) }}</strong><span>{{ t('common.total') }}</span></div>
         <div><strong>{{ formatNumber(dueCount) }}</strong><span>{{ t('common.dueNow') }}</span></div>
         <div><strong>{{ formatNumber(newCount) }}</strong><span>{{ t('common.new') }}</span></div>
-        <div><strong>{{ t('common.daysShort', { count: calcStreak(deck.sessions) }) }}</strong><span>{{ t('browse.streak') }}</span></div>
+        <div><strong>{{ t('common.daysShort', { count: calcStreak(deck.sessions, calendar.today) }) }}</strong><span>{{ t('browse.streak') }}</span></div>
       </section>
 
       <div class="browse-toolbar">
@@ -294,30 +312,22 @@ const sortFields: [SortColumn, TranslationKey][] = [
           <tbody>
             <tr v-for="card in cards" :key="card.id">
               <td class="td-front" :data-label="t('common.front')">
-                <span
-                  class="cell-edit"
-                  :contenteditable="!structured(card)"
-                  :role="structured(card) ? undefined : 'textbox'"
-                  :aria-label="t('browse.editFront')"
-                  :title="card.front"
-                  @blur="inlineEdit(card, 'front', $event)"
-                  @dblclick="structured(card) && ui.editCard(deckId, card.id)"
-                >{{ card.front }}</span>
+                <span v-if="structured(card)" class="cell-edit" :title="card.front"
+                  @dblclick="ui.editCard(deckId, card.id)">{{ card.front }}</span>
+                <textarea v-else class="cell-edit" rows="1" :value="card.front"
+                  :title="card.front" :aria-label="t('browse.editFront')"
+                  @blur="inlineEdit(card, 'front', $event)" />
               </td>
               <td class="td-back" :data-label="t('common.back')">
-                <span
-                  class="cell-edit"
-                  :contenteditable="!structured(card)"
-                  :role="structured(card) ? undefined : 'textbox'"
-                  :aria-label="t('browse.editBack')"
-                  :title="card.back"
-                  @blur="inlineEdit(card, 'back', $event)"
-                  @dblclick="structured(card) && ui.editCard(deckId, card.id)"
-                >{{ card.back }}</span>
+                <span v-if="structured(card)" class="cell-edit" :title="card.back"
+                  @dblclick="ui.editCard(deckId, card.id)">{{ card.back }}</span>
+                <textarea v-else class="cell-edit" rows="1" :value="card.back"
+                  :title="card.back" :aria-label="t('browse.editBack')"
+                  @blur="inlineEdit(card, 'back', $event)" />
               </td>
               <td class="td-meta" :data-label="t('common.due')">
                 <span v-if="!card.lastReview && !card.stability && !card.repetitions" class="tag-new">{{ t('common.new') }}</span>
-                <span v-else :class="{ overdue: card.dueDate && card.dueDate < todayStr() }">{{ card.dueDate }}</span>
+                <span v-else :class="{ overdue: card.dueDate && card.dueDate < calendar.today }">{{ card.dueDate }}</span>
               </td>
               <td class="td-meta" :data-label="t('browse.interval')">{{ card.interval > 0 ? t('common.daysShort', { count: card.interval }) : '-' }}</td>
               <td class="td-meta" :data-label="t('browse.difficulty')">

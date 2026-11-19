@@ -46,7 +46,7 @@ it('preserves partial history when a dormant matching card is replaced', async (
   await mountView(deck.id)
   expect(library.deckById(deck.id)!.sessions).toHaveLength(1)
   expect(library.deckById(deck.id)!.sessions![0]).toMatchObject({ reviewed: 1, easy: 1 })
-  expect(study.sessionStats.reviewed).toBe(0)
+  await vi.waitFor(() => expect(study.sessionStats.reviewed).toBe(0))
   expect(study.mainQueue).not.toContain(source!.id)
   expect(study.mainQueue).toEqual(expect.arrayContaining(cards.map(card => card.id)))
 })

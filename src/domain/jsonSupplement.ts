@@ -20,11 +20,11 @@ export interface SupplementPlan {
 }
 
 /** Match against the original deck only; never let one input row overwrite another. */
-export function planJsonSupplement(deck: Deck, payload: unknown): SupplementPlan {
+export function planJsonSupplement(deck: Deck, payload: unknown, libraryCardCount = deck.cards.length): SupplementPlan {
   const rows = Array.isArray(payload) ? payload : record(payload) && !('decks' in payload) ? payload.cards : undefined
   if (!Array.isArray(rows)) throw new SupplementError('supplement.invalidFormat')
   if (!rows.length) throw new SupplementError('import.noCards')
-  if (rows.length > MAX_CARDS) throw new SupplementError('import.tooLarge')
+  if (rows.length > MAX_CARDS) throw new SupplementError('supplement.cardLimit')
   const byId = new Map(deck.cards.map(card => [card.id, card]))
   const byFront = new Map<string, Card[]>()
   for (const card of deck.cards) {
@@ -40,7 +40,7 @@ export function planJsonSupplement(deck: Deck, payload: unknown): SupplementPlan
   let unchanged = 0
   for (const row of rows) {
     if (!record(row)) throw new SupplementError('supplement.invalidCard')
-    const hasId = Object.hasOwn(row, 'id')
+    const hasId = Object.prototype.hasOwnProperty.call(row, 'id')
     if (hasId && (typeof row.id !== 'string' || !/^[\w-]{1,128}$/.test(row.id) || ['__proto__', 'constructor', 'prototype'].includes(row.id))) throw new SupplementError('supplement.invalidId')
     const matches = !hasId && typeof row.front === 'string' ? byFront.get(row.front) || [] : []
     if (matches.length > 1) throw new SupplementError('supplement.ambiguous')
@@ -51,9 +51,9 @@ export function planJsonSupplement(deck: Deck, payload: unknown): SupplementPlan
     // An omitted field preserves content; null explicitly removes a task.
     const content = {
       ...(hasId ? { id: row.id } : {}),
-      front: Object.hasOwn(row, 'front') ? row.front : before?.front,
-      back: Object.hasOwn(row, 'back') ? row.back : before?.back,
-      task: Object.hasOwn(row, 'task') ? row.task === null ? undefined : row.task : before?.task,
+      front: Object.prototype.hasOwnProperty.call(row, 'front') ? row.front : before?.front,
+      back: Object.prototype.hasOwnProperty.call(row, 'back') ? row.back : before?.back,
+      task: Object.prototype.hasOwnProperty.call(row, 'task') ? row.task === null ? undefined : row.task : before?.task,
     }
     let normalized: Card
     try { normalized = normalizeDeck({ cards: [content] }, { today: todayStr() }).cards[0]! }
@@ -71,11 +71,11 @@ export function planJsonSupplement(deck: Deck, payload: unknown): SupplementPlan
         if (hasId) throw new SupplementError('supplement.duplicate')
         normalized = normalizeDeck({ cards: [{ ...content, id: undefined }] }, { today: todayStr() }).cards[0]!
       }
+      if (libraryCardCount + additions.length >= MAX_CARDS) throw new SupplementError('supplement.cardLimit')
       additions.push(normalized)
       addedIds.add(normalized.id)
       changes.push({ after: normalized })
     }
   }
-  if (deck.cards.length + additions.length > MAX_CARDS) throw new SupplementError('import.tooLarge')
   return { source: supplementSource(deck), cards: [...deck.cards.map(card => replacements.get(card.id) || card), ...additions], changes, added: additions.length, updated: replacements.size, unchanged }
 }

@@ -99,7 +99,24 @@ export function responseError(task: TaskDefinition | undefined, response: StudyR
   if (a.kind === 'formula' && response.kind === 'text') return !response.value.trim() ? 'task.requiredAnswer' : null
   return 'task.invalid'
 }
+const mathAtom = /^(?:\p{L}|\d+(?:[.,]\d+)?|[.,]\d+)$/u
+const compactMathToken = /^(?:\p{L}|\d+(?:[.,]\d+)?|[.,]\d+|sin|cos|tan|log|ln|exp|sqrt)$/iu
+function looksLikeExpression(value: string): boolean {
+  const source = value.trim().normalize('NFKC')
+  if (/[+*=^_<>×÷≤≥]|\\(?:[()[\]]|[a-z]+(?=[{_^])|(?:cdot|times|div)\b)|^\${1,2}.+\${1,2}$/i.test(source)) return true
+  // Hyphens, slashes and parentheses are also common in prose.
+  if (!/[−/()[\]{}-]/.test(source)) return false
+  const tokens = source.split(/[\s−/()[\]{}-]+/).filter(Boolean)
+  return tokens.length > 0 && tokens.every(token => compactMathToken.test(token))
+}
 function textBlankEqual(actual: string, expected: string): boolean {
+  const atom = expected.trim().normalize('NFKC')
+  if (looksLikeExpression(expected) || (mathAtom.test(atom) && looksLikeExpression(actual))) {
+    const expression = (value: string) => value.trim().toLowerCase().normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/−/g, '-').replace(/\s+/g, ' ')
+      .replace(/\s*([+*/=^_\\(){}[\]<>×÷≤≥-])\s*/g, '$1')
+    return expression(actual) === expression(expected)
+  }
   const normalized = normalizeAnswer(expected)
   return normalized ? normalizeAnswer(actual) === normalized
     : actual.trim().normalize('NFKC') === expected.trim().normalize('NFKC')
@@ -109,7 +126,7 @@ const partEvaluation = (parts: ResponsePart[]): AnswerEvaluation => {
   return { source: 'local', verdict: correct === parts.length ? 'correct' : correct ? 'partially_correct' : 'incorrect',
     feedback: t('task.parts', { correct, total: parts.length }), parts }
 }
-export function evaluateResponse(card: Card, response: StudyResponse): AnswerEvaluation | null {
+export function evaluateResponse(card: Pick<Card, 'task'>, response: StudyResponse): AnswerEvaluation | null {
   const task = card.task
   if (!task || task.kind === 'short_text' || task.kind === 'long_text') return null
   if (task.kind === 'calculation') {

@@ -17,6 +17,7 @@ The interface is available in German and English. OpenRouter answer evaluation i
 - [Building distributables](#building-distributables)
 - [Mobile builds (iOS and Android)](#mobile-builds-ios-and-android)
 - [Usage walkthrough](#usage-walkthrough)
+- [Guided learning paths](#guided-learning-paths)
 - [Smart Study mode](#smart-study-mode)
   - [Local answer assessment](#local-answer-assessment)
   - [OpenRouter answer evaluation](#openrouter-answer-evaluation)
@@ -153,7 +154,7 @@ npm run dev        # Vite browser development server with hot reload
 npm start          # production web build, then launch Electron
 ```
 
-Electron data is persisted to your OS user-data folder (see [Data storage](#data-storage)). The browser development version uses `localStorage`; it does not load your Electron decks or expose OpenRouter credentials. To launch Electron without rebuilding an existing web bundle, use `npm run start:electron`.
+Electron data is persisted to your OS user-data folder (see [Data storage](#data-storage)). The browser development version uses IndexedDB; it does not load your Electron decks or expose OpenRouter credentials. To launch Electron without rebuilding an existing web bundle, use `npm run start:electron`.
 
 Useful checks:
 
@@ -246,6 +247,18 @@ Android's device test starts `MainActivity`, checks the package ID and native Fi
 3. From Home, click **Study (n)** to start a standard session, or click **Smart Study** in the header for a configurable session.
 4. Press **Space** / **Enter** or click **Reveal answer**; rate the card with the four buttons or keys **1**-**4**.
 5. Open **Preferences** (**Einstellungen**) to change language or appearance. Open **API Usage** (**API-Verbrauch**) to inspect recorded AI requests.
+
+## Guided learning paths
+
+Open **Library → Learn a topic** and select the German percentage example or import a learning path. **Copy authoring prompt** supplies a German prompt for turning your own source material into a path. If the material is insufficient, importing the generated report shows which information the author needs. The [prompt](docs/learning-path-prompt.md), [complete example](docs/learning-path.example.json) and [JSON Schema](docs/learning-path.schema.json) are included.
+
+Each objective has a short explanation, a worked example, guided practice and independent checks. A chapter opens once every objective in its predecessor has an independently correct check. Consulting a hint, solution or lesson during a check turns that attempt into practice. A different variant follows. The app saves drafts, completed objectives and the current step locally.
+
+Every required objective has an offline check. On desktop and iOS, a written alternative can use the configured OpenRouter connection. Checking sends the current question, reference, criteria, path title and submitted answer. Every criterion needs evidence for an independent pass. Ambiguous or unavailable evaluation returns the learner to the local task with the written draft preserved. If the model accepts an author's known wrong or incomplete example, that written variant counts as practice on this device.
+
+**Export learning content** shares the path without personal progress. **Import → Export All** in the library includes paths, drafts and progress in the personal backup. Reimporting identical content resumes the saved version. Changed content needs a new version and has separate progress. Learners can select review cards from completed objectives and add them to a deck once. Chapter completion does not rate cards or change their review dates.
+
+The optional authoring check covers percentage calculations, conceptual distinctions, insufficient source material and three free-text answers. Running `node scripts/evaluate-learning-path-prompt.mjs` validates the bundled example locally. Passing `--run` sends the six synthetic requests through the model and API key configured in the environment. Authors can set `written.practiceOnly` on unreliable rubrics before sharing the path.
 
 ## Smart Study mode
 
@@ -434,7 +447,7 @@ Three shapes are accepted by **Import JSON** on Home.
 | `difficulty` | number | no | unset | FSRS difficulty |
 | `lastReview` | string | no | unset | Last review date, `YYYY-MM-DD` |
 
-Cards require non-empty `front` and `back` strings (up to 20,000 characters each). Invalid card data, unknown task types, or invalid task configurations reject the import rather than silently skipping cards. Unknown card fields are ignored. Valid, unique card IDs are retained in deck objects, full backups, and bare arrays; missing, invalid, or duplicate IDs are regenerated. Deck objects and full backups can also restore `cardStats` for retained card IDs. Deck IDs are always regenerated, and imports from Home add decks rather than merging existing ones.
+Cards require non-empty `front` and `back` strings (up to 20,000 characters each). Invalid card data, unknown task types, or invalid task configurations reject the import rather than silently skipping cards. Unknown card fields are ignored. Valid, unique card IDs are retained in deck objects, full backups, and bare arrays; missing, invalid, or duplicate IDs are regenerated. Deck objects and full backups can also restore `cardStats` for retained card IDs. Restoring to an empty library retains valid, unique deck IDs. Importing into a populated library creates additional decks with fresh IDs.
 
 For structured tasks, `task` defines the correct solution and the importer regenerates readable `back` content from it. Put solution explanations in `task.explanation` and calculation working in `task.solutionSteps`; text tasks (`short_text` / `long_text`) continue to use `back` as the reference answer. JSON imports are limited to 10 MiB, 100,000 cards in total, and 1,000 decks in a full backup.
 
@@ -481,7 +494,7 @@ Both **Import TXT / CSV** entry points (Home or inside a deck) use the same pars
 
 - Two columns: `front`, `back`.
 - Delimiter is auto-detected: if the first non-empty, non-comment line contains a tab outside quoted fields, tab is used; otherwise comma.
-- CSV quoting starts only at the beginning of a field (after optional whitespace). A quote inside ordinary text, such as `Convert 6" to centimetres`, is literal and does not hide a following tab separator. Tab-delimited imports preserve quotes unchanged.
+- CSV quoting starts only at the beginning of a field (after optional whitespace). A quote inside ordinary text, such as `Convert 6" to centimetres`, is literal and does not hide a following tab separator. Unmarked tab-delimited imports preserve quotes unchanged. Anki files with a leading `#separator:Tab` directive support quoted fields.
 - Lines starting with `#` are treated as comments and skipped outside quoted CSV fields. Quoted content, including lines starting with `#`, is preserved.
 - Empty lines are skipped outside quoted CSV fields.
 - For CSV, fields containing comma, quote, or newline must be wrapped in double quotes. Literal double quotes inside a quoted field are escaped by doubling them (`""`), per RFC 4180.
@@ -516,10 +529,10 @@ Imports made via **Home > Import TXT / CSV** create a new deck named after the f
 
 Per-deck exports live in the **Browse** view; a full backup of every deck lives on **Home**.
 
-- **Export JSON** (Browse) writes the full deck object as `<deck_name>.json`. Re-import preserves task definitions, scheduling state, card IDs, card statistics, elaborations, extra-practice flags and session history; the deck receives a new ID.
+- **Export JSON** (Browse) writes the full deck object as `<deck_name>.json`. Re-import preserves task definitions, scheduling state, card IDs, card statistics, elaborations, extra-practice flags and session history; the deck receives a new ID when added to a populated library.
 - **Export CSV** (Browse) writes two columns (`front`, `back`) with a header as `<deck_name>.csv`. Re-import recognizes the header and preserves multiline content. Structured tasks are flattened into readable questions and solutions; re-import creates text cards. Task definitions and scheduling state are not exported.
-- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. LF, CRLF, and CR line breaks inside a field become `<br>` (Anki renders HTML), literal tabs become spaces, and quotes are kept. Structured tasks are flattened into readable questions and solutions; interactive task definitions are not retained. Import directly in Anki via *File > Import*.
-- **Export All** (Home) writes every deck — with cards, per-card stats, and session history — as a single `smartL3arn_backup_<date>.json`. Re-import it with **Import JSON** on Home to restore the whole collection (decks are added, not merged; deck IDs are regenerated).
+- **Export TXT** (Browse) writes Anki-compatible tab-delimited `front<TAB>back`, one note per line, as `<deck_name>.txt`. LF, CRLF, and CR line breaks inside a field become `<br>` (Anki renders HTML), literal tabs become spaces, and quotes are kept. Structured tasks are flattened into readable questions and solutions; interactive task definitions are not retained. When a question starts with `#`, the export uses Anki separator and HTML directives with quoted fields to preserve it on re-import. Import directly in Anki via *File > Import*.
+- **Export All** (Home) writes every deck — with cards, per-card stats, and session history — as a single `smartL3arn_backup_<date>.json`. Re-import it with **Import JSON** on Home to restore the whole collection.
 
 On Windows/macOS (Electron) and in a browser, exports download as a file. On iOS/Android the file is written to the app cache and the native **share sheet** opens, so you can save it to Files, Drive, email, etc. (via `@capacitor/filesystem` + `@capacitor/share`).
 
@@ -558,8 +571,10 @@ Standard Study shortcuts apply when focus is outside buttons, inputs, textareas,
 | Electron, macOS | `~/Library/Application Support/smartl3arn/ankiweb_data.json` |
 | Electron, Windows | `%APPDATA%/smartl3arn/ankiweb_data.json` |
 | Electron, Linux | `~/.config/smartl3arn/ankiweb_data.json` |
-| Browser only | `localStorage` key `ankiweb_v1` |
-| iOS / Android (Capacitor) | WebView `localStorage` key `ankiweb_v1` |
+| Browser only | IndexedDB database `smartL3arn` |
+| iOS / Android (Capacitor) | WebView IndexedDB database `smartL3arn` |
+
+Browser and mobile installations import their existing `ankiweb_v1` library on first load.
 
 Other persisted keys:
 
@@ -580,7 +595,7 @@ Electron also keeps these files in its user-data directory:
 | `openrouter-debug.jsonl`, `openrouter-debug.jsonl.1` | Rotating connection diagnostics; export separately from API Usage | No |
 | `.env` | Optional key/model configuration for a packaged app | No |
 
-Source/development `.env` configuration is read from the repository root. Decks are local to each app/browser installation; there is no automatic synchronization between Electron, browser, and mobile storage. Use **Export All** and **Import JSON** to transfer decks and learning data. Re-import adds copies with new deck IDs.
+Source/development `.env` configuration is read from the repository root. Decks are local to each app/browser installation; there is no automatic synchronization between Electron, browser, and mobile storage. Use **Export All** and **Import JSON** to transfer decks and learning data. Import into an empty library to retain the original deck IDs, or into a populated library to add copies.
 
 A one-time migration in `main.js` copies data from the pre-rename `Anki Web` userData folder into the new `smartL3arn` folder on first launch.
 

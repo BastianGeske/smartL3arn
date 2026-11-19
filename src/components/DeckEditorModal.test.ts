@@ -7,7 +7,7 @@ import { importJsonFile } from '../services/importer'
 import { DECK_COVERS } from '../domain/deckCovers'
 import { normalizeAppData } from '../../shared/data-validation.mjs'
 import DeckEditorModal from './DeckEditorModal.vue'
-import { browserStorage } from '../services/storage/browserStorage'
+import { BrowserStorage } from '../services/storage/browserStorage'
 
 let wrapper: VueWrapper | undefined
 beforeEach(() => { localStorage.clear(); setActivePinia(createPinia()) })
@@ -25,8 +25,9 @@ test('selected image survives saving, reopening and backup import', async () => 
   await wrapper.get('input[value="sage"]').setValue()
   await wrapper.get('.modal-footer .btn-primary').trigger('click')
   await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().deckEditor).toBeNull())
   expect(library.deckById(deck.id)?.coverId).toBe('sage')
-  const backup = JSON.parse(localStorage.getItem('ankiweb_v1')!)
+  const backup = (await new BrowserStorage().load())
   expect(backup.decks[0].coverId).toBe('sage')
   ui.editDeck(deck.id)
   await flushPromises()
@@ -57,6 +58,7 @@ test('new decks use the image chosen in the editor', async () => {
   await wrapper.get('input[value="sky"]').setValue()
   await wrapper.get('.modal-footer .btn-primary').trigger('click')
   await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().deckEditor).toBeNull())
   expect(library.decks[0]).toMatchObject({ name: 'Languages', coverId: 'sky' })
 })
 
@@ -68,7 +70,7 @@ test('deleting a deck persists deletion and keeps legacy images stable', async (
   await library.hydrate()
   expect(library.deckById('second')?.coverId).toBe('teal')
   await library.deleteDeck('first')
-  const saved = JSON.parse(localStorage.getItem('ankiweb_v1')!)
+  const saved = (await new BrowserStorage().load())
   expect(saved.decks).toHaveLength(1)
   expect(saved.decks[0]).toMatchObject({ id: 'second', coverId: 'teal' })
 })
@@ -88,13 +90,14 @@ test('failed saving shows an error and retry creates only one deck', async () =>
   await flushPromises()
   await wrapper.get('#deck-modal-name').setValue('Languages')
   await wrapper.get('input[value="sky"]').setValue()
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Storage full'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Storage full'))
   await wrapper.get('.modal-footer .btn-primary').trigger('click')
   await flushPromises()
   expect(wrapper.find('[role="alert"]').exists()).toBe(true)
   expect(library.decks).toHaveLength(0)
   await wrapper.get('.modal-footer .btn-primary').trigger('click')
   await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().deckEditor).toBeNull())
   expect(library.decks).toHaveLength(1)
   expect(library.decks[0]?.coverId).toBe('sky')
   expect(wrapper.find('.modal-overlay').exists()).toBe(false)
@@ -104,7 +107,7 @@ test('failed update preserves the original image and name', async () => {
   const library = useLibraryStore()
   await library.hydrate()
   const deck = await library.createDeck('Original', 'rose')
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Storage full'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Storage full'))
   await expect(library.updateDeck(deck.id, 'Changed', 'navy')).rejects.toThrow()
   expect(library.deckById(deck.id)).toMatchObject({ name: 'Original', coverId: 'rose' })
 })

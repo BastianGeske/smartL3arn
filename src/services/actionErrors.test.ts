@@ -7,7 +7,7 @@ import BrowseView from '../views/BrowseView.vue'
 import CardEditorModal from '../components/CardEditorModal.vue'
 import { useLibraryStore } from '../stores/library'
 import { useUiStore } from '../stores/ui'
-import { browserStorage } from './storage/browserStorage'
+import { BrowserStorage } from './storage/browserStorage'
 import { useStudyStore } from '../stores/study'
 
 const saveExport = vi.hoisted(() => vi.fn())
@@ -37,7 +37,7 @@ test('invalid import uses a typed notification and never a blocking alert', asyn
 })
 test('a valid import with failed saving is not called a parsing failure and can be retried without duplicates', async () => {
   const library = await home()
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('PRIVATE_PATH'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('PRIVATE_PATH'))
   const data = JSON.stringify({ decks: [{ id: 'imported', name: 'Imported', cards: [] }] })
   await importFile(data); await flushPromises()
   expect(library.persistenceIssue).toBe('save')
@@ -45,7 +45,7 @@ test('a valid import with failed saving is not called a parsing failure and can 
   expect(useUiStore().notifications).toHaveLength(0)
   await importFile(data); await flushPromises()
   expect(library.decks).toHaveLength(2)
-  expect(library.persistenceIssue).toBeNull()
+  await vi.waitFor(() => expect(library.persistenceIssue).toBeNull())
   expect(useUiStore().notifications).toMatchObject([{ key: 'import.decks', kind: 'success' }])
 })
 test('failed exports are reported without exposing the technical exception', async () => {
@@ -57,7 +57,7 @@ test('failed exports are reported without exposing the technical exception', asy
 test('failed deletion retains the deck and never emits a success', async () => {
   const library = await home()
   vi.spyOn(window, 'confirm').mockReturnValue(true)
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Disk full'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Disk full'))
   await wrapper!.get('.is-danger').trigger('click'); await flushPromises()
   expect(library.decks).toHaveLength(1)
   expect(library.persistenceIssue).toBe('save')
@@ -70,29 +70,29 @@ test('failed card saving keeps the editor and input open; retry creates one card
   await flushPromises()
   await wrapper.get('#modal-front').setValue('Question')
   await wrapper.get('#modal-back').setValue('Answer')
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Disk full'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Disk full'))
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
   expect(wrapper.find('[role="alert"]').exists()).toBe(true)
   expect((wrapper.get('#modal-front').element as HTMLTextAreaElement).value).toBe('Question')
   expect(library.deckById(deck.id)?.cards).toHaveLength(0)
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
   expect(library.deckById(deck.id)?.cards).toHaveLength(1)
-  expect(wrapper.find('.modal-overlay').exists()).toBe(false)
+  await vi.waitFor(() => expect(wrapper!.find('.modal-overlay').exists()).toBe(false))
 })
 test('unsaved learning progress stays in memory and is included in the next successful save', async () => {
   const library = useLibraryStore(); await library.hydrate(); const deck = await library.createDeck('Test')
   await library.addCard(deck.id, 'First question', 'Answer')
   await library.addCard(deck.id, 'Second question', 'Answer')
   const study = useStudyStore(); expect(study.start(deck.id)).toBe(true)
-  vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Disk full'))
+  vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Disk full'))
   study.flip()
   await study.rate(2)
   expect(library.persistenceIssue).toBe('save')
   expect(study.sessionStats.reviewed).toBe(1)
   study.flip()
   await study.rate(2)
-  expect(library.persistenceIssue).toBeNull()
+  await vi.waitFor(() => expect(library.persistenceIssue).toBeNull())
   expect(study.sessionStats.reviewed).toBe(2)
-  const saved = JSON.parse(localStorage.getItem('ankiweb_v1')!)
-  expect(saved.decks[0].sessions[0].reviewed).toBe(2)
+  const saved = (await new BrowserStorage().load())
+  expect(saved.decks[0].sessions![0].reviewed).toBe(2)
 })

@@ -7,7 +7,7 @@ import { shuffled, fieldValue } from '../domain/tasks'
 import MathContent from './MathContent.vue'
 import MathInput from './MathInput.vue'
 import NumberInput from './NumberInput.vue'
-const props = withDefaults(defineProps<{ task?: TaskDefinition; front: string; modelValue: StudyResponse; disabled?: boolean; inputId?: string }>(), { disabled: false })
+const props = withDefaults(defineProps<{ task?: TaskDefinition; front: string; modelValue: StudyResponse; disabled?: boolean; inputId?: string; constructOrder?: boolean; invalidNumericGaps?: string[] }>(), { disabled: false })
 const emit = defineEmits<{ 'update:modelValue': [response: StudyResponse]; submit: [] }>()
 const { t } = useI18n()
 const uid = useId()
@@ -17,12 +17,19 @@ watch(() => props.task?.kind === 'single_choice' || props.task?.kind === 'multip
   const task = props.task
   optionOrder.value = task?.kind === 'single_choice' || task?.kind === 'multiple_choice' ? shuffled(task.options.map(o => o.id)) : task?.kind === 'matching' ? shuffled(task.pairs.map(p => p.id)) : []
 })
-// Initialize once per attempt; changing a draft or retrying never reshuffles controls.
+// Initialize when the response mounts. Draft changes leave the order intact.
 optionOrder.value = props.task?.kind === 'single_choice' || props.task?.kind === 'multiple_choice' ? shuffled(props.task.options.map(o => o.id)) : props.task?.kind === 'matching' ? shuffled(props.task.pairs.map(p => p.id)) : []
 const options = computed(() => {
   const task = props.task
   return task?.kind === 'single_choice' || task?.kind === 'multiple_choice' ? optionOrder.value.map(id => task.options.find(o => o.id === id)).filter((item): item is TaskItem => Boolean(item)) : []
 })
+// Each learning-path question has its own pool.
+const orderingPool = props.constructOrder && props.task?.kind === 'ordering' ? shuffled(props.task.items) : []
+function toggleOrder(id: string) {
+  if (props.modelValue.kind !== 'order') return
+  const ids = props.modelValue.ids
+  emit('update:modelValue', { kind: 'order', ids: ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id] })
+}
 let fractionDraft: Extract<StudyResponse, { kind: 'fraction' }> = { kind: 'fraction', numerator: '', denominator: '' }
 let decimalDraft = ''
 function fractionMode(kind: 'fraction' | 'text') {
@@ -84,7 +91,8 @@ function keydown(event: KeyboardEvent) {
     <div v-else-if="task.kind === 'cloze'" class="task-cloze">
       <template v-for="(segment, i) in gapSegments" :key="i">
         <template v-if="/^\{\{[\w-]+\}\}$/.test(segment)">
-          <NumberInput v-if="task.gaps.find(g => g.id === segment.slice(2, -2))?.kind === 'number'" class="gap-input" :label="segment.slice(2, -2)" :model-value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, segment.slice(2, -2)) : ''" :disabled="disabled" @update:model-value="field(segment.slice(2, -2), $event)" />
+          <NumberInput v-if="task.gaps.find(g => g.id === segment.slice(2, -2))?.kind === 'number'" class="gap-input" :label="segment.slice(2, -2)" :model-value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, segment.slice(2, -2)) : ''" :disabled="disabled"
+            :error="invalidNumericGaps?.includes(segment.slice(2, -2)) ? t('task.invalidNumber') : undefined" @update:model-value="field(segment.slice(2, -2), $event)" />
           <input v-else class="input gap-input" :aria-label="segment.slice(2, -2)" :value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, segment.slice(2, -2)) : ''" :disabled="disabled" maxlength="4000" @input="field(segment.slice(2, -2), ($event.target as HTMLInputElement).value)" />
         </template>
         <MathContent v-else :text="segment" />
@@ -106,6 +114,22 @@ function keydown(event: KeyboardEvent) {
         </span>
       </label>
     </div>
-    <ol v-else-if="task.kind === 'ordering' && modelValue.kind === 'order'" class="task-ordering"><li v-for="(itemId, i) in modelValue.ids" :key="itemId"><MathContent :text="task.items.find(o => o.id === itemId)?.text || ''" /><div class="task-row-actions"><button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === 0" :aria-label="`${t('task.up')} ${i + 1}`" @click="move(i, -1)"><AppIcon name="chevron-up" :size="18" /></button><button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === modelValue.ids.length - 1" :aria-label="`${t('task.down')} ${i + 1}`" @click="move(i, 1)"><AppIcon name="chevron-down" :size="18" /></button></div></li></ol>
+    <template v-else-if="task.kind === 'ordering' && modelValue.kind === 'order'">
+      <fieldset v-if="constructOrder" class="task-choices">
+        <legend class="field-label">{{ t('path.buildOrder') }}</legend>
+        <div class="task-row-actions task-order-pool">
+          <button v-for="item in orderingPool" :key="item.id" type="button" class="segment-button"
+            :class="{ 'is-selected': modelValue.ids.includes(item.id) }" :aria-pressed="modelValue.ids.includes(item.id)"
+            :disabled="disabled" @click="toggleOrder(item.id)"><MathContent :text="item.text" /></button>
+        </div>
+      </fieldset>
+      <ol class="task-ordering"><li v-for="(itemId, i) in modelValue.ids" :key="itemId">
+        <MathContent :text="task.items.find(o => o.id === itemId)?.text || ''" />
+        <div class="task-row-actions">
+          <button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === 0" :aria-label="`${t('task.up')} ${i + 1}`" @click="move(i, -1)"><AppIcon name="chevron-up" :size="18" /></button>
+          <button class="btn btn-secondary btn-sm" type="button" :disabled="disabled || i === modelValue.ids.length - 1" :aria-label="`${t('task.down')} ${i + 1}`" @click="move(i, 1)"><AppIcon name="chevron-down" :size="18" /></button>
+        </div>
+      </li></ol>
+    </template>
   </div>
 </template>

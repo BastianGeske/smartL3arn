@@ -1,3 +1,4 @@
+import { normalizePaths } from '../../shared/learning-paths.mjs'
 import { t, type TranslationKey } from '../i18n'
 import { createCard, genId, parseCards } from '../domain/importExport'
 import { todayStr } from '../domain/dates'
@@ -7,7 +8,7 @@ import { TaskValidationError } from '../../shared/tasks.mjs'
 import { SupplementError } from '../domain/jsonSupplement'
 
 export class ImportError extends Error {
-  constructor(readonly key: TranslationKey) { super(t(key)) }
+  constructor(readonly key: TranslationKey, readonly params: Record<string, string | number> = {}) { super(t(key, params)) }
 }
 export function importErrorKey(error: unknown): TranslationKey {
   return error instanceof ImportError || error instanceof SupplementError ? error.key : 'notifications.importFailed'
@@ -17,9 +18,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
-function deckFromBackup(value: unknown, fallbackName = t('import.defaultDeck')): Deck | null {
-  if (!isRecord(value) || !Array.isArray(value.cards)) return null
-  try { return normalizeDeck(value, { today: todayStr(), name: fallbackName.slice(0, 120), newDeckId: true }) }
+function deckFromBackup(value: unknown, fallbackName = t('import.defaultDeck'), keepDeckId = false): Deck {
+  try { return normalizeDeck(value, { today: todayStr(), name: fallbackName.slice(0, 120), newDeckId: !keepDeckId }) }
   catch (error) { throw new ImportError(error instanceof TaskValidationError ? `task.${error.code}` as TranslationKey : 'import.invalidBackup') }
 }
 
@@ -36,32 +36,43 @@ export async function readJsonSupplement(file: File): Promise<unknown> {
   catch { throw new ImportError('import.parseError') }
 }
 
-export async function importJsonFile(file: File): Promise<Deck[]> {
-  const content = await readImportFile(file)
-  let parsed: unknown
-  try { parsed = JSON.parse(content) } catch { throw new ImportError('import.parseError') }
-  if (isRecord(parsed) && Array.isArray((parsed as unknown as AppData).decks)) {
-    if ((parsed as unknown as AppData).decks.length > 1000) throw new ImportError('import.tooLarge')
-    const decks = (parsed as unknown as AppData).decks
-      .map((deck) => deckFromBackup(deck))
-      .filter((deck): deck is Deck => Boolean(deck))
+export async function importJsonFile(file: File, { keepDeckIds = false } = {}): Promise<Deck[]> {
+  return (await importLibraryFile(file, { keepDeckIds })).decks
+}
+
+export async function importLibraryFile(file: File, { keepDeckIds = false } = {}): Promise<AppData> {
+  const parsed = await readJsonSupplement(file)
+  if (isRecord(parsed) && Array.isArray(parsed.decks)) {
+    if (parsed.decks.length > 1000) throw new ImportError('import.tooLarge')
+    const decks = parsed.decks.map((deck, index) => {
+      try { return deckFromBackup(deck, undefined, keepDeckIds) }
+      catch {
+        const label = isRecord(deck) && typeof deck.name === 'string' && deck.name.trim()
+          ? deck.name.slice(0, 120) : index + 1
+        throw new ImportError('import.invalidBackupDeck', { deck: label })
+      }
+    })
     if (decks.reduce((count, deck) => count + deck.cards.length, 0) > MAX_CARDS) throw new ImportError('import.tooLarge')
+    if (parsed.learningPaths !== undefined) {
+      try { return { decks, learningPaths: normalizePaths(parsed.learningPaths) } }
+      catch { throw new ImportError('import.invalidBackup') }
+    }
     if (!decks.length) throw new ImportError('import.noDecks')
-    return decks
+    return { decks }
   }
 
   if (isRecord(parsed) && Array.isArray(parsed.cards)) {
     const fallbackName = typeof parsed.name === 'string'
       ? parsed.name : file.name.replace(/\.[^.]+$/, '')
-    const deck = deckFromBackup(parsed, fallbackName)
-    if (!deck?.cards.length) throw new ImportError('import.noCards')
-    return [deck]
+    const deck = deckFromBackup(parsed, fallbackName, keepDeckIds)
+    if (!deck.cards.length && typeof parsed.name !== 'string') throw new ImportError('import.noCards')
+    return { decks: [deck] }
   }
   if (!Array.isArray(parsed)) throw new ImportError('import.invalidJson')
   const name = file.name.replace(/\.[^.]+$/, '').replace(/_/g, ' ') || t('import.defaultDeck')
   const deck = deckFromBackup({ cards: parsed }, name)
-  if (!deck?.cards.length) throw new ImportError('import.noCards')
-  return [deck]
+  if (!deck.cards.length) throw new ImportError('import.noCards')
+  return { decks: [deck] }
 }
 
 export async function importTextFile(file: File): Promise<Deck> {

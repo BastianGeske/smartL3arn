@@ -4,6 +4,7 @@ import { computed, onMounted, onScopeDispose, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
+import { useCalendarStore } from '../stores/calendar'
 import { isDue } from '../domain/dates'
 import { isSmartNeedsPracticeCard } from '../domain/study/smartQueue'
 import type { SmartTechniques } from '../domain/types'
@@ -20,6 +21,7 @@ const router = useRouter()
 const library = useLibraryStore()
 const settings = useSettingsStore()
 const smart = useSmartStudyStore()
+const calendar = useCalendarStore()
 const ui = useUiStore()
 const ai = getAiBridge()
 const aiStatus = ref<{
@@ -40,17 +42,29 @@ const fixedKeyActive = computed(() => Capacitor.getPlatform() !== 'ios'
 const selectedDecks = computed(() => settings.smartConfig.deckIds
   .map((id) => library.deckById(id))
   .filter((deck) => Boolean(deck)))
-const canStart = computed(() => selectedDecks.value.some((deck) => deck && deck.cards.length > 0))
-const availabilityNow = ref(Date.now())
-const availabilityTimer = setInterval(() => { availabilityNow.value = Date.now() }, 1000)
+smart.refreshAvailability()
+const availabilityTimer = setInterval(smart.refreshAvailability, 1000)
 onScopeDispose(() => clearInterval(availabilityTimer))
-const available = computed(() => {
-  void availabilityNow.value
-  return canStart.value ? smart.availableQueue() : { queue: [], hasCore: false, mode: 'practice' as const }
+const canStart = computed(() => smart.availability.count > 0)
+const aiUnavailable = computed(() => settings.smartConfig.evaluationMode === 'openrouter'
+  && (aiLoading.value || !aiStatus.value.available))
+const planHint = computed(() => {
+  const { count, hasCore, nextPracticeAt } = smart.availability
+  if (count) return t(hasCore ? 'smart.scheduled' : 'smart.practiceRound')
+  if (nextPracticeAt) return t('study.availableAfter', { time: new Date(nextPracticeAt).toLocaleString() })
+  return t('smart.chooseBegin')
 })
-const selectedDue = computed(() => selectedDecks.value.reduce(
-  (sum, deck) => sum + (deck?.cards.filter((card) => isDue(card)).length || 0),
-  0,
+const deckCounts = computed(() => new Map(library.decks.map(deck => {
+  let due = 0
+  let practice = 0
+  for (const card of deck.cards) {
+    if (isDue(card, calendar.today)) due++
+    else if (isSmartNeedsPracticeCard(deck, card.id)) practice++
+  }
+  return [deck.id, { due, practice }]
+})))
+const selectedDue = computed(() => settings.smartConfig.deckIds.reduce(
+  (sum, id) => sum + (deckCounts.value.get(id)?.due || 0), 0,
 ))
 
 const techniques: {
@@ -177,7 +191,9 @@ function toggleDeck(deckId: string, checked: boolean): void {
 }
 
 async function start(): Promise<void> {
-  if (aiLoading.value) return
+  smart.refreshAvailability()
+  if (!canStart.value || aiUnavailable.value) return
+  if (aiLoading.value) settings.setEvaluationMode('local')
   if (settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.value.configured) {
     aiMessage.value = 'ai.notConfigured'
     document.querySelector('#openrouter-key')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -186,8 +202,6 @@ async function start(): Promise<void> {
   }
   if (await smart.start()) {
     await router.push({ name: 'smart-study' })
-  } else {
-    window.alert(t('smart.noCards'))
   }
 }
 </script>
@@ -245,12 +259,12 @@ async function start(): Promise<void> {
                 <span class="smart-row-title">{{ deck.name }}</span>
                 <span class="smart-row-meta">
                   <span>{{ t('smart.totalCount', { count: deck.cards.length }) }}</span>
-                  <span v-if="deck.cards.filter((card) => isDue(card)).length" class="is-emphasis">
-                    {{ t('library.dueCount', { count: deck.cards.filter((card) => isDue(card)).length }) }}
+                  <span v-if="deckCounts.get(deck.id)?.due" class="is-emphasis">
+                    {{ t('library.dueCount', { count: deckCounts.get(deck.id)?.due || 0 }) }}
                   </span>
                   <span v-else>{{ t('library.caughtUp') }}</span>
-                  <span v-if="deck.cards.filter((card) => !isDue(card) && isSmartNeedsPracticeCard(deck, card.id)).length">
-                    {{ t('smart.practiceCount', { count: deck.cards.filter((card) => !isDue(card) && isSmartNeedsPracticeCard(deck, card.id)).length }) }}
+                  <span v-if="deckCounts.get(deck.id)?.practice">
+                    {{ t('smart.practiceCount', { count: deckCounts.get(deck.id)?.practice || 0 }) }}
                   </span>
                 </span>
               </span>
@@ -259,8 +273,6 @@ async function start(): Promise<void> {
         </section>
 
         <div class="smart-options">
-        <p v-if="smart.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(smart.nextPracticeAt).toLocaleString() }) }}</p>
-
 
           <section class="config-section" aria-labelledby="smart-techniques-title">
             <div class="config-heading">
@@ -305,7 +317,7 @@ async function start(): Promise<void> {
               <div><span class="config-step">4</span><h2 id="smart-ai-title">{{ t('ai.evaluation') }}</h2></div>
               <span v-if="aiStatus.configured" class="ai-configured">{{ t('ai.configured') }}</span>
             </div>
-            <div v-if="aiStatus.available" class="ai-settings">
+            <div class="ai-settings">
               <div class="segmented-control" :aria-label="t('ai.mode')">
                 <button
                   class="segment-button"
@@ -319,64 +331,64 @@ async function start(): Promise<void> {
                   :class="{ 'is-selected': settings.smartConfig.evaluationMode === 'openrouter' }"
                   type="button"
                   :aria-pressed="settings.smartConfig.evaluationMode === 'openrouter'"
+                  :disabled="!aiStatus.available"
                   @click="settings.setEvaluationMode('openrouter')"
                 >{{ t('ai.openrouter') }}</button>
               </div>
-              <p class="ai-privacy-note">
-                {{ t('ai.privacy') }}
-              </p>
-              <p class="ai-privacy-note">{{ t('task.aiPrivacy') }}</p>
-              <p class="ai-privacy-note">{{ t('task.structuredLocal') }}</p>
-              <p v-if="settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.configured" class="ai-status-message" role="status">{{ t('ai.notConfigured') }}</p>
-              <p v-if="aiStatus.configured" class="ai-status-message">
-                {{ aiStatus.credentialSource === 'environment'
-                  ? t('ai.environmentKey')
-                  : aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : t('ai.storedKey') }}
-              </p>
-              <div class="ai-key-actions">
-                <button
-                  class="btn btn-secondary btn-sm ai-test-connection"
-                  type="button"
-                  :disabled="aiBusy || aiLoading || !aiStatus.configured"
-                  :aria-busy="aiTesting"
-                  @click="testConnection"
-                >{{ t(aiTesting ? 'ai.testingConnection' : 'ai.testConnection') }}</button>
-              </div>
-              <p class="ai-privacy-note">{{ t('ai.connectionHint') }}</p>
-              <form class="ai-key-form" @submit.prevent="saveApiKey">
-                <p v-if="aiStatus.model" class="ai-status-message">{{ t('usage.configured') }} <strong>{{ aiStatus.model }}</strong></p>
-                <p v-if="Capacitor.getPlatform() === 'ios' && aiStatus.credentialSource === 'bundled'" class="ai-privacy-note">{{ t('ai.privateBuildHint') }}</p>
-                <label class="field-label" for="openrouter-key">
-                  {{ fixedKeyActive ? t('ai.fallbackKey') : aiStatus.configured ? t('ai.replaceKey') : t('ai.key') }}
-                </label>
-                <input
-                  id="openrouter-key"
-                  v-model="apiKey"
-                  class="text-input"
-                  type="password"
-                  autocomplete="off"
-                  :placeholder="t('ai.keyPlaceholder')"
-                  :disabled="aiBusy"
-                >
+              <template v-if="aiStatus.available">
+                <p class="ai-privacy-note">
+                  {{ t('ai.privacy') }}
+                </p>
+                <p class="ai-privacy-note">{{ t('task.aiPrivacy') }}</p>
+                <p class="ai-privacy-note">{{ t('task.structuredLocal') }}</p>
+                <p v-if="settings.smartConfig.evaluationMode === 'openrouter' && !aiStatus.configured" class="ai-status-message" role="status">{{ t('ai.notConfigured') }}</p>
+                <p v-if="aiStatus.configured" class="ai-status-message">
+                  {{ aiStatus.credentialSource === 'environment'
+                    ? t('ai.environmentKey')
+                    : aiStatus.credentialSource === 'bundled' ? t('ai.bundledKey') : t('ai.storedKey') }}
+                </p>
                 <div class="ai-key-actions">
-                  <button class="btn btn-secondary btn-sm" type="submit" :disabled="aiBusy || !apiKey.trim()">
-                    {{ aiBusy ? t('common.wait') : t('ai.validateSave') }}
-                  </button>
                   <button
-                    v-if="aiStatus.configured && (Capacitor.getPlatform() !== 'ios' || aiStatus.credentialSource === 'stored')"
-                    class="btn btn-quiet btn-sm"
+                    class="btn btn-secondary btn-sm ai-test-connection"
                     type="button"
-                    :disabled="aiBusy"
-                    @click="removeApiKey"
-                  >{{ t('ai.removeKey') }}</button>
+                    :disabled="aiBusy || aiLoading || !aiStatus.configured"
+                    :aria-busy="aiTesting"
+                    @click="testConnection"
+                  >{{ t(aiTesting ? 'ai.testingConnection' : 'ai.testConnection') }}</button>
                 </div>
-              </form>
+                <p class="ai-privacy-note">{{ t('ai.connectionHint') }}</p>
+                <form class="ai-key-form" @submit.prevent="saveApiKey">
+                  <p v-if="aiStatus.model" class="ai-status-message">{{ t('usage.configured') }} <strong>{{ aiStatus.model }}</strong></p>
+                  <p v-if="Capacitor.getPlatform() === 'ios' && aiStatus.credentialSource === 'bundled'" class="ai-privacy-note">{{ t('ai.privateBuildHint') }}</p>
+                  <label class="field-label" for="openrouter-key">
+                    {{ fixedKeyActive ? t('ai.fallbackKey') : aiStatus.configured ? t('ai.replaceKey') : t('ai.key') }}
+                  </label>
+                  <input
+                    id="openrouter-key"
+                    v-model="apiKey"
+                    class="text-input"
+                    type="password"
+                    autocomplete="off"
+                    :placeholder="t('ai.keyPlaceholder')"
+                    :disabled="aiBusy"
+                  >
+                  <div class="ai-key-actions">
+                    <button class="btn btn-secondary btn-sm" type="submit" :disabled="aiBusy || !apiKey.trim()">
+                      {{ aiBusy ? t('common.wait') : t('ai.validateSave') }}
+                    </button>
+                    <button
+                      v-if="aiStatus.configured && (Capacitor.getPlatform() !== 'ios' || aiStatus.credentialSource === 'stored')"
+                      class="btn btn-quiet btn-sm"
+                      type="button"
+                      :disabled="aiBusy"
+                      @click="removeApiKey"
+                    >{{ t('ai.removeKey') }}</button>
+                  </div>
+                </form>
+              </template>
+              <p v-else-if="!aiMessage" class="ai-privacy-note">{{ t('ai.desktopOnly') }} {{ t('task.structuredLocal') }}</p>
               <p v-if="aiMessage" class="ai-status-message" role="status">{{ t(aiMessage, { ms: aiResponseTime ?? 0 }) }}</p>
             </div>
-            <p v-else class="ai-privacy-note">
-              {{ t('ai.desktopOnly') }}
-              {{ t('task.structuredLocal') }}
-            </p>
           </section>
         </div>
         </div>
@@ -385,19 +397,19 @@ async function start(): Promise<void> {
               <span><AppIcon name="sparkles" /></span>
               <div>
                 <strong>{{ canStart ? t('smart.ready') : t('smart.plan') }}</strong>
-                <span>{{ canStart ? (available.hasCore ? t('smart.scheduled') : t('smart.practiceRound')) : t('smart.chooseBegin') }}</span>
+                <span>{{ planHint }}</span>
               </div>
             </div>
             <dl class="session-plan-stats">
               <div><dt>{{ t('common.decks') }}</dt><dd>{{ formatNumber(selectedDecks.length) }}</dd></div>
-              <div><dt>{{ t('common.cards') }}</dt><dd>{{ formatNumber(available.queue.length) }}</dd></div>
+              <div><dt>{{ t('common.cards') }}</dt><dd>{{ formatNumber(smart.availability.count) }}</dd></div>
               <div><dt>{{ t('common.due') }}</dt><dd>{{ formatNumber(selectedDue) }}</dd></div>
               <div><dt>{{ t('smart.planLength') }}</dt><dd>{{ settings.smartConfig.duration ? t('common.minutes', { count: settings.smartConfig.duration }) : t('common.noLimit') }}</dd></div>
             </dl>
-            <button class="btn btn-smart btn-lg" type="button" :disabled="!canStart || aiLoading" @click="start">
+            <button class="btn btn-smart btn-lg" type="button" :disabled="!canStart || aiUnavailable" @click="start">
               <AppIcon name="play" /><span>{{ t('smart.start') }}</span>
             </button>
-            <p v-if="!canStart" class="smart-hint">{{ t('smart.selectHint') }}</p>
+            <p v-if="!canStart && !smart.availability.nextPracticeAt" class="smart-hint">{{ t('smart.selectHint') }}</p>
           </aside>
       </div>
     </main>

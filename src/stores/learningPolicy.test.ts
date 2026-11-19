@@ -7,7 +7,7 @@ import { useSettingsStore } from './settings'
 import { createCard } from '../domain/importExport'
 import { evaluateResponse } from '../domain/tasks'
 import { normalizeAppData } from '../../shared/data-validation.mjs'
-import { browserStorage } from '../services/storage/browserStorage'
+import { BrowserStorage } from '../services/storage/browserStorage'
 import { PRACTICE_DELAY_MS } from '../domain/study/practice'
 import type { Deck } from '../domain/types'
 
@@ -132,14 +132,14 @@ describe('learning data boundaries', () => {
   it('preserves delayed steps in memory on save failure and saves them on retry', async () => {
     const library = useLibraryStore()
     const standard = useStudyStore(); standard.start(deck.id)
-    vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('Disk full'))
+    vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('Disk full'))
     await standardRate(0)
     expect(library.persistenceIssue).toBe('save')
     expect(deck.cardStats![deck.cards[0]!.id]!.practiceAvailableAt).toBe(Date.now() + PRACTICE_DELAY_MS)
     await library.persist()
-    const saved = JSON.parse(localStorage.getItem('ankiweb_v1')!)
-    expect(saved.decks[0].cardStats[deck.cards[0]!.id].smartNeedsPractice).toBe(true)
-    expect(saved.decks[0].cardStats[deck.cards[0]!.id].practiceAvailableAt).toBe(Date.now() + PRACTICE_DELAY_MS)
+    const saved = (await new BrowserStorage().load())
+    expect(saved.decks[0].cardStats![deck.cards[0]!.id].smartNeedsPractice).toBe(true)
+    expect(saved.decks[0].cardStats![deck.cards[0]!.id].practiceAvailableAt).toBe(Date.now() + PRACTICE_DELAY_MS)
   })
   it('does not lose delayed steps when a timed session ends', async () => {
     await useLibraryStore().addCard(deck.id, 'Other', 'Answer')
@@ -150,7 +150,8 @@ describe('learning data boundaries', () => {
     await vi.advanceTimersByTimeAsync(PRACTICE_DELAY_MS)
     expect(smart.isDone).toBe(true)
     expect(deck.cardStats![failed]!.smartNeedsPractice).toBe(true)
-    expect(smart.availableQueue().queue.some(item => item.cardId === failed)).toBe(true)
+    smart.refreshAvailability()
+    expect(smart.availability.count).toBeGreaterThan(0)
   })
   it('accepts old data without cooldown and ignores obsolete smart blockers', async () => {
     deck.cardStats = { [deck.cards[0]!.id]: { reviews: 1, again: 1, hard: 0, smartNeedsPractice: true, smartBlockedUntil: Date.now() + 99_999_999 } }
@@ -158,4 +159,61 @@ describe('learning data boundaries', () => {
     useLibraryStore().decks.splice(0, useLibraryStore().decks.length, ...restored.decks)
     expect(await useSmartStudyStore().start()).toBe(true)
   })
+})
+
+it('protects a retained Smart Study review after a standard Again rating', async () => {
+  const smart = useSmartStudyStore()
+  await smart.start()
+  smart.reveal()
+  const standard = useStudyStore()
+  standard.start(deck.id)
+  await standardRate(0)
+  const before = JSON.stringify(deck)
+  const save = vi.spyOn(BrowserStorage.prototype, 'save')
+  await smart.rate(2)
+  expect(JSON.stringify(deck)).toBe(before)
+  expect(smart.session!.sessionStats.reviewed).toBe(0)
+  expect(smart.session!.phase).toBe('reviewing')
+  expect(save).not.toHaveBeenCalled()
+  vi.advanceTimersByTime(PRACTICE_DELAY_MS)
+  await smart.rate(2)
+  expect(smart.session!.sessionStats.reviewed).toBe(1)
+  expect(save).toHaveBeenCalledOnce()
+})
+
+it('preserves the standard summary until a nonempty queue becomes available', async () => {
+  const study = useStudyStore()
+  study.start(deck.id)
+  await standardRate(0)
+  const summary = study.sessionStats
+  expect(study.start(deck.id)).toBe(false)
+  expect(study.sessionStats).toBe(summary)
+  expect(study.availability).toMatchObject({ count: 0, nextPracticeAt: Date.now() + PRACTICE_DELAY_MS })
+  vi.advanceTimersByTime(PRACTICE_DELAY_MS)
+  study.refreshAvailability()
+  expect(study.availability).toMatchObject({ count: 1, nextPracticeAt: null })
+  expect(study.start(deck.id)).toBe(true)
+})
+
+it('closes a timed session to ratings before a slow history write settles', async () => {
+  await useLibraryStore().addCard(deck.id, 'Second', 'Answer')
+  useSettingsStore().smartConfig.duration = 10
+  const smart = useSmartStudyStore()
+  await smart.start()
+  await smartRate(2)
+  smart.reveal()
+  let release!: () => void
+  const save = vi.spyOn(BrowserStorage.prototype, 'save').mockImplementationOnce(
+    () => new Promise<void>(resolve => { release = resolve }),
+  )
+  vi.advanceTimersByTime(10 * 60_000)
+  expect(smart.isDone).toBe(true)
+  expect(save).toHaveBeenCalledOnce()
+  await smart.rate(2)
+  vi.advanceTimersByTime(500)
+  expect(save).toHaveBeenCalledOnce()
+  expect(deck.sessions).toMatchObject([{ reviewed: 1 }])
+  expect(smart.session!.sessionStats.reviewed).toBe(1)
+  release()
+  await smart.saveSessions()
 })

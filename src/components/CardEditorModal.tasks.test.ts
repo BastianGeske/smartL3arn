@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { BrowserStorage } from '../services/storage/browserStorage'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import CardEditorModal from './CardEditorModal.vue'
@@ -57,6 +58,7 @@ it('creates a structured numeric card and regenerates the readable solution on e
   await wrapper.get('.task-config input').setValue('4')
   await wrapper.get('.modal-footer .btn-primary').trigger('click')
   await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   const library = useLibraryStore(), deck = library.decks[0]!, card = deck.cards[0]!
   expect(card.task).toMatchObject({ kind: 'calculation', answer: { kind: 'number', value: '4' } })
   expect(card.back).toBe('4')
@@ -64,9 +66,10 @@ it('creates a structured numeric card and regenerates the readable solution on e
   useUiStore().editCard(deck.id, card.id); await flushPromises()
   await wrapper.get('.task-config input').setValue('5')
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   expect(card.back).toBe('5')
   expect(card.stability).toBe(10)
-  expect(JSON.parse(localStorage.getItem('ankiweb_v1')!).decks[0].cards[0].task.answer.value).toBe('5')
+  expect((await new BrowserStorage().load()).decks[0].cards[0].task).toMatchObject({ kind: 'calculation', answer: { value: '5' } })
 })
 it('rejects a choice card without a marked correct option and preserves the draft', async () => {
   await wrapper.get('#task-type').setValue('single_choice')
@@ -78,6 +81,7 @@ it('rejects a choice card without a marked correct option and preserves the draf
   expect(useLibraryStore().decks[0]!.cards).toHaveLength(0)
   await wrapper.findAll('.task-config input[type="radio"]')[0]!.setValue(true)
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   const card = useLibraryStore().decks[0]!.cards[0]!
   expect(card.back).toBe('Berlin')
   expect(card.task?.kind).toBe('single_choice')
@@ -92,6 +96,7 @@ it('preserves spaces and newlines while writing explanations and alternative gap
   await wrapper.get('.task-gap-config textarea').setValue('BERLIN\n')
   expect((wrapper.get('.task-gap-config textarea').element as HTMLTextAreaElement).value).toBe('BERLIN\n')
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   expect(useLibraryStore().decks[0]!.cards[0]!.task).toMatchObject({ kind: 'cloze', gaps: [{ alternatives: ['BERLIN'] }] })
 })
 
@@ -105,6 +110,7 @@ it('provides a sign control for quantity reference values', async () => {
   await row.findAll('input')[1]!.setValue('°C')
   await wrapper.get('#modal-front').setValue('Temperature?')
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   expect(useLibraryStore().decks[0]!.cards[0]!.task).toMatchObject({ answer: { pairs: [{ value: '-5', unit: '°C' }] } })
 })
 it('identifies oversized serialized reference working before saving', async () => {
@@ -137,6 +143,7 @@ it('updates quality advice and converts a valid multiple choice without losing o
   await wrapper.get('#task-explanation').setValue('B ist richtig, A ist falsch.')
   expect(wrapper.find('[data-quality-code="missingExplanation"]').exists()).toBe(false)
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await vi.waitFor(() => expect(useUiStore().cardEditor).toBeNull())
   expect(useLibraryStore().decks[0]!.cards[0]!.task).toEqual({ ...before, kind: 'single_choice', explanation: 'B ist richtig, A ist falsch.' })
 })
 

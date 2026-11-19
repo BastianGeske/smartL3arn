@@ -24,3 +24,9 @@ Der Zehn-Minuten-Abstand ist ein Produktstandard, kein behauptetes universelles 
 - Native iOS-KI-Journal-Prüfung: 31 Checks. Ein vollständiger iOS-/Android-Gerätebuild ist damit nicht abgedeckt.
 
 Die historischen Reproduktionen im Forschungsabgleich beschreiben den Zustand vor diesen Änderungen. Die neuen Regressionstests prüfen insbesondere das falsche Quadrat-Beispiel, Paraphrasen, FSRS-Referenzwerte, Kalendergrenzen, gespeicherte Sperrfristen, begrenzte Zusatzversuche, Speicherfehler und Sitzungszeitlimits.
+
+## Erstlernen im Lernpfad
+
+Ein Lernziel beginnt mit einer Erklärung und einem ausgearbeiteten Beispiel. Die angeleitete Übung gibt konkrete Hilfe. Beim anschließenden Abruf bearbeitet der Lernende eine neue Anwendung. Wer dabei einen Hinweis braucht, kann ihn sofort nutzen und erhält eine andere Prüfvariante. Bereits erreichte Ziele bleiben erhalten.
+
+Die Freigabe verlangt einen selbstständigen Nachweis für jedes Pflichtziel. Ein unmittelbarer Erfolg belegt die Anwendung in dieser Aufgabe. Für späteres Wiederholen lassen sich gezielt Karten in einen Stapel übernehmen. Die spätere Bewertung im Stapel steuert deren Fälligkeit.

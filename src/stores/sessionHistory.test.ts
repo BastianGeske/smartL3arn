@@ -1,3 +1,4 @@
+import { BrowserStorage } from '../services/storage/browserStorage'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { useLibraryStore } from './library'
@@ -35,14 +36,14 @@ async function setup(mode: 'standard' | 'smart', practice = false) {
 }
 
 it.each(['standard', 'smart'] as const)('finalizes partial %s history once even if persistence fails', async mode => {
-  const { library, deck, store, rate, start } = await setup(mode)
+  const { deck, store, rate, start } = await setup(mode)
   await rate()
-  const persist = vi.spyOn(library, 'persist').mockRejectedValue(new Error('Disk full'))
+  const persist = vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValue(new Error('Disk full'))
   await store.saveSessions()
   await store.saveSessions()
   expect(deck.sessions).toHaveLength(1)
   expect(deck.sessions![0]).toMatchObject({ reviewed: 1, easy: 1, practice: false })
-  expect(persist).toHaveBeenCalledOnce()
+  expect(persist).toHaveBeenCalledTimes(2)
   persist.mockRestore()
   await start()
   expect(mode === 'standard' ? useStudyStore().sessionStats.reviewed : useSmartStudyStore().session!.sessionStats.reviewed).toBe(0)
@@ -64,7 +65,7 @@ it.each(['standard', 'smart'] as const)('does not duplicate completed %s history
 })
 
 it.each(['resolve', 'reject'] as const)('keeps a restarted standard answer revealed when the previous save settles (%s)', async outcome => {
-  const { library, deck, rate } = await setup('standard')
+  const { deck, rate } = await setup('standard')
   const study = useStudyStore()
   await rate()
   let resolveSave!: () => void
@@ -73,7 +74,7 @@ it.each(['resolve', 'reject'] as const)('keeps a restarted standard answer revea
     resolveSave = resolve
     rejectSave = reject
   })
-  const persist = vi.spyOn(library, 'persist').mockReturnValueOnce(pendingSave)
+  const persist = vi.spyOn(BrowserStorage.prototype, 'save').mockReturnValueOnce(pendingSave)
 
   study.flip()
   const finishing = study.rate(3)
@@ -126,4 +127,37 @@ it('finalizes Smart Study totals for surviving decks when another deck is delete
   await store.saveSessions()
   expect(deck.sessions).toHaveLength(1)
   expect(deck.sessions![0]).toMatchObject({ reviewed: 1, good: 1, smart: true })
+})
+
+it.each(['standard', 'smart'] as const)('records an explicitly ended partial %s session before returning to the library', async mode => {
+  const { deck, store, rate, start } = await setup(mode)
+  await rate()
+  await store.end()
+  expect((await new BrowserStorage().load()).decks[0].sessions).toMatchObject([{ reviewed: 1, easy: 1 }])
+  await start()
+  expect(deck.sessions).toHaveLength(1)
+})
+
+it.each(['standard', 'smart'] as const)('records a paused partial %s session once when starting another', async mode => {
+  const { deck, rate, start } = await setup(mode)
+  await rate()
+  await start()
+  await start()
+  expect((await new BrowserStorage().load()).decks[0].sessions).toMatchObject([{ reviewed: 1, easy: 1 }])
+  expect(deck.sessions).toHaveLength(1)
+})
+
+it.each(['standard', 'smart'] as const)('rejects a late %s rating queued behind an explicit exit', async mode => {
+  const { library, deck, store } = await setup(mode)
+  if (mode === 'standard') useStudyStore().flip()
+  else useSmartStudyStore().reveal()
+  let release!: () => void
+  vi.spyOn(BrowserStorage.prototype, 'save').mockImplementationOnce(() => new Promise<void>(resolve => { release = resolve }))
+  const pending = library.persist()
+  const leaving = store.end()
+  const late = store.rate(2)
+  release()
+  await Promise.all([pending, leaving, late])
+  expect(deck.cardStats).toBeUndefined()
+  expect(deck.sessions).toBeUndefined()
 })

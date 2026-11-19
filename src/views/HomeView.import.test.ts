@@ -1,3 +1,4 @@
+import { BrowserStorage } from '../services/storage/browserStorage'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -28,12 +29,12 @@ it('keeps malformed JSON as a technical error and shows quality guidance only af
   expect(wrapper.find('.import-quality-summary').exists()).toBe(false)
   await importFile(payload())
   expect(library.decks).toHaveLength(1)
-  expect(wrapper.find('.import-quality-summary').exists()).toBe(true)
+  await vi.waitFor(() => expect(wrapper.find('.import-quality-summary').exists()).toBe(true))
   await wrapper.get('.quality-card-link').trigger('click')
   expect(ui.cardEditor).toEqual({ deckId: library.decks[0]!.id, cardId: 'bool' })
 })
 it('does not report or retain a deck whose import could not be persisted', async () => {
-  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota exceeded') })
+  vi.spyOn(BrowserStorage.prototype, 'save').mockImplementation(() => { throw new Error('Quota exceeded') })
   await importFile(payload())
   expect(useLibraryStore().decks).toHaveLength(0)
   expect(wrapper.find('.import-quality-summary').exists()).toBe(false)

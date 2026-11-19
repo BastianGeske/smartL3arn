@@ -72,3 +72,12 @@ it('waits for pending saves and keeps later learning progress', async () => {
   expect(library.decks[0]!.cards[0]!.interval).toBe(30)
   expect(repo.save).toHaveBeenCalledTimes(2)
 })
+
+it('rechecks the library card limit when applying a still-current target preview', async () => {
+  const { library, plan } = await setup()
+  // The other deck can grow without changing the target fingerprint.
+  const card = library.decks[0]!.cards[0]!
+  library.data.decks.push({ id: 'other', name: 'Other', cards: Array(99_999).fill(card) })
+  await expect(library.applyJsonSupplement('deck', payload, plan.source)).rejects.toMatchObject({ key: 'supplement.cardLimit' })
+  expect(repo.save).not.toHaveBeenCalled()
+})

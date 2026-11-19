@@ -11,6 +11,8 @@ import PreferencesView from './views/PreferencesView.vue'
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    { path: '/learn', name: 'learning-paths', component: () => import('./views/LearningPathsView.vue') },
+    { path: '/learn/:key', name: 'learning-path', component: () => import('./views/LearningPathView.vue') },
     { path: '/preferences', name: 'preferences', component: PreferencesView },
     { path: '/usage', name: 'api-usage', component: ApiUsageView },
     { path: '/', name: 'home', component: HomeView },

@@ -1,5 +1,6 @@
+import { checkDataSize } from '../../shared/data-validation.mjs'
 import { todayStr } from './dates'
-import type { Card, Deck, TaskDefinition } from './types'
+import type { AppData, Card, Deck, TaskDefinition } from './types'
 import { normalizeTask, taskSolution } from '../../shared/tasks.mjs'
 import { taskQuestion } from './tasks'
 import { t } from '../i18n'
@@ -56,28 +57,34 @@ export function parseCards(text: string): ParsedCard[] {
       atFieldStart = false
     }
   }
-  const rows = tabDelimited
+  const rows = /^#separator:tab(?:\r\n|\r|\n)/i.test(content)
+    ? parseDelimitedRecords(content, true, '\t').filter(row => row.length > 1 || row[0])
+    : tabDelimited
     ? content.split(/\r\n|\r|\n/)
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'))
       .map((line) => line.split('\t').map((field) => field.trim()))
-    : parseCsvRecords(content, true).filter((row) => row.length > 1 || row[0])
+    : parseDelimitedRecords(content, true).filter((row) => row.length > 1 || row[0])
+  const ankiHtml = /^#separator:tab(?:\r\n|\r|\n)#html:true(?:\r\n|\r|\n)/i.test(content)
+  const readField = (field: string) => ankiHtml
+    ? field.trim().replace(/<br>/g, '\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    : field.trim()
   const cards: ParsedCard[] = []
   rows.forEach((parts, index) => {
-    if (index === 0 && parts.length === 2
+    if (!ankiHtml && index === 0 && parts.length === 2
       && parts[0].toLowerCase() === 'front' && parts[1].toLowerCase() === 'back') return
     if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
-      cards.push({ front: parts[0].trim(), back: parts[1].trim() })
+      cards.push({ front: readField(parts[0]), back: readField(parts[1]) })
     }
   })
   return cards
 }
 
 export function parseCsvLine(line: string): string[] {
-  return parseCsvRecords(line)[0] || ['']
+  return parseDelimitedRecords(line)[0] || ['']
 }
 
-function parseCsvRecords(text: string, skipComments = false): string[][] {
+function parseDelimitedRecords(text: string, skipComments = false, delimiter = ','): string[][] {
   const result: string[][] = []
   let row: string[] = []
   let inQuote = false
@@ -104,7 +111,7 @@ function parseCsvRecords(text: string, skipComments = false): string[][] {
         inQuote = !inQuote
         atFieldStart = false
       }
-    } else if (character === ',' && !inQuote) {
+    } else if (character === delimiter && !inQuote) {
       row.push(current.trim())
       current = ''
       atFieldStart = true
@@ -131,6 +138,12 @@ export function csvEscape(value: unknown): string {
   return text
 }
 
+export function backupJson(data: AppData | Deck): string {
+  const raw = JSON.stringify(data)
+  checkDataSize(raw)
+  return raw
+}
+
 export function deckFilename(name: string): string {
   return (name || 'deck').replace(/[/\\:*?"<>|]+/g, '-').replace(/\s+/g, '_')
 }
@@ -149,5 +162,15 @@ export function deckToAnkiText(deck: Deck): string {
     .replace(/>/g, '&gt;')
     .replace(/\t/g, ' ')
     .replace(/\r\n|\r|\n/g, '<br>')
-  return deck.cards.map((card) => `${field(taskQuestion(card))}\t${field(card.task?.kind === 'true_false' ? t(card.task.correct ? 'task.true' : 'task.false') + (card.task.explanation ? '\n\n' + card.task.explanation : '') : card.back)}`).join('\n')
+  const rows = deck.cards.map(card => [
+    field(taskQuestion(card)),
+    field(card.task?.kind === 'true_false' ? t(card.task.correct ? 'task.true' : 'task.false') + (card.task.explanation ? '\n\n' + card.task.explanation : '') : card.back),
+  ])
+  if (rows.some(([front]) => front.trimStart().startsWith('#'))) {
+    // Anki's explicit separator directive lets us quote fields unambiguously,
+    // while unmarked legacy TXT continues to treat ordinary quotes literally.
+    const quoted = rows.map(row => row.map(value => '"' + value.replace(/"/g, '""') + '"').join('\t'))
+    return ['#separator:Tab', '#html:true', ...quoted].join('\n')
+  }
+  return rows.map(row => row.join('\t')).join('\n')
 }

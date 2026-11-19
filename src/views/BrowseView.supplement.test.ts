@@ -1,3 +1,4 @@
+import { BrowserStorage } from '../services/storage/browserStorage'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -37,14 +38,15 @@ it('previews changes, cancels safely, then saves both kinds of changes into the 
   expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
   expect(JSON.stringify(library.data)).toBe(before)
   await importFile(payload())
-  await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
+  await wrapper.get('.modal-footer .btn-primary').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('[role="dialog"]').exists()).toBe(false))
   expect(library.decks).toHaveLength(1)
   expect(library.decks[0]!.cards).toHaveLength(2)
   expect(library.decks[0]!.cards[0]).toMatchObject({ id: 'card', back: 'Erweiterte Antwort', repetitions: 4, interval: 15 })
   expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
   expect(wrapper.find('.import-quality-summary').exists()).toBe(true)
   expect(useUiStore().notifications.at(-1)?.key).toBe('supplement.saved')
-  expect(JSON.parse(localStorage.getItem('ankiweb_v1')!).decks[0].cards).toHaveLength(2)
+  expect((await new BrowserStorage().load()).decks[0].cards).toHaveLength(2)
 })
 it('reports invalid files and disables saving an unchanged supplement', async () => {
   await importFile('{invalid', true)
@@ -55,15 +57,15 @@ it('reports invalid files and disables saving an unchanged supplement', async ()
 })
 it('keeps a failed save open for retry and shows no success or partial changes', async () => {
   const library = useLibraryStore(), before = JSON.stringify(library.data)
-  const storage = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota exceeded') })
+  const storage = vi.spyOn(BrowserStorage.prototype, 'save').mockImplementation(() => { throw new Error('Quota exceeded') })
   await importFile(payload())
   await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
   expect(wrapper.get('[role="alert"]').text()).toBe(t('supplement.saveFailed'))
   expect(JSON.stringify(library.data)).toBe(before)
   expect(useUiStore().notifications.some(item => item.key === 'supplement.saved')).toBe(false)
   storage.mockRestore()
-  await wrapper.get('.modal-footer .btn-primary').trigger('click'); await flushPromises()
-  expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  await wrapper.get('.modal-footer .btn-primary').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('[role="dialog"]').exists()).toBe(false))
   expect(library.decks[0]!.cards).toHaveLength(2)
 })
 it('paginates previews and restores background access when closed with Escape', async () => {
@@ -75,4 +77,31 @@ it('paginates previews and restores background access when closed with Escape', 
   expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
   expect(wrapper.get('.app-shell').attributes('inert')).toBeUndefined()
   expect(document.body.classList.contains('modal-open')).toBe(false)
+})
+
+it.each(['other', 'home', 'away-and-back', 'deleted'] as const)('cancels an in-flight TXT import when the target changes (%s)', async change => {
+  const library = useLibraryStore(), ui = useUiStore()
+  const other = await library.createDeck('Other')
+  const input = wrapper.get('input[accept=".txt,.csv,.tsv"]')
+  let finish!: (value: string) => void
+  const file = { size: 3, text: () => new Promise<string>(resolve => { finish = resolve }) }
+  Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
+  await input.trigger('change')
+  if (change === 'deleted') await library.deleteDeck('deck')
+  else {
+    await wrapper.vm.$router.push(change === 'other' ? '/deck/' + other.id : '/')
+    if (change === 'away-and-back') await wrapper.vm.$router.push('/deck/deck')
+  }
+  finish('Q\tA')
+  await flushPromises()
+  expect(ui.notifications.some(message => message.key === 'import.cards')).toBe(false)
+  expect(library.deckById(other.id)?.cards).toHaveLength(0)
+  if (change !== 'deleted') expect(library.deckById('deck')?.cards).toHaveLength(1)
+})
+
+it('saves line breaks from a multiline table cell and restores them after reload', async () => {
+  const answer = wrapper.get<HTMLTextAreaElement>('textarea[aria-label="' + t('browse.editBack') + '"]')
+  await answer.setValue('Eins\nZwei')
+  await answer.trigger('blur')
+  expect((await new BrowserStorage().load()).decks[0].cards[0].back).toBe('Eins\nZwei')
 })

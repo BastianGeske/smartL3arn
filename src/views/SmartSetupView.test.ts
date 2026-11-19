@@ -1,3 +1,4 @@
+import { useSmartStudyStore } from '../stores/smartStudy'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -56,7 +57,7 @@ test('new iOS installation without a key can immediately start local study', asy
   expect(settings.smartConfig.evaluationMode).toBe('local')
   await wrapper!.get('.session-plan .btn-smart').trigger('click')
   await flushPromises()
-  expect(router.currentRoute.value.path).toBe('/smart/session')
+  await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/smart/session'))
   expect(localStorage.getItem('smartl3arn_ios_ai_mode_initialized')).toBe('1')
 })
 
@@ -145,7 +146,7 @@ test('a status failure leaves a fresh installation able to start locally', async
   const { settings, router } = await setup()
   expect(settings.smartConfig.evaluationMode).toBe('local')
   await wrapper!.get('.session-plan .btn-smart').trigger('click'); await flushPromises()
-  expect(router.currentRoute.value.path).toBe('/smart/session')
+  await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/smart/session'))
 })
 
 test('a status failure never silently changes a stored AI decision', async () => {
@@ -186,4 +187,56 @@ test('reopening after an unconfigured first launch keeps local mode even if a ke
   wrapper = mount(SmartSetupView, { global: { plugins: [pinia, router], stubs: { AppBar: true, AppIcon: true } } })
   await flushPromises()
   expect(settings.smartConfig.evaluationMode).toBe('local')
+})
+
+test('allows a user with a saved AI choice to select local after a bridge failure', async () => {
+  localStorage.setItem('ankiweb_smart_config', JSON.stringify({ evaluationMode: 'openrouter' }))
+  native.getAiStatus.mockRejectedValue(new Error('Unavailable'))
+  const { settings, router } = await setup()
+  expect(wrapper!.find('#openrouter-key').exists()).toBe(false)
+  await wrapper!.get('.ai-settings .segment-button').trigger('click')
+  expect(settings.smartConfig.evaluationMode).toBe('local')
+  await wrapper!.get('.session-plan .btn-smart').trigger('click')
+  await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/smart/session'))
+})
+
+test('uses the same availability for the count, wait message and start button without shuffling', async () => {
+  vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+  try {
+    await setup()
+    const deck = useLibraryStore().decks[0]
+    const unlock = Date.now() + 2000
+    deck.cardStats = { card: { again: 1, reviews: 1, hard: 0, practiceAvailableAt: unlock } }
+    const random = vi.spyOn(Math, 'random')
+    await flushPromises()
+    const button = wrapper!.get<HTMLButtonElement>('.session-plan .btn-smart')
+    const cards = () => wrapper!.get('.session-plan-stats').findAll('dd')[1].text()
+    const wait = t('study.availableAfter', { time: new Date(unlock).toLocaleString() })
+    expect(cards()).toBe('0')
+    expect(button.element.disabled).toBe(true)
+    expect(wrapper!.text()).toContain(wait)
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(cards()).toBe('1')
+    expect(button.element.disabled).toBe(false)
+    expect(wrapper!.text()).not.toContain(wait)
+    expect(random).not.toHaveBeenCalled()
+  } finally { vi.useRealTimers() }
+})
+
+test('counts a 40,000-card plan without building its random order during refreshes', async () => {
+  const { settings } = await setup()
+  const smart = useSmartStudyStore()
+  const deck = useLibraryStore().decks[0]
+  const template = deck.cards[0]
+  deck.cards = Array.from({ length: 40_000 }, (_, id) => ({ ...template, id: String(id) }))
+  const random = vi.spyOn(Math, 'random')
+  expect(smart.availability.count).toBe(40_000)
+  const snapshot = smart.availability
+  for (let tick = 0; tick < 10; tick++) {
+    smart.refreshAvailability()
+    expect(smart.availability).toBe(snapshot)
+  }
+  expect(random).not.toHaveBeenCalled()
+  settings.smartConfig.deckIds = []
+  expect(smart.availability.count).toBe(0)
 })

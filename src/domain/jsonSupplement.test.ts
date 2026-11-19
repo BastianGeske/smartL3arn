@@ -72,3 +72,11 @@ describe('JSON supplements', () => {
     expect(planJsonSupplement(deck, payload)).toMatchObject({ added: 0, updated: 0, unchanged: 2, changes: [] })
   })
 })
+
+
+it('rejects net additions above the whole-library limit while allowing updates at capacity', () => {
+  const deck = { id: 'deck', name: 'Test', cards: [createCard('Existing', 'Original')] }
+  const additions = Array.from({ length: 11_000 }, (_, index) => ({ id: 'new' + index, front: 'Q', back: 'A' }))
+  expect(() => planJsonSupplement(deck, additions, 90_000)).toThrowError(expect.objectContaining({ key: 'supplement.cardLimit' }))
+  expect(planJsonSupplement(deck, [{ id: deck.cards[0].id, back: 'Revised' }], 100_000).updated).toBe(1)
+})

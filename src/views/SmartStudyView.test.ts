@@ -54,7 +54,7 @@ async function mountView() {
     plugins: [pinia, router],
     stubs: {
       AppIcon: true, StudyHeader: true, StudyCardBody: true, StudyRatingButtons: true,
-      SmartCardMeta: true, TaskResponse: true, WorkingSteps: true, MathContent: true,
+      SmartCardMeta: true, WorkingSteps: true, MathContent: true,
     },
   } })
   await flushPromises()
@@ -72,7 +72,7 @@ async function finishLastCard(rating: 0 | 1) {
 it.each([0, 1] as const)('offers another session when the final rating %s cooldown expires', async rating => {
   await finishLastCard(rating)
   const savedDeck = JSON.stringify(useLibraryStore().decks[0])
-  const availableAt = smart.nextPracticeAt!
+  const availableAt = smart.availability.nextPracticeAt!
   const availabilityMessage = t('study.availableAfter', { time: new Date(availableAt).toLocaleString() })
   expect(wrapper!.text()).toContain(availabilityMessage)
   expect(wrapper!.find('.smart-done-actions .btn-smart').exists()).toBe(false)
@@ -81,7 +81,7 @@ it.each([0, 1] as const)('offers another session when the final rating %s cooldo
   expect(wrapper!.find('.smart-done-actions .btn-smart').exists()).toBe(false)
   await vi.advanceTimersByTimeAsync(1)
   expect(wrapper!.text()).not.toContain(availabilityMessage)
-  expect(smart.nextPracticeAt).toBeNull()
+  expect(smart.availability.nextPracticeAt).toBeNull()
   const nextButton = wrapper!.get('.smart-done-actions .btn-smart')
   expect(nextButton.text()).toContain(t('smart.newSession'))
   expect(JSON.stringify(useLibraryStore().decks[0])).toBe(savedDeck)
@@ -144,7 +144,7 @@ it('restarts a dormant queue when its original matching card was replaced by ind
   smart.stopTimer()
   const cards = await library.splitMatchingCard(deck.id, source!.id, [{ pairId: 'a', selected: true, front: 'What matches A?', back: '1' }, { pairId: 'b', selected: true, front: 'What matches B?', back: '2' }], true)
   await mountView()
-  expect(smart.session!.queue.some(item => item.cardId === source!.id)).toBe(false)
+  await vi.waitFor(() => expect(smart.session!.queue.some(item => item.cardId === source!.id)).toBe(false))
   expect(smart.session!.queue.map(item => item.cardId)).toEqual(expect.arrayContaining(cards.map(card => card.id)))
   expect(smart.currentCard).toBeDefined()
   expect(library.deckById(deck.id)!.sessions).toHaveLength(1)
@@ -184,7 +184,25 @@ it('checks card IDs within their own deck', async () => {
   const previous = smart.session
   deck.cards = []
   await mountView()
-  expect(smart.session).not.toBe(previous)
+  await vi.waitFor(() => expect(smart.session && smart.session !== previous).toBe(true))
   expect(smart.session!.queue.every(item => item.deckId === other.id)).toBe(true)
   expect(library.deckById(deck.id)!.sessions || []).toHaveLength(0)
+})
+
+it.each(['draft', 'reviewed'] as const)('resets a paused %s response after a same-ID task replacement', async phase => {
+  useSettingsStore().smartConfig.techniques.typeRecall = true
+  const library = useLibraryStore(), deck = library.decks[0], card = deck.cards[0]
+  await library.updateCard(deck.id, card.id, { front: 'True?', back: 'Yes', task: { kind: 'true_false', correct: true } })
+  await smart.start()
+  smart.setResponse({ kind: 'boolean', value: true })
+  if (phase === 'reviewed') await smart.checkAnswer()
+  smart.stopTimer()
+  const { supplementSource } = await import('../domain/jsonSupplement')
+  await library.applyJsonSupplement(deck.id, [{ id: card.id, front: 'Order these', task: {
+    kind: 'ordering', items: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], correctOrder: ['a', 'b'],
+  } }], supplementSource(deck))
+  await mountView()
+  expect(smart.session).toMatchObject({ phase: 'asking', response: { kind: 'order' }, typedAnswer: '', evaluation: null })
+  expect(smart.currentCard!.id).toBe(card.id)
+  expect(wrapper!.findAll('.task-ordering li')).toHaveLength(2)
 })

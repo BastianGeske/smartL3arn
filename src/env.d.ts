@@ -48,6 +48,8 @@ declare global {
       testOpenRouterConnection: () => Promise<AiOperationResult>
       saveOpenRouterKey: (apiKey: string) => Promise<AiOperationResult>
       removeOpenRouterKey: () => Promise<AiOperationResult>
+      evaluateCriteria?: (input: AiEvaluationInput & { criteria: import('../shared/learning-paths.mjs').Criterion[] }) =>
+        Promise<AiOperationResult & { result?: { criteria: import('../shared/rubric.mjs').CriterionResult[] } }>
       evaluateAnswer: (input: AiEvaluationInput) => Promise<AiEvaluationResult>
     }
   }

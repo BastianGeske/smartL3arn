@@ -1,3 +1,4 @@
+import { normalizePaths } from './learning-paths.mjs'
 import { isDeckCoverId } from './deck-covers.mjs'
 import { normalizeTask, taskSolution } from './tasks.mjs'
 export const MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -60,7 +61,7 @@ export function normalizeDeck(value, { today, name = 'Imported deck', newDeckId 
     if (!record(value.cardStats)) invalid()
     deck.cardStats = Object.create(null)
     for (const card of cards) {
-      if (!Object.hasOwn(value.cardStats, card.id)) continue
+      if (!Object.prototype.hasOwnProperty.call(value.cardStats, card.id)) continue
       const v = value.cardStats[card.id]
       if (!record(v)) invalid()
       const stats = { reviews: number(v.reviews, 0, 100_000_000, true), again: number(v.again, 0, 100_000_000, true), hard: number(v.hard, 0, 100_000_000, true) }
@@ -88,7 +89,7 @@ export function normalizeAppData(value, today) {
     seen.add(deck.id)
     return deck
   })
-  return { decks }
+  return value.learningPaths === undefined ? { decks } : { decks, learningPaths: normalizePaths(value.learningPaths) }
 }
 export function checkDataSize(raw) {
   if (typeof raw !== 'string' || new TextEncoder().encode(raw).byteLength > MAX_FILE_BYTES) invalid()

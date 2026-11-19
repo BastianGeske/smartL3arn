@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('node:url');
 const { isTrustedSender, configureWindowSecurity } = require('./electron/security.cjs');
+const { configureDraftUnload } = require('./electron/draft-unload.cjs');
 const validation = import('./shared/data-validation.mjs');
 const appUrl = pathToFileURL(path.join(__dirname, 'web-dist', 'index.html')).href;
 let mainWindow;
@@ -31,32 +32,15 @@ function getDbPath() {
   return path.join(app.getPath('userData'), 'ankiweb_data.json');
 }
 
-// One-time migration from the pre-rename "Anki Web" userData folder.
-async function migrateLegacyDataIfNeeded() {
-  try {
-    const newPath = getDbPath();
-    if (fs.existsSync(newPath)) return;
-    const legacyDir = path.join(path.dirname(app.getPath('userData')), 'Anki Web');
-    const legacyPath = path.join(legacyDir, 'ankiweb_data.json');
-    if (fs.existsSync(legacyPath)) {
-      await fs.promises.mkdir(path.dirname(newPath), { recursive: true });
-      await fs.promises.copyFile(legacyPath, newPath);
-    }
-  } catch (_) {}
-}
+const { loadLibrary } = require('./electron/library.cjs');
 
-async function dbLoad() {
-  await migrateLegacyDataIfNeeded();
-  try {
-    const validator = await validation;
-    if ((await fs.promises.stat(getDbPath())).size > validator.MAX_FILE_BYTES) throw new Error('Library too large.');
-    const raw = await fs.promises.readFile(getDbPath(), 'utf8');
-    validator.checkDataSize(raw);
-    return validator.normalizeAppData(JSON.parse(raw), localToday());
-  } catch (error) {
-    if (error.code === 'ENOENT') return { decks: [] };
-    throw new Error('The saved library could not be read safely.');
-  }
+let pendingLoad;
+function dbLoad() {
+  if (pendingLoad) return pendingLoad;
+  const target = getDbPath();
+  const legacy = path.join(path.dirname(app.getPath('userData')), 'Anki Web', path.basename(target));
+  pendingLoad = loadLibrary(target, legacy, localToday()).finally(() => { pendingLoad = undefined; });
+  return pendingLoad;
 }
 
 async function dbSave(data) {
@@ -250,23 +234,37 @@ function createWindow() {
 
   mainWindow = win;
   configureWindowSecurity(win, appUrl);
+  configureDraftUnload(win);
   win.loadFile(path.join(__dirname, 'web-dist', 'index.html'));
   win.setMenuBarVisibility(false);
 }
 
-app.whenReady().then(() => {
-  if (process.platform === 'darwin') {
-    try { app.dock.setIcon(path.join(__dirname, 'build', 'icon.png')); } catch (_) {}
-  }
-  createWindow();
-  getCredentialResolver().status().then((status) => recordDiagnostic({
-    event: 'configuration', model: getCredentialResolver().model, ...status,
-  })).catch(() => recordDiagnostic({ event: 'credential-failure', reason: 'unavailable' }));
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      if (app.isReady()) createWindow();
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
   });
-});
+  app.whenReady().then(() => {
+    if (process.platform === 'darwin') {
+      try { app.dock.setIcon(path.join(__dirname, 'build', 'icon.png')); } catch (_) {}
+    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    getCredentialResolver().status().then((status) => recordDiagnostic({
+      event: 'configuration', model: getCredentialResolver().model, ...status,
+    })).catch(() => recordDiagnostic({ event: 'credential-failure', reason: 'unavailable' }));
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}

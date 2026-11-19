@@ -7,10 +7,13 @@ import { taskQuality } from '../domain/taskQuality'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 import AppMenu from '../components/AppMenu.vue'
+import { useDeckPracticeCooldowns } from '../composables/useStudyAvailability'
 import { calcBestStreak, formatDateLabel, isDue, todayStr } from '../domain/dates'
-import type { Deck } from '../domain/types'
+import type { AppData, Deck } from '../domain/types'
 import { coverFor, coverUrl } from '../domain/deckCovers'
-import { importErrorKey, importJsonFile, importTextFile } from '../services/importer'
+import { backupJson } from '../domain/importExport'
+import { useCalendarStore } from '../stores/calendar'
+import { ImportError, importErrorKey, importLibraryFile, importTextFile } from '../services/importer'
 import { saveExport } from '../services/native'
 import { useLibraryStore } from '../stores/library'
 import { useStudyStore } from '../stores/study'
@@ -21,14 +24,15 @@ const { t, locale, formatNumber } = useI18n()
 const router = useRouter()
 const library = useLibraryStore()
 const study = useStudyStore()
+const calendar = useCalendarStore()
 const ui = useUiStore()
+const cooldowns = useDeckPracticeCooldowns(() => library.decks)
 const importedDeckIds = ref<string[]>([])
 const jsonInput = ref<HTMLInputElement>()
 const textInput = ref<HTMLInputElement>()
 
-const totalCards = computed(() => library.decks.reduce((sum, deck) => sum + deck.cards.length, 0))
 const totalDue = computed(() => library.decks.reduce(
-  (sum, deck) => sum + deck.cards.filter((card) => isDue(card)).length,
+  (sum, deck) => sum + deck.cards.filter((card) => isDue(card, calendar.today)).length,
   0,
 ))
 const activeDecks = computed(() => library.decks.filter((deck) => deck.cards.length > 0).length)
@@ -38,21 +42,21 @@ const bestStreak = computed(() => Math.max(
 ))
 const nextReview = computed(() => library.decks
   .flatMap((deck) => deck.cards.map((card) => card.dueDate))
-  .filter((date) => date && date > todayStr())
+  .filter((date) => date && date > calendar.today)
   .sort()[0] || null)
 const sortedDecks = computed(() => [...library.decks].sort((left, right) => {
-  const dueDifference = right.cards.filter((card) => isDue(card)).length - left.cards.filter((card) => isDue(card)).length
+  const dueDifference = right.cards.filter((card) => isDue(card, calendar.today)).length - left.cards.filter((card) => isDue(card, calendar.today)).length
   return dueDifference || left.name.localeCompare(right.name, locale.value)
 }))
 
 function deckDue(deck: Deck): number {
-  return deck.cards.filter((card) => isDue(card)).length
+  return deck.cards.filter((card) => isDue(card, calendar.today)).length
 }
 
 function nextDueDate(deck: Deck): string | null {
   return deck.cards
     .map((card) => card.dueDate)
-    .filter((date) => date && date > todayStr())
+    .filter((date) => date && date > calendar.today)
     .sort()[0] || null
 }
 
@@ -77,13 +81,15 @@ async function handleJson(event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file) return
   try {
-    let decks: Deck[]
-    try { decks = await importJsonFile(file) }
-    catch (error) { ui.showError(importErrorKey(error)); return }
-    try { await library.addDecks(decks) }
-    catch { return }
+    let backup: AppData
+    try { backup = await importLibraryFile(file, { keepDeckIds: !library.decks.length }) }
+    catch (error) { ui.showError(importErrorKey(error), error instanceof ImportError ? error.params : {}); return }
+    const { decks, learningPaths } = backup
+    try { await library.addDecks(decks, learningPaths) }
+    catch { if (!library.saveError) ui.showError('path.restoreConflict'); return }
     importedDeckIds.value = decks.some(deck => deck.cards.some(card => taskQuality(card).length)) ? decks.map(deck => deck.id) : []
-    ui.showToast('import.decks', { count: decks.length })
+    if (learningPaths?.length) ui.showToast('path.restored', { count: learningPaths.length })
+    else ui.showToast('import.decks', { count: decks.length })
   } finally {
     input.value = ''
   }
@@ -106,10 +112,10 @@ async function handleText(event: Event): Promise<void> {
 }
 
 async function exportAll(): Promise<void> {
-  if (!library.decks.length) return
+  if (!library.decks.length && !library.data.learningPaths?.length) return
   try { await saveExport(
     `smartL3arn_backup_${todayStr()}.json`,
-    JSON.stringify(library.data, null, 2),
+    backupJson(library.data),
     'application/json',
   ) } catch { ui.showError('notifications.exportFailed') }
 }
@@ -128,7 +134,8 @@ async function exportAll(): Promise<void> {
           </p>
         </div>
         <div class="page-heading-actions">
-          <button class="btn btn-primary" type="button" :disabled="!totalCards" @click="router.push('/smart')">
+          <button class="btn btn-secondary" type="button" @click="router.push('/learn')"><AppIcon name="book-open" :size="17" />{{ t('path.learn') }}</button>
+          <button class="btn btn-primary" type="button" :disabled="!library.cardCount" @click="router.push('/smart')">
             <AppIcon name="sparkles" :size="17" /><span>{{ t('library.startSmart') }}</span>
           </button>
         </div>
@@ -142,7 +149,7 @@ async function exportAll(): Promise<void> {
         </div>
         <div class="summary-item">
           <span class="summary-icon"><AppIcon name="layers-3" /></span>
-          <div><strong>{{ formatNumber(totalCards) }}</strong><span>{{ t('library.totalCards') }}</span></div>
+          <div><strong>{{ formatNumber(library.cardCount) }}</strong><span>{{ t('library.totalCards') }}</span></div>
         </div>
         <div class="summary-item">
           <span class="summary-icon"><AppIcon name="book-open" /></span>
@@ -170,7 +177,7 @@ async function exportAll(): Promise<void> {
               <button class="menu-item" type="button" @click="textInput?.click()">
                 <AppIcon name="file-text" :size="16" /><span>{{ t('import.text') }}</span>
               </button>
-              <template v-if="library.decks.length">
+              <template v-if="library.decks.length || library.data.learningPaths?.length">
                 <div class="menu-divider" />
                 <button class="menu-item" type="button" @click="exportAll">
                   <AppIcon name="archive" :size="16" /><span>{{ t('import.backup') }}</span>
@@ -211,13 +218,16 @@ async function exportAll(): Promise<void> {
                 <span>{{ t('library.cardCount', { count: deck.cards.length }) }}</span>
                 <span v-if="deck.sessions?.length">
                   <AppIcon name="history" :size="14" />
-                  {{ t('library.lastReviewed', { date: formatDateLabel(deck.sessions.at(-1)?.date || '') }) }}
+                  {{ t('library.lastReviewed', { date: formatDateLabel(deck.sessions[deck.sessions.length - 1]?.date || '') }) }}
                 </span>
                 <span v-else>{{ t('library.notStudied') }}</span>
               </div>
             </div>
             <div class="deck-row-status">
-              <template v-if="deckDue(deck) > 0">
+              <span v-if="cooldowns.has(deck.id)" class="deck-status-label is-cooldown">
+                {{ t('study.availableAfter', { time: new Date(cooldowns.get(deck.id)!).toLocaleString() }) }}
+              </span>
+              <template v-else-if="deckDue(deck) > 0">
                 <span class="deck-due is-due">{{ t('library.dueCount', { count: deckDue(deck) }) }}</span>
                 <span class="deck-status-label">{{ t('library.readyNow') }}</span>
               </template>
@@ -233,6 +243,7 @@ async function exportAll(): Promise<void> {
                 class="btn btn-sm"
                 :class="deckDue(deck) ? 'btn-primary' : (deck.cards.length ? 'btn-quiet' : 'btn-secondary')"
                 type="button"
+                :disabled="cooldowns.has(deck.id)"
                 @click="deck.cards.length ? start(deck) : browse(deck.id)"
               >
                 <AppIcon :name="deckDue(deck) ? 'play' : 'book-open'" :size="15" />

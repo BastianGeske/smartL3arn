@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('smartL3arn', {
   getAiDiagnostics: () => ipcRenderer.invoke('ai:diagnostics'),
   saveOpenRouterKey: (apiKey) => ipcRenderer.invoke('ai:save-key', apiKey),
   removeOpenRouterKey: () => ipcRenderer.invoke('ai:remove-key'),
+  evaluateCriteria: (input) => ipcRenderer.invoke('ai:evaluate', { ...input, evaluationScope: 'criteria' }),
   evaluateAnswer: (input) => ipcRenderer.invoke('ai:evaluate', input)
 });

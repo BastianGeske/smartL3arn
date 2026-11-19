@@ -81,6 +81,7 @@ export interface Deck {
 }
 
 export interface AppData {
+  learningPaths?: import('../../shared/learning-paths.mjs').SavedPath[]
   decks: Deck[]
 }
 
@@ -126,7 +127,7 @@ export interface SmartSessionState {
   durationMs: number
   timeUp: boolean
   sessionStats: SessionStats
-  perDeck: Record<string, SessionStats>
+  perDeck: Map<string, SessionStats>
   requeues: Record<string, number>
   sessionSaved: boolean
   breakStartTime?: number

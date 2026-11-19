@@ -51,7 +51,6 @@ const breakProgress = computed(() => {
   const duration = smart.session?.breakDurationMs || 0
   return duration ? Math.min(1, Math.max(0, 1 - smart.breakRemainingMs / duration)) : 1
 })
-const nextAvailability = computed(() => smart.availableQueue())
 const stopAvailabilityRefresh = watch(() => smart.isDone, (done, _previous, onCleanup) => {
   if (!done) return
   smart.refreshAvailability()
@@ -80,15 +79,14 @@ onMounted(async () => {
       .filter(deck => referencedDeckIds.has(deck.id))
       .map(deck => [deck.id, new Set(deck.cards.map(card => card.id))]))
     if (smart.session.queue.some(item => !cardIdsByDeck.get(item.deckId)?.has(item.cardId))) {
-      smart.stopTimer()
-      await smart.saveSessions()
-      smart.session = null
+      await smart.end()
     }
   }
   if (!smart.session && !(await smart.start())) {
     await router.replace({ name: 'smart-setup' })
     return
   }
+  smart.refreshAttempt()
   if (!smart.isDone) smart.startTimer()
   window.addEventListener('keydown', handleKeydown)
   await nextTick(focusCurrentInput)
@@ -146,7 +144,7 @@ async function startNext(): Promise<void> {
 }
 
 async function exit(): Promise<void> {
-  smart.stopTimer()
+  await smart.end()
   await router.push('/')
 }
 </script>
@@ -207,16 +205,16 @@ async function exit(): Promise<void> {
       :note="smart.session.timeUp ? t('smart.timeUp', { count: settings.smartConfig.duration }) : t('smart.allCards', { count: smart.session.queue.length })"
       :stats="smart.session.sessionStats"
     >
-      <p v-if="smart.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(smart.nextPracticeAt).toLocaleString() }) }}</p>
+      <p v-if="!smart.availability.count && smart.availability.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(smart.availability.nextPracticeAt).toLocaleString() }) }}</p>
       <div class="smart-done-actions">
         <button
-          v-if="nextAvailability.queue.length"
+          v-if="smart.availability.count"
           class="btn btn-smart"
           type="button"
           @click="startNext"
         >
           <AppIcon name="rotate-ccw" :size="17" />
-          <span>{{ nextAvailability.hasCore ? t('smart.newSession') : t('smart.practiceAnyway') }}</span>
+          <span>{{ smart.availability.hasCore ? t('smart.newSession') : t('smart.practiceAnyway') }}</span>
         </button>
         <button class="btn btn-secondary" type="button" @click="router.push('/smart')">
           <AppIcon name="settings-2" :size="17" /><span>{{ t('smart.adjust') }}</span>

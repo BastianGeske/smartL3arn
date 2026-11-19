@@ -4,7 +4,7 @@ import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import NotificationStack from './NotificationStack.vue'
 import { useUiStore } from '../stores/ui'
 import { useLibraryStore } from '../stores/library'
-import { browserStorage } from '../services/storage/browserStorage'
+import { BrowserStorage } from '../services/storage/browserStorage'
 import { setLanguage } from '../i18n'
 
 let wrapper: VueWrapper | undefined
@@ -19,7 +19,7 @@ afterEach(() => { wrapper?.unmount(); wrapper = undefined; disposePinia(pinia); 
 test('library failure stays visible, hides private exception details and clears only after successful saving', async () => {
   const library = useLibraryStore()
   await library.hydrate()
-  const save = vi.spyOn(browserStorage, 'save').mockRejectedValueOnce(new Error('PRIVATE_PATH_AND_KEY'))
+  const save = vi.spyOn(BrowserStorage.prototype, 'save').mockRejectedValueOnce(new Error('PRIVATE_PATH_AND_KEY'))
   await expect(library.createDeck('Test')).rejects.toThrow()
   wrapper = mount(NotificationStack)
   expect(wrapper.findAll('.notification-persistent')).toHaveLength(1)
@@ -83,4 +83,18 @@ test('updates reserved notification space when the math keyboard moves notices u
   expect(document.documentElement.style.getPropertyValue('--notification-space')).toBe(`${innerHeight - 380 + 12}px`)
   expect(changed).toHaveBeenCalledOnce()
   window.removeEventListener('notification-geometrychange', changed)
+})
+
+test('offers a reload for a stale tab and preserves the other tab’s saved deck', async () => {
+  const library = useLibraryStore()
+  await library.hydrate()
+  const peer = new BrowserStorage()
+  await peer.load()
+  await peer.save({ decks: [{ id: 'peer', name: 'Peer', cards: [] }] })
+  await expect(library.createDeck('Stale')).rejects.toThrow()
+  wrapper = mount(NotificationStack)
+  expect(library.persistenceIssue).toBe('conflict')
+  expect(wrapper.get('.notification-persistent button').text()).toBe('Reload library')
+  await expect(library.createDeck('Another')).rejects.toThrow()
+  expect((await peer.load()).decks.map(deck => deck.id)).toEqual(['peer'])
 })

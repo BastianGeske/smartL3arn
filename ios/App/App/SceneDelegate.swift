@@ -67,6 +67,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "removeOpenRouterKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getApiUsage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAiDiagnostics", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "evaluateCriteria", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "evaluateAnswer", returnType: CAPPluginReturnPromise)
     ]
 
@@ -167,12 +168,15 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["ok": status == errSecSuccess || status == errSecItemNotFound])
     }
 
-    @objc func evaluateAnswer(_ call: CAPPluginCall) {
+    @objc func evaluateCriteria(_ call: CAPPluginCall) { evaluate(call, criteria: true) }
+    @objc func evaluateAnswer(_ call: CAPPluginCall) { evaluate(call, criteria: false) }
+
+    private func evaluate(_ call: CAPPluginCall, criteria: Bool) {
         guard let key = readKey() ?? bundledKey else {
             call.resolve(["ok": false, "reason": "not-configured"])
             return
         }
-        let input: [String: Any] = [
+        var input: [String: Any] = [
             "deckName": call.getString("deckName") as Any? ?? NSNull(),
             "question": call.getString("question") as Any? ?? NSNull(),
             "referenceAnswer": call.getString("referenceAnswer") as Any? ?? NSNull(),
@@ -182,18 +186,23 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
             "userWorking": call.getString("userWorking") ?? "",
             "language": call.getString("language") ?? "en"
         ]
+        if criteria {
+            input["evaluationScope"] = "criteria"
+            input["criteria"] = call.getArray("criteria")
+        }
+        let ids = (input["criteria"] as? [[String: String]])?.compactMap { $0["id"] }
         guard let body = NativeAiEvaluationRequest.body(input: input, model: configuredModel),
               let data = try? JSONSerialization.data(withJSONObject: body), data.count <= 64000 else {
             call.resolve(["ok": false, "reason": "invalid-input"])
             return
         }
-        send(key: key, endpoint: "chat/completions", body: data, requiresWorking: input["evaluationScope"] as? String == "answer_and_working") { body, reason in
+        send(key: key, endpoint: "chat/completions", body: data, requiresWorking: input["evaluationScope"] as? String == "answer_and_working", criteria: ids) { body, reason in
             if let reason = reason { call.resolve(["ok": false, "reason": reason]) }
             else { call.resolve(["ok": true, "body": body ?? [:]]) }
         }
     }
 
-    private func send(key: String, endpoint: String, body: Data?, requiresWorking: Bool = false, source sourceOverride: String? = nil,
+    private func send(key: String, endpoint: String, body: Data?, requiresWorking: Bool = false, criteria: [String]? = nil, source sourceOverride: String? = nil,
                       completion: @escaping ([String: Any]?, String?) -> Void) {
         requestLock.lock()
         guard activeRequests < 2 else {
@@ -235,7 +244,7 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 if json == nil && reason == nil { reason = "invalid-response" }
             } else { reason = "unavailable" }
-            if reason == nil && operation == "evaluate" && !NativeAiJournal.evaluationIsValid(json, requiresWorking: requiresWorking) {
+            if reason == nil && operation == "evaluate" && !NativeAiJournal.evaluationIsValid(json, requiresWorking: requiresWorking, criteria: criteria) {
                 reason = "invalid-response"
             }
             if reason == nil && operation == "validate-key" && !(json?["data"] is [String: Any]) {

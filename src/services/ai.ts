@@ -1,7 +1,8 @@
+import { criterionResults } from '../../shared/rubric.mjs'
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
 type AiBridge = Pick<NonNullable<Window['smartL3arn']>,
-  'getAiStatus' | 'testOpenRouterConnection' | 'saveOpenRouterKey' | 'removeOpenRouterKey' | 'evaluateAnswer' | 'getApiUsage' | 'getAiDiagnostics'>
+  'evaluateCriteria' | 'getAiStatus' | 'testOpenRouterConnection' | 'saveOpenRouterKey' | 'removeOpenRouterKey' | 'evaluateAnswer' | 'getApiUsage' | 'getAiDiagnostics'>
 
 const nativeAi = registerPlugin<{
   getAiStatus: AiBridge['getAiStatus']
@@ -10,6 +11,7 @@ const nativeAi = registerPlugin<{
   getAiDiagnostics: AiBridge['getAiDiagnostics']
   saveOpenRouterKey: (options: { apiKey: string }) => ReturnType<AiBridge['saveOpenRouterKey']>
   removeOpenRouterKey: AiBridge['removeOpenRouterKey']
+  evaluateCriteria: (input: Parameters<NonNullable<AiBridge['evaluateCriteria']>>[0]) => Promise<{ ok: boolean; reason?: string; body?: any }>
   evaluateAnswer: (input: Parameters<AiBridge['evaluateAnswer']>[0]) => Promise<{ ok: boolean; reason?: string; body?: any }>
 }>('NativeAi')
 
@@ -22,6 +24,15 @@ const iosAi: AiBridge = {
   getAiDiagnostics: () => nativeAi.getAiDiagnostics(),
   saveOpenRouterKey: (apiKey) => nativeAi.saveOpenRouterKey({ apiKey }),
   removeOpenRouterKey: () => nativeAi.removeOpenRouterKey(),
+  async evaluateCriteria(input) {
+    const response = await nativeAi.evaluateCriteria(input)
+    if (!response.ok) return { ok: false, reason: response.reason }
+    try {
+      const criteria = criterionResults(JSON.parse(response.body?.choices?.[0]?.message?.content).criteria, input.criteria)
+      if (criteria) return { ok: true, result: { criteria } }
+    } catch { /* Invalid provider response. */ }
+    return { ok: false, reason: 'invalid-response' }
+  },
   async evaluateAnswer(input) {
     if (!input || typeof input.deckName !== 'string' || input.deckName.length > 4000 || [input.question, input.referenceAnswer, input.userAnswer].some(
       value => typeof value !== 'string' || !value.trim() || value.length > 4000,

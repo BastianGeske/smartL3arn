@@ -32,6 +32,18 @@ struct CheckAiJournal {
         let valid: [String: Any] = ["choices": [["message": ["content": "{\"verdict\":\"correct\",\"feedback\":\"Richtig\"}"]]]]
         expect(NativeAiJournal.evaluationIsValid(valid), "valid evaluation")
         expect(!NativeAiJournal.evaluationIsValid(["choices": []]), "missing evaluation rejected")
+        var rubricInput = input
+        rubricInput["evaluationScope"] = "criteria"
+        rubricInput["criteria"] = [["id": "base", "description": "Identify the base"]]
+        expect(NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model") != nil, "rubric request accepted")
+        rubricInput["criteria"] = [["id": "base", "description": "One"], ["id": "base", "description": "Two"]]
+        expect(NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model") == nil, "duplicate criterion rejected")
+        let evidence = ["criteria": [["id": "base", "status": "missing", "reason": "The starting value is missing."]]]
+        let evidenceJSON = String(data: try JSONSerialization.data(withJSONObject: evidence), encoding: .utf8)!
+        let rubricResponse = ["choices": [["message": ["content": evidenceJSON]]]]
+        expect(NativeAiJournal.evaluationIsValid(rubricResponse, criteria: ["base"]), "criterion evidence accepted")
+        expect(!NativeAiJournal.evaluationIsValid(rubricResponse, criteria: ["other"]), "foreign criterion rejected")
+        expect(!NativeAiJournal.evaluationIsValid(valid, criteria: ["base"]), "legacy verdict cannot release a learning chapter")
         var workingInput = input
         workingInput["evaluationScope"] = "answer_and_working"
         workingInput["referenceWorking"] = ""

@@ -1,4 +1,4 @@
-import { browserStorage } from './browserStorage'
+import { BrowserStorage } from './browserStorage'
 import type { StorageRepository } from './StorageRepository'
 
 const electronStorage: StorageRepository = {
@@ -11,5 +11,5 @@ const electronStorage: StorageRepository = {
 }
 
 export function getStorageRepository(): StorageRepository {
-  return window.smartL3arn ? electronStorage : browserStorage
+  return window.smartL3arn ? electronStorage : new BrowserStorage()
 }

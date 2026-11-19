@@ -46,6 +46,7 @@ onBeforeUnmount(() => {
   window.visualViewport?.removeEventListener('scroll', measure)
   document.documentElement.style.removeProperty('--notification-space')
 })
+function reloadLibrary(): void { window.location.reload() }
 function focusOut(id: number, event: FocusEvent): void {
   if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) ui.resumeNotification(id, 'focus')
 }
@@ -55,7 +56,11 @@ function focusOut(id: number, event: FocusEvent): void {
   <aside ref="root" class="notification-stack" :aria-label="t('notifications.region')">
     <div v-if="library.persistenceIssue" class="notification notification-error notification-persistent" role="alert" aria-atomic="true">
       <AppIcon name="alert-circle" :size="20" />
-      <p>{{ t(library.persistenceIssue === 'load' ? 'common.loadError' : 'notifications.saveFailed') }}</p>
+      <template v-if="library.persistenceIssue === 'conflict'">
+        <p>{{ t('notifications.libraryConflict') }}</p>
+        <button type="button" class="btn btn-secondary btn-sm" @click="reloadLibrary">{{ t('notifications.reload') }}</button>
+      </template>
+      <p v-else>{{ t(library.persistenceIssue === 'load' ? 'common.loadError' : 'notifications.saveFailed') }}</p>
     </div>
     <div v-for="message in visible" :key="message.id" class="notification"
       :class="`notification-${message.kind}`" :role="message.kind === 'error' ? 'alert' : 'status'" aria-atomic="true"

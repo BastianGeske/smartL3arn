@@ -148,11 +148,25 @@ describe('typed tasks', () => {
 })
 
  it.each([
-  ['?', '!', 'incorrect'], ['?', '?', 'correct'], ['/', '_', 'incorrect'],
+  ['−x', 'x', 'incorrect'], ['−x', '-x', 'correct'], ['x', '-x', 'incorrect'],
+  ['a/b', 'a b', 'incorrect'], ['?', '!', 'incorrect'], ['?', '?', 'correct'], ['/', '_', 'incorrect'],
+  ['x/y', 'x / y', 'correct'], ['x/y', 'x*y', 'incorrect'], ['a b/c', 'ab / c', 'incorrect'],
   ['?', '  ?  ', 'correct'], ['Berlin', 'BERLIN!', 'correct'],
+  ['Jean-Luc Picard', 'Jean-Luc Picard.', 'correct'],
+  ['Paris (France)', 'Paris, France.', 'correct'],
+  ['Paris (France)', 'Paris, Texas.', 'incorrect'],
+  ['f(x)', 'f ( x )', 'correct'], ['f(x)', 'f x', 'incorrect'],
+  ['x/y', 'x-y', 'incorrect'],
  ])('compares text blank %s with %s as %s', (answer, actual, verdict) => {
   const card = createCard('{{gap}}', '', { kind: 'cloze', gaps: [{ id: 'gap', kind: 'text', answer }] })
   expect(evaluateResponse(card, { kind: 'fields', values: { gap: actual } })?.verdict).toBe(verdict)
+ })
+ it('compares each cloze alternative using its own notation', () => {
+  const card = createCard('{{gap}}', '', { kind: 'cloze', gaps: [
+    { id: 'gap', kind: 'text', answer: 'x/y', alternatives: ['Ratio (quotient)'] },
+  ] })
+  expect(evaluateResponse(card, { kind: 'fields', values: { gap: 'Ratio, quotient.' } })?.verdict).toBe('correct')
+  expect(evaluateResponse(card, { kind: 'fields', values: { gap: 'x y' } })?.verdict).toBe('incorrect')
  })
  it('counts serialized formula and combined working lengths at the AI boundary', () => {
   const task: TaskDefinition = { kind: 'calculation', answer: { kind: 'formula', value: 'x'.repeat(3996) } }

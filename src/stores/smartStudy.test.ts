@@ -5,6 +5,8 @@ import { useSettingsStore } from './settings'
 import { useSmartStudyStore } from './smartStudy'
 import type { CalculationAnswer, StudyResponse, TaskDefinition } from '../domain/types'
 import { createCard } from '../domain/importExport'
+import { importLibraryFile } from '../services/importer'
+import { BrowserStorage } from '../services/storage/browserStorage'
 import * as tasks from '../domain/tasks'
 import * as similarity from '../domain/study/answerSimilarity'
 
@@ -36,6 +38,26 @@ beforeEach(async () => {
   smart.session!.typedAnswer = 'Pflanzen erzeugen Zucker mithilfe von Licht.'
 })
 afterEach(() => { smart?.stopTimer(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+it('records ratings and session history for restored deck IDs that overlap Vue proxy metadata', async () => {
+  const library = useLibraryStore()
+  await smart.end()
+  await library.deleteDeck(library.decks[0]!.id)
+  const id = '__v_isReactive'
+  const raw = JSON.stringify({ decks: [{ id, name: 'Restored', cards: [createCard('Question', 'Answer')] }] })
+  const backup = await importLibraryFile(new File([raw], 'backup.json'), { keepDeckIds: true })
+  await library.addDecks(backup.decks)
+  const settings = useSettingsStore()
+  settings.smartConfig.deckIds = [id]
+  settings.smartConfig.evaluationMode = 'local'
+  expect(await smart.start()).toBe(true)
+  await smart.checkAnswer()
+  await smart.rate(2)
+  expect(smart.session?.index).toBe(1)
+  expect(smart.session?.sessionStats).toMatchObject({ reviewed: 1, good: 1 })
+  const saved = await new BrowserStorage().load()
+  expect(saved.decks[0]).toMatchObject({ id, sessions: [{ reviewed: 1, good: 1, smart: true }] })
+})
 
 describe('AI evaluation selection', () => {
   it.each([undefined, 'short_text', 'long_text'] as const)('skips local text comparison for AI %s cards', async kind => {
@@ -323,7 +345,7 @@ describe('typed task evaluation', () => {
     expect(smart.session!.workingEvaluation).toBeNull()
     expect(smart.session!.response).toBeNull()
     expect(smart.isDone).toBe(true)
-    expect(smart.nextPracticeAt).toBeGreaterThan(Date.now())
+    expect(smart.availability.nextPracticeAt).toBeGreaterThan(Date.now())
   })
 })
 

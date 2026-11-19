@@ -19,6 +19,18 @@ const router = useRouter()
 const study = useStudyStore()
 const routeDeckId = computed(() => String(route.params.deckId || ''))
 
+watch(() => study.complete, (done, _previous, onCleanup) => {
+  if (!done) return
+  study.refreshAvailability()
+  const timer = setInterval(study.refreshAvailability, 1000)
+  onCleanup(() => clearInterval(timer))
+}, { immediate: true })
+
+async function exit() {
+  await study.end()
+  await router.push('/')
+}
+
 const progress = computed(() => {
   if (!study.mainQueue.length) return 100
   const completed = study.phase === 'main' ? study.index : study.mainQueue.length
@@ -106,7 +118,7 @@ function adjustFlashcardHeight(): void {
       :label="study.complete ? t('study.reviewed', { count: study.sessionStats.reviewed }) : progressLabel"
       :compact="!study.complete"
       :session-stats="study.complete ? undefined : study.sessionStats"
-      @exit="router.push('/')"
+      @exit="exit"
     />
 
     <StudyCompletion v-if="study.complete" :kicker="t('study.complete')" :title="t('study.cardReviewed', { count: study.sessionStats.reviewed })" :stats="study.sessionStats">
@@ -114,9 +126,9 @@ function adjustFlashcardHeight(): void {
         <AppIcon name="calendar-days" :size="16" />
         {{ t('study.nextReview', { date: formatDateLabel(upcomingDate, undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }) }}
       </template>
-      <p v-if="study.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(study.nextPracticeAt).toLocaleString() }) }}</p>
+      <p v-if="!study.availability.count && study.availability.nextPracticeAt">{{ t('study.availableAfter', { time: new Date(study.availability.nextPracticeAt).toLocaleString() }) }}</p>
       <div class="study-done-actions">
-        <button v-if="study.deck.cards.length" class="btn btn-primary" type="button" @click="study.start(study.deck.id)">
+        <button v-if="study.deck.cards.length" class="btn btn-primary" type="button" :disabled="!study.availability.count" @click="study.start(study.deck.id)">
           <AppIcon name="rotate-ccw" :size="17" />
           <span>{{ study.deck.cards.some((card) => isDue(card)) ? t('study.studyAgain') : t('study.practiceAgain') }}</span>
         </button>

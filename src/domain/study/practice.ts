@@ -1,5 +1,5 @@
 import type { Card, Deck, Rating, StudyPurpose } from '../types'
-import { isDue, todayStr } from '../dates'
+import { isDue, localDateStr, todayStr } from '../dates'
 import { cardStatsFor } from '../cardStats'
 
 export const PRACTICE_DELAY_MS = 10 * 60_000
@@ -28,7 +28,21 @@ export function advanceReady<T>(queue: T[], index: number, ready: (item: T) => b
   if (next < 0) queue.splice(index)
   else if (next !== index) queue.splice(index, 0, queue.splice(next, 1)[0]!)
 }
-export function nextPracticeAt(decks: Deck[], now = Date.now()): number | null {
-  const times = decks.flatMap(deck => deck.cards.map(card => deck.cardStats?.[card.id]?.practiceAvailableAt || 0)).filter(time => time > now)
-  return times.length ? Math.min(...times) : null
+export function studyAvailability(decks: Deck[], now = Date.now()) {
+  const today = localDateStr(new Date(now))
+  let ready = 0
+  let core = 0
+  let nextPracticeAt: number | null = null
+  for (const deck of decks) {
+    for (const card of deck.cards) {
+      const unlock = deck.cardStats?.[card.id]?.practiceAvailableAt || 0
+      if (unlock > now) {
+        nextPracticeAt = Math.min(nextPracticeAt ?? unlock, unlock)
+      } else {
+        ready++
+        if (studyPurpose(deck, card, today) !== 'practice') core++
+      }
+    }
+  }
+  return { count: core || ready, hasCore: core > 0, nextPracticeAt }
 }

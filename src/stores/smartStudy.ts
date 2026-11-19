@@ -1,4 +1,5 @@
-import { advanceReady, nextPracticeAt, practiceReady, recordPractice, retryLimit } from '../domain/study/practice'
+import { useStudyAvailability } from '../composables/useStudyAvailability'
+import { advanceReady, practiceReady, recordPractice, retryLimit } from '../domain/study/practice'
 import { locale, type TranslationKey } from '../i18n'
 import { computed, onScopeDispose, ref } from 'vue'
 import { defineStore } from 'pinia'
@@ -95,29 +96,63 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       .filter((deck): deck is Deck => Boolean(deck))
   }
 
-  function availableQueue() {
-    // Track clock refreshes in computed callers while checking availability at call time.
-    void clockNow.value
-    return buildSmartStudyQueue(selectedDecks(), settings.smartConfig)
+  const { availability, refreshAvailability } = useStudyAvailability(selectedDecks)
+  const content = computed(() => {
+    const card = currentCard.value
+    return card && JSON.stringify([currentItem.value?.deckId, card.id, card.front, card.back, card.task])
+  })
+  let attemptContent: string | undefined
+
+  function resetAttempt(value: SmartSessionState) {
+    evaluationSequence++
+    attemptContent = content.value
+    value.typedAnswer = ''
+    value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
+    value.working = []
+    value.workingEvaluation = null
+    value.selfAssessment = false
+    inputError.value = null
+    evaluationError.value = null
+    value.evaluation = null
+    value.isEvaluating = false
+    value.confidenceLevel = null
+    value.elaboration = ''
+    value.phase = 'asking'
   }
 
-  function refreshAvailability(): void {
-    clockNow.value = Date.now()
+  function refreshAttempt(): boolean {
+    const value = session.value
+    if (!value || value.timeUp || !currentCard.value || content.value === attemptContent) return false
+    resetAttempt(value)
+    return true
   }
 
   async function start(): Promise<boolean> {
     if (library.transactionBusy) return false
-    evaluationError.value = null
-    const breakUntil = getPomodoroBreakUntil()
-    if (
-      settings.smartConfig.duration === POMODORO_MINUTES
-      && breakUntil > Date.now()
-    ) {
+    let started = false
+    await library.persist(() => {
+      const decks = selectedDecks()
+      const duration = settings.smartConfig.duration
+      const breakUntil = getPomodoroBreakUntil()
+      const resumeBreak = duration === POMODORO_MINUTES && breakUntil > Date.now()
+      const plan = resumeBreak ? { queue: [], mode: 'practice' as const } : buildSmartStudyQueue(decks, settings.smartConfig)
+      if (!resumeBreak && !plan.queue.length) return false
+
+      const historyChanged = appendSessions(session.value)
+      if (!resumeBreak) {
+        for (const deck of decks) {
+          deck.smartSessionSeq = (deck.smartSessionSeq || 0) + 1
+          for (const stats of Object.values(deck.cardStats || {})) {
+            delete stats.smartBlockedUntil
+            delete stats.smartSkipUntilSession
+          }
+        }
+      }
       session.value = {
-        queue: [],
-        mode: 'practice',
+        queue: plan.queue,
+        mode: plan.mode,
         index: 0,
-        phase: 'break',
+        phase: resumeBreak ? 'break' : 'asking',
         typedAnswer: '',
         response: null, working: [], workingEvaluation: null, selfAssessment: false,
         evaluation: null,
@@ -125,71 +160,24 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
         confidenceLevel: null,
         elaboration: '',
         startTime: Date.now(),
-        durationMs: 0,
-        timeUp: true,
-        breakStartTime: breakUntil - BREAK_MINUTES * 60_000,
-        breakDurationMs: BREAK_MINUTES * 60_000,
-        breakDone: false,
+        durationMs: resumeBreak ? 0 : duration * 60_000,
+        timeUp: resumeBreak,
+        ...(resumeBreak ? {
+          breakStartTime: breakUntil - BREAK_MINUTES * 60_000,
+          breakDurationMs: BREAK_MINUTES * 60_000,
+          breakDone: false,
+        } : {}),
         sessionStats: emptySessionStats(),
-        perDeck: {},
-        requeues: {},
-        sessionSaved: true,
+        perDeck: new Map(),
+        requeues: Object.create(null),
+        sessionSaved: resumeBreak,
       }
+      if (!resumeBreak) resetAttempt(session.value)
       startTimer()
-      return true
-    }
-
-    const decks = selectedDecks()
-    let changed = false
-    decks.forEach((deck) => {
-      Object.values(deck.cardStats || {}).forEach((stats) => {
-        if ('smartBlockedUntil' in stats) {
-          delete stats.smartBlockedUntil
-          changed = true
-        }
-        if ('smartSkipUntilSession' in stats) {
-          delete stats.smartSkipUntilSession
-          changed = true
-        }
-      })
-    })
-
-    const result = buildSmartStudyQueue(decks, settings.smartConfig)
-    if (!result.queue.length) {
-      if (changed) await library.persist().catch(() => undefined)
-      return false
-    }
-
-    decks.forEach((deck) => {
-      deck.smartSessionSeq = (deck.smartSessionSeq || 0) + 1
-    })
-    await library.persist().catch(() => undefined)
-
-    session.value = {
-      queue: result.queue,
-      mode: result.mode,
-      index: 0,
-      phase: 'asking',
-      typedAnswer: '',
-      response: null, working: [], workingEvaluation: null, selfAssessment: false,
-      evaluation: null,
-      isEvaluating: false,
-      confidenceLevel: null,
-      elaboration: '',
-      startTime: Date.now(),
-      durationMs: settings.smartConfig.duration > 0
-        ? settings.smartConfig.duration * 60_000
-        : 0,
-      timeUp: false,
-      sessionStats: emptySessionStats(),
-      perDeck: {},
-      requeues: {},
-      sessionSaved: false,
-    }
-    session.value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
-    inputError.value = null
-    startTimer()
-    return true
+      started = true
+      return historyChanged || !resumeBreak
+    }).catch(() => undefined)
+    return started
   }
 
   function startTimer(): void {
@@ -221,10 +209,10 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
 
   async function finishForTimeLimit(): Promise<void> {
     const value = session.value
-    if (!value) return
-    await saveSessions()
+    if (!value || value.timeUp || value.index >= value.queue.length) return
     value.timeUp = true
-    if (settings.smartConfig.duration === POMODORO_MINUTES) {
+    value.isEvaluating = false
+    if (value.durationMs === POMODORO_MINUTES * 60_000) {
       value.phase = 'break'
       value.breakStartTime = Date.now()
       value.breakDurationMs = BREAK_MINUTES * 60_000
@@ -234,6 +222,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     } else {
       stopTimer()
     }
+    await saveSessions()
   }
 
   function setConfidence(level: ConfidenceLevel): void {
@@ -251,7 +240,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     const value = session.value
     const card = currentCard.value
     const deck = currentDeck.value
-    if (!value || !card || !deck || value.phase !== 'asking' || value.isEvaluating) return
+    if (!value || !card || !deck || value.timeUp || value.phase !== 'asking' || value.isEvaluating || refreshAttempt()) return
 
     const response = card.task ? value.response ?? initialResponse(card.task) : { kind: 'text' as const, value: value.typedAnswer }
     inputError.value = responseError(card.task, response)
@@ -332,6 +321,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
       || value.phase !== 'asking'
       || value.timeUp
       || currentCard.value?.id !== cardId
+      || refreshAttempt()
     ) return
 
     value.isEvaluating = false
@@ -356,6 +346,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   }
 
   function skip(): void {
+    refreshAttempt()
     evaluationError.value = null
     const value = session.value
     const card = currentCard.value
@@ -371,6 +362,7 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   }
 
   function reveal(): void {
+    refreshAttempt()
     const value = session.value
     if (!value || value.phase !== 'asking' || value.isEvaluating) return
     value.evaluation = null
@@ -382,87 +374,93 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
   async function rate(rating: Rating): Promise<void> {
     const value = session.value
     const item = currentItem.value
-    const deck = currentDeck.value
-    const card = currentCard.value
-    if (!value || !item || !deck || !card || value.phase !== 'reviewing' || value.timeUp) {
-      return
-    }
+    const index = value?.index
+    if (!value || !item || value.phase !== 'reviewing' || value.timeUp || value.sessionSaved || refreshAttempt()) return
+    await library.persist(() => {
+      const deck = currentDeck.value
+      const card = currentCard.value
+      if (session.value !== value || value.index !== index || currentItem.value !== item || !deck || !card
+        || value.phase !== 'reviewing' || value.timeUp || value.sessionSaved || refreshAttempt()
+        || (value.durationMs && Date.now() >= value.startTime + value.durationMs)
+        || !practiceReady(deck, card.id)) return false
 
-    const key = ratingKey(rating)
-    const queueKey = `${item.deckId}:${item.cardId}`
-    const requeueCount = value.requeues[queueKey] || 0
+      const key = ratingKey(rating)
+      const queueKey = `${item.deckId}:${item.cardId}`
+      const requeueCount = value.requeues[queueKey] || 0
 
-    value.sessionStats.reviewed += 1
-    value.sessionStats[key] += 1
-    const deckStats = value.perDeck[item.deckId] || emptySessionStats()
-    deckStats.reviewed += 1
-    deckStats[key] += 1
-    value.perDeck[item.deckId] = deckStats
+      value.sessionStats.reviewed += 1
+      value.sessionStats[key] += 1
+      const deckStats = value.perDeck.get(item.deckId) ?? emptySessionStats()
+      deckStats.reviewed += 1
+      deckStats[key] += 1
+      value.perDeck.set(item.deckId, deckStats)
 
-    const cardIndex = deck.cards.findIndex((entry) => entry.id === card.id)
-    if (item.purpose !== 'practice') deck.cards[cardIndex] = scheduleCard(card, rating)
+      const cardIndex = deck.cards.findIndex((entry) => entry.id === card.id)
+      if (item.purpose !== 'practice') deck.cards[cardIndex] = scheduleCard(card, rating)
 
-    const stats = cardStatsFor(deck, card.id)
-    recordPractice(deck, card, rating, item.purpose || 'review')
-    if (settings.smartConfig.techniques.whyPrompt && value.elaboration.trim()) {
-      stats.elaborations ||= []
-      stats.elaborations.push({
-        date: todayStr(),
-        text: value.elaboration.trim().slice(0, 500),
-      })
-      if (stats.elaborations.length > 3) {
-        stats.elaborations = stats.elaborations.slice(-3)
+      const stats = cardStatsFor(deck, card.id)
+      recordPractice(deck, card, rating, item.purpose || 'review')
+      if (settings.smartConfig.techniques.whyPrompt && value.elaboration.trim()) {
+        stats.elaborations ||= []
+        stats.elaborations.push({
+          date: todayStr(),
+          text: value.elaboration.trim().slice(0, 500),
+        })
+        if (stats.elaborations.length > 3) {
+          stats.elaborations = stats.elaborations.slice(-3)
+        }
       }
-    }
-    delete stats.smartBlockedUntil
-    delete stats.smartSkipUntilSession
-    stats.smartLastGrade = key
-    stats.smartLastReviewedSession = deck.smartSessionSeq || 0
+      delete stats.smartBlockedUntil
+      delete stats.smartSkipUntilSession
+      stats.smartLastGrade = key
+      stats.smartLastReviewedSession = deck.smartSessionSeq || 0
 
-    if (requeueCount < retryLimit(rating)) {
-      value.requeues[queueKey] = requeueCount + 1
-      value.queue.push({ ...item, purpose: item.purpose === 'practice' ? 'practice' : 'relearning' })
-    }
+      if (requeueCount < retryLimit(rating)) {
+        value.requeues[queueKey] = requeueCount + 1
+        value.queue.push({ ...item, purpose: item.purpose === 'practice' ? 'practice' : 'relearning' })
+      }
 
-    value.index += 1
-    advanceReady(value.queue, value.index, entry => {
-      const entryDeck = library.deckById(entry.deckId)
-      return Boolean(entryDeck && practiceReady(entryDeck, entry.cardId))
-    })
-    value.typedAnswer = ''
-    value.response = currentCard.value?.task ? initialResponse(currentCard.value.task) : null
-    value.working = []
-    value.workingEvaluation = null
-    value.selfAssessment = false
-    inputError.value = null
-    evaluationError.value = null
-    value.evaluation = null
-    value.isEvaluating = false
-    value.confidenceLevel = null
-    value.elaboration = ''
-    value.phase = 'asking'
-
-    if (value.index >= value.queue.length) {
-      await saveSessions()
-      stopTimer()
-    } else {
-      await library.persist().catch(() => undefined)
-    }
+      value.index += 1
+      advanceReady(value.queue, value.index, entry => {
+        const entryDeck = library.deckById(entry.deckId)
+        return Boolean(entryDeck && practiceReady(entryDeck, entry.cardId))
+      })
+      resetAttempt(value)
+      if (value.index >= value.queue.length) {
+        stopTimer()
+        appendSessions(value)
+      }
+      return true
+    }).catch(() => undefined)
   }
 
-  async function saveSessions(): Promise<void> {
-    const value = session.value
-    if (!value || value.sessionSaved) return
-    Object.entries(value.perDeck).forEach(([deckId, stats]) => {
+  function appendSessions(value: SmartSessionState | null): boolean {
+    if (!value || value.sessionSaved || !value.sessionStats.reviewed) return false
+    for (const [deckId, stats] of value.perDeck) {
       const deck = library.deckById(deckId)
-      if (!deck || !stats.reviewed) return
-      deck.sessions ||= []
-      deck.sessions.push({ date: todayStr(), ...stats, smart: true, practice: value.mode === 'practice' })
-      if (deck.sessions.length > 90) deck.sessions = deck.sessions.slice(-90)
-    })
+      if (!deck || !stats.reviewed) continue
+      const entry = { date: todayStr(), ...stats, smart: true, practice: value.mode === 'practice' }
+      deck.sessions = [...(deck.sessions || []), entry].slice(-90)
+    }
     value.sessionSaved = true
-    // Sessions remain in memory for the next save; do not append them twice on retry.
-    await library.persist().catch(() => undefined)
+    return true
+  }
+
+  async function saveSessions(closing = false): Promise<void> {
+    const value = session.value
+    if (!value) return
+    await library.persist(() => {
+      const changed = appendSessions(value) || (value.sessionSaved && library.persistenceIssue === 'save')
+      if (closing) value.sessionSaved = true
+      return changed
+    }).catch(() => undefined)
+  }
+
+  async function end(): Promise<void> {
+    const value = session.value
+    stopTimer()
+    await saveSessions(true)
+    if (session.value === value) session.value = null
   }
 
   onScopeDispose(stopTimer)
@@ -479,12 +477,10 @@ export const useSmartStudyStore = defineStore('smart-study', () => {
     breakRemainingMs,
     isBreak,
     isDone,
-    availableQueue,
+    availability,
     refreshAvailability,
-    nextPracticeAt: computed(() => {
-      void clockNow.value
-      return nextPracticeAt(selectedDecks())
-    }),
+    refreshAttempt,
+    end,
     start,
     saveSessions,
     startTimer,

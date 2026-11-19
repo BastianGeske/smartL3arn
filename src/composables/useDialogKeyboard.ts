@@ -18,7 +18,7 @@ export function useDialogKeyboard(editor: ComputedRef<unknown>) {
     })
     controls.sort((left, right) => left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
     const first = controls[0]
-    const last = controls.at(-1)
+    const last = controls[controls.length - 1]
     const inside = controls.includes(document.activeElement as HTMLElement)
     if (event.shiftKey && (document.activeElement === first || !inside)) {
       event.preventDefault(); last?.focus()

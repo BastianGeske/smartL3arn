@@ -24,7 +24,7 @@ export const useUiStore = defineStore('ui', () => {
   const deckEditor = ref<DeckEditorState | null>(null)
   const notifications = ref<Notification[]>([])
   const toast = computed(() => {
-    const message = notifications.value.at(-1)
+    const message = notifications.value[notifications.value.length - 1]
     return message ? t(message.key, message.params) : ''
   })
   let nextId = 0
