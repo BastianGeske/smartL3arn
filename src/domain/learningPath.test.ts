@@ -29,6 +29,8 @@ describe('source and offline contract', () => {
       (r: ReturnType<typeof normalizePath>) => { const [a,b] = r.chapters[0]!.objectives[0]!.checks; b!.question = a!.question },
       (r: ReturnType<typeof normalizePath>) => { r.chapters[0]!.objectives[0]!.checks[0]!.task = {kind:'true_false',correct:true} },
       (r: ReturnType<typeof normalizePath>) => { r.chapters[0]!.objectives[0]!.checks[0]!.task = {kind:'long_text'} },
+      (r: ReturnType<typeof normalizePath>) => { r.chapters[0]!.objectives[0]!.checks[0]!.task = {kind:'calculation',answer:{kind:'formula',value:'x^2'}} },
+      (r: ReturnType<typeof normalizePath>) => { Object.assign(r.chapters[1]!.objectives[0]!.checks[0]!.written!, { input: 'unknown' }) },
       (r: ReturnType<typeof normalizePath>) => { r.chapters[0]!.id = r.chapters[1]!.id },
     ]) {
       const content = normalizePath(example)
@@ -142,5 +144,38 @@ describe('criterion-based free text', () => {
     }
     row.content.version++
     expect(gradeWritten(row,token,row.progress.prose,all)).toBe(row.progress)
+  })
+  it.each([
+    { input: 'code', field: 'partial', authored: 'return n - 1', submitted: 'return n - 1\r\n \t\r\n' },
+    { input: 'formula', field: 'misconception', authored: 'V = I / R', submitted: 'V=I/R' },
+    { input: 'formula', field: 'partial', authored: 'x = \\frac{1}{2}', submitted: 'x=\\frac{1}{2}' },
+    { input: 'formula', field: 'misconception', authored: '\\frac {1} {2} \n \\text {of {a b} \\{x\\}}', submitted: '\\frac{1}{2}\\text{of {a b} \\{x\\}}' },
+  ] as const)('keeps a formatted $input counterexample practice-only despite positive grading', ({ input, field, authored, submitted }) => {
+    const { row, written, all } = trial()
+    Object.assign(written, { input, [field]: authored })
+    row.progress.prose = submitted
+    expect(gradeWritten(row, attemptKey(row), submitted, all)).toMatchObject({
+      outcome: 'retry', passed: ['anteil'], practiceOnly: ['w-check1'], prose: submitted,
+    })
+  })
+  it.each([
+    { input: 'code', wrong: 'if ready:\n    return result\nreturn None', correct: 'if ready:\n    return Result\nreturn None' },
+    { input: 'code', wrong: 'if ready:\n    log()\nreturn result', correct: 'if ready:\n    log()\n    return result' },
+    { input: 'formula', wrong: 'v=IR', correct: 'V=IR' },
+    { input: 'formula', wrong: '\\text{a + b}', correct: '\\text{a+b}' },
+    { input: 'formula', wrong: '\\operatorname*{a b}', correct: '\\operatorname*{ab}' },
+    { input: 'formula', wrong: '\\alpha x', correct: '\\alphax' },
+    { input: 'formula', wrong: 'x\\,\\alpha', correct: 'x\\alpha' },
+    { input: 'formula', wrong: 'x\\ \\alpha', correct: 'x\\alpha' },
+    { input: 'formula', wrong: 'x = "A B"', correct: 'x="AB"' },
+    { input: 'formula', wrong: '\\verb|a b|', correct: '\\verb|ab|' },
+    { input: 'code', wrong: 'return "A B"', correct: 'return "AB"' },
+  ] as const)('keeps meaningful case and indentation in $input counterexamples', ({ input, wrong, correct }) => {
+    const { row, written, all } = trial()
+    Object.assign(written, { input, misconception: wrong })
+    row.progress.prose = input === 'code' ? wrong.replace(/\n/g, '\r\n') : wrong
+    expect(gradeWritten(row, attemptKey(row), row.progress.prose, all)).toMatchObject({ outcome: 'retry', practiceOnly: ['w-check1'] })
+    row.progress.prose = correct
+    expect(gradeWritten(row, attemptKey(row), correct, all).passed).toContain('wechsel')
   })
 })

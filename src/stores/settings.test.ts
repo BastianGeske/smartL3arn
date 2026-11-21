@@ -31,7 +31,7 @@ test('failed learning-configuration saving is announced once for repeated change
 })
 test('language controls report failed persistence while retaining the selected session language', async () => {
   useSettingsStore()
-  const view = mount(PreferencesView, { global: { stubs: { AppBar: true, AppIcon: true } } })
+  const view = mount(PreferencesView, { global: { stubs: { AppBar: true, AppIcon: true, RouterLink: true } } })
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota exceeded') })
   await view.get('#language-preference').setValue('de')
   expect(languagePreference.value).toBe('de')

@@ -6,6 +6,8 @@ const fs = require('fs')
 const { configureDraftUnload } = require('../electron/draft-unload.cjs')
 
 const root = path.join(__dirname, '..')
+const pathFixture = fs.readFileSync(path.join(root, 'docs', 'learning-path.example.json'), 'utf8')
+const roundsFixture = fs.readFileSync(path.join(root, 'docs', 'learning-path.rounds.example.json'), 'utf8')
 const longDeckName = 'A long destination deck name '.repeat(4).trim()
 const fixture = {
   decks: [{
@@ -29,6 +31,206 @@ function wait(milliseconds) {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
+}
+
+async function pressKey(contents, key, keyCode, modifiers = 0) {
+  const devtools = contents.debugger
+  devtools.attach('1.3')
+  try {
+    const event = { key, code: key, windowsVirtualKeyCode: keyCode, modifiers }
+    const text = key === 'Enter' ? '\r' : undefined
+    await devtools.sendCommand('Input.dispatchKeyEvent', { ...event, type: text ? 'keyDown' : 'rawKeyDown', text })
+    await devtools.sendCommand('Input.dispatchKeyEvent', { ...event, type: 'keyUp' })
+  } finally { devtools.detach() }
+}
+
+async function checkLearningRounds(window, directory) {
+  const run = script => window.webContents.executeJavaScript(script)
+  const helpers = `${until.toString()}
+    async function click(label) {
+      const button = await until(() => [...document.querySelectorAll('button')].find(b =>
+        !b.disabled && b.getClientRects().length && b.textContent.trim() === label))
+      button.click()
+    }
+    async function fill(value, name) {
+      const selector = '.path-local-response .task-number-input input:not(:disabled)' + (name ? '[aria-label="' + name + '"]' : '')
+      const input = await until(() => document.querySelector(selector))
+      input.value = value
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    async function answer(value) {
+      await fill(value)
+      await click('Antwort prüfen')
+    }`
+  const checkLayout = async stage => {
+    for (const [width, height] of [[390, 760], [1100, 750]]) {
+      window.setSize(width, height)
+      for (const dark of [false, true]) {
+        await run(`document.body.classList.toggle('dark', ${dark})`)
+        await wait(75)
+        const fits = await run(`(() => {
+          const panel = document.querySelector('.path-answer-feedback, .path-round-summary')
+          const bounds = panel.getBoundingClientRect()
+          return bounds.width > 0 && bounds.left >= 0 && bounds.right <= innerWidth &&
+            panel.scrollWidth <= panel.clientWidth && document.documentElement.scrollWidth <= innerWidth
+        })()`)
+        assert(fits, 'Learning-path ' + stage + ' overflows at ' + width + 'px')
+        if (directory) {
+          await run(`document.querySelector('.path-round-summary h2, .path-answer-feedback h3').scrollIntoView({ block: 'start' })`)
+          await wait(75)
+          const name = 'round-' + stage + '-' + width + (dark ? '-dark' : '-light') + '.png'
+          fs.writeFileSync(path.join(directory, name), (await window.webContents.capturePage()).toPNG())
+        }
+      }
+    }
+    window.setSize(390, 760)
+  }
+
+  await run(`(async () => {
+    ${helpers}
+    location.hash = '#/learn'
+    const input = await until(() => document.querySelector('input[type="file"][accept=".json,application/json"]'))
+    const transfer = new DataTransfer()
+    transfer.items.add(new File([${JSON.stringify(roundsFixture)}], 'learning-path.rounds.example.json', { type: 'application/json' }))
+    input.files = transfer.files
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+    await until(() => location.hash.startsWith('#/learn/prozentuale-aenderung'))
+    await click('Übung beginnen')
+    await fill('80', 'basis')
+    await fill('20', 'prozent')
+    await click('Antwort prüfen')
+    await until(() => document.querySelector('.path-feedback-list [data-correct="true"]'))
+    await until(() => document.activeElement === document.querySelector('.path-answer-feedback h3'))
+    if (!document.querySelector('.path-feedback-list [data-correct="false"]')) throw new Error('Partial feedback omitted the missed blank')
+    if (document.querySelector('.path-feedback-solution')) throw new Error('Practice solution was exposed before asking for it')
+  })()`)
+  await checkLayout('feedback')
+
+  await run(`(async () => {
+    ${helpers}
+    await click('Lösung ansehen')
+    await until(() => document.querySelector('.path-feedback-solution[open]'))
+    for (const value of ['25', '20']) {
+      await click('Nächste Übung')
+      await answer(value)
+    }
+    await until(() => document.querySelector('.path-round-brief')?.textContent.includes('4 von 5'))
+    await click('Selbstkontrolle starten')
+    await fill('72', 'basis')
+    await fill('20', 'prozent')
+    await click('Antwort prüfen')
+    await until(() => document.querySelector('.path-answer-feedback[data-verdict="partial"] .path-result-title'))
+    if (document.querySelector('.path-feedback-solution, .path-feedback-list')) throw new Error('Self-check details were exposed mid-round')
+    for (const value of ['15', '10', '37,5', '15']) {
+      await click('Nächste Aufgabe')
+      await answer(value)
+    }
+    await until(() => document.querySelector('.path-round-score')?.textContent.trim() === '4 von 5 selbstständig richtig')
+    await until(() => document.activeElement === document.querySelector('.path-round-summary h2'))
+    document.querySelector('.path-round-results summary').focus()
+  })()`)
+  await pressKey(window.webContents, 'Enter', 13)
+  assert(await run(`document.querySelector('.path-round-results details[open] .path-feedback-part strong')?.textContent.trim() === '72'`),
+    'Keyboard activation did not show the submitted answer in the round summary')
+  await checkLayout('summary')
+  await run(`(async () => {
+    ${helpers}
+    await click('Lernpfad abschließen')
+    await until(() => document.querySelector('.path-study h2')?.textContent === 'Lernpfad abgeschlossen')
+  })()`)
+}
+
+// Serialized into the renderer when waiting for the learning-path flow.
+async function until(read) {
+  const end = Date.now() + 5000
+  while (Date.now() < end) {
+    const value = read()
+    if (value) return value
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+  throw new Error('Learning path step did not complete: ' + location.hash + ' ' + document.querySelector('.path-study h2')?.textContent)
+}
+
+async function checkPathTimer(window, captureDirectory) {
+  const contents = window.webContents
+  const run = script => contents.executeJavaScript(script)
+  const badge = 'document.querySelector(".path-focus-trigger")'
+  const popup = 'document.querySelector(".path-focus-dialog")'
+  const initialDark = await run('document.body.classList.contains("dark")')
+  const capture = async name => {
+    if (captureDirectory) fs.writeFileSync(path.join(captureDirectory, name + '.png'), (await contents.capturePage()).toPNG())
+  }
+  for (const phone of [false, true]) {
+    window.setSize(...(phone ? [390, 760] : [1100, 750]))
+    for (const dark of [false, true]) {
+      const variant = (phone ? 'phone' : 'desktop') + (dark ? '-dark' : '-light')
+      const initial = await run(`(() => {
+        document.body.classList.toggle('dark', ${dark})
+        const badge = ${badge}
+        const popup = ${popup}
+        badge.click()
+        return popup.matches(':modal') &&
+          popup.querySelector('[role="timer"]').textContent.trim() === '25:00' &&
+          document.activeElement === popup.querySelector('.btn-primary')
+      })()`)
+      assert(initial, 'Timer setup did not open as a focused 25-minute dialog on ' + variant)
+      await wait(180)
+      const fits = await run(`(() => {
+        const popup = ${popup}
+        const bounds = popup.getBoundingClientRect()
+        const buttons = [...popup.querySelectorAll('button')].filter(button => button.getClientRects().length)
+        const aligned = ${phone} ? Math.abs(innerHeight - bounds.bottom) < 2 :
+          Math.abs((bounds.top + bounds.bottom) / 2 - innerHeight / 2) < 2
+        return aligned && bounds.left >= 0 && bounds.right <= innerWidth && bounds.top >= 0 &&
+          popup.scrollWidth <= popup.clientWidth && document.documentElement.scrollWidth <= innerWidth &&
+          buttons.every(button => button.getBoundingClientRect().height >= 44 && button.scrollWidth <= button.clientWidth)
+      })()`)
+      assert(fits, 'Timer layout or touch targets do not fit on ' + variant)
+      await capture('timer-setup-' + variant)
+      if (!phone && !dark) {
+        await pressKey(contents, 'Tab', 9, 8)
+        assert(await run(`document.activeElement === ${popup}.querySelector('.path-focus-close')`), 'Shift+Tab did not move within the timer dialog')
+        await pressKey(contents, 'Escape', 27)
+        assert(await run(`!${popup}.open && document.activeElement === ${badge}`), 'Escape did not close the timer dialog and restore its trigger')
+        await run(`${badge}.click()`)
+      }
+      await run(`${popup}.querySelector('.btn-primary').click()`)
+      await wait(50)
+      assert(await run(`!${popup}.open && document.activeElement === ${badge} &&
+        /^2[45]:/.test(${badge}.textContent.trim()) && document.documentElement.scrollWidth <= innerWidth`),
+      'Timer did not become a countdown badge on ' + variant)
+      if (phone && dark) {
+        await capture('timer-running-phone-dark')
+        const finished = await run(`(() => {
+          const task = document.querySelector('.path-active-study .path-actions .btn')
+          task.focus()
+          const now = Date.now
+          try {
+            Date.now = () => now() + 25 * 60_000
+            document.dispatchEvent(new Event('visibilitychange'))
+          } finally { Date.now = now }
+          return document.activeElement === task && !${popup}.open
+        })()`)
+        assert(finished, 'Timer expiry moved focus or opened the popup')
+        await wait(100)
+        assert(await run(`${badge}.textContent.trim() === 'Zeit abgelaufen' &&
+          document.querySelector('.notification-stack [role="status"]')?.textContent.includes('Zeit abgelaufen')`),
+        'Timer expiry did not update the badge and banner')
+        await capture('timer-finished-phone-dark')
+        await run(`document.querySelector('.notification-stack .notification-dismiss').click()`)
+      }
+      await run(`${badge}.click()`)
+      if (phone && !dark) {
+        await run(`${popup}.querySelector('.btn-primary').click()`)
+        await wait(180)
+        await capture('timer-paused-phone-light')
+      }
+      await run(`${popup}.querySelector('.path-focus-actions .btn-secondary').click()`)
+      assert(await run(`!${popup}.open && ${badge}.textContent.trim() === 'Lerntimer'`),
+        'Clearing the timer did not return to its idle state on ' + variant)
+    }
+  }
+  await run(`document.body.classList.toggle('dark', ${initialDark})`)
 }
 
 app.disableHardwareAcceleration()
@@ -184,8 +386,8 @@ app.whenReady().then(async () => {
   await wait(50)
   assert(await window.webContents.executeJavaScript(`document.querySelectorAll('.usage-table tbody tr').length === 1`), 'Today filter excludes today')
 
-  if (process.env.SMARTL3ARN_SMOKE_CAPTURE_DIR) {
-    const directory = process.env.SMARTL3ARN_SMOKE_CAPTURE_DIR
+  const directory = process.env.SMARTL3ARN_SMOKE_CAPTURE_DIR
+  if (directory) {
     fs.mkdirSync(directory, { recursive: true })
     fs.writeFileSync(path.join(directory, 'usage-light.png'), (await window.webContents.capturePage()).toPNG())
     window.setSize(600, 500)
@@ -202,15 +404,17 @@ app.whenReady().then(async () => {
   await window.webContents.executeJavaScript("location.hash = '#/learn'")
   // Exercise the production hash routes, lazy chunks, native bridge and mobile layout.
   await window.webContents.executeJavaScript(`(async () => {
-    async function until(read) {
-      const end = Date.now() + 5000
-      while (Date.now() < end) {
-        const value = read()
-        if (value) return value
-        await new Promise(resolve => setTimeout(resolve, 20))
-      }
-      throw new Error('Learning path control did not appear')
-    }
+    ${until.toString()}
+    const importInput = await until(() => document.querySelector('input[type="file"][accept=".json,application/json"]'))
+    const transfer = new DataTransfer()
+    transfer.items.add(new File([${JSON.stringify(pathFixture)}], 'learning-path.example.json', { type: 'application/json' }))
+    importInput.files = transfer.files
+    importInput.dispatchEvent(new Event('change', { bubbles: true }))
+    await until(() => location.hash.startsWith('#/learn/') && document.querySelector('.path-active-study'))
+  })()`)
+  await checkPathTimer(window, directory)
+  await window.webContents.executeJavaScript(`(async () => {
+    ${until.toString()}
     async function click(label) {
       const button = await until(() => [...document.querySelectorAll('button')].find(b => !b.disabled && b.textContent.trim() === label))
       button.click()
@@ -218,18 +422,22 @@ app.whenReady().then(async () => {
     async function answer(value) {
       const input = await until(() => document.querySelector('.task-number-input input:not(:disabled)'))
       input.value = value
-      input.dispatchEvent(new Event('input', {bubbles:true}))
+      input.dispatchEvent(new Event('input', { bubbles: true }))
       await click('Antwort prüfen')
     }
-    await click('Beispiel starten')
     await click('Übung beginnen')
     await answer('6')
     await click('Selbstständig anwenden')
     await until(() => document.querySelector('.task-question')?.textContent.includes('75 Bücher'))
     await answer('15')
-    await until(() => document.querySelector('.path-study')?.textContent.includes('80 € auf 60 €'))
+    await until(() => document.querySelector('#path-pass-heading')?.textContent === 'Lernziel erreicht')
+    await until(() => document.activeElement === document.querySelector('#path-pass-heading'))
+    await click('Weiter zum nächsten Lernziel')
+    const nextHeading = await until(() => document.querySelector('.path-active-study h2'))
+    await until(() => document.activeElement === nextHeading)
+    await click('Antwort und Erklärung anzeigen')
+    await until(() => document.querySelector('.path-active-study .path-example')?.textContent.includes('80 € auf 60 €'))
     if (document.documentElement.scrollWidth > innerWidth) throw new Error('Learning path overflows mobile window')
-    if (document.activeElement?.tagName !== 'H2') throw new Error('Focus did not follow chapter unlock')
     async function fill(selector, value) {
       const input = await until(() => document.querySelector(selector))
       input.value = value
@@ -241,11 +449,14 @@ app.whenReady().then(async () => {
     await click('Antwort prüfen')
     await click('Selbstständig anwenden')
     await click('In eigenen Worten mit KI beantworten')
-    await fill('textarea', '80 ist der Ausgangswert, der Anstieg beträgt 25 Prozent.')
+    await fill('#written-answer', '80 ist der Ausgangswert, der Anstieg beträgt 25 Prozent.')
     await click('Antwort prüfen')
-    await until(() => document.body.textContent.includes('Die KI-Prüfung ist nicht verfügbar'))
-    const target = document.querySelector('#path-target')
-    target.closest('details').open = true
+    await until(() => document.querySelector('.path-task-panel .path-notice')?.textContent.includes('Deine Antwort ist gespeichert'))
+    await until(() => document.querySelector('.path-local-response input[aria-label="basis"]:not(:disabled)'))
+    const tools = await until(() => document.querySelector('.path-tools'))
+    tools.open = true
+    tools.querySelector('.path-transfer').open = true
+    const target = await until(() => tools.querySelector('#path-target'))
     target.value = 'smoke-deck'
     target.dispatchEvent(new Event('change', { bubbles: true }))
     if (innerWidth > 400 || target.getBoundingClientRect().right > innerWidth || document.documentElement.scrollWidth > innerWidth) {
@@ -284,10 +495,11 @@ app.whenReady().then(async () => {
         if (key.startsWith('smartL3arn:path-draft:')) throw new DOMException('Storage full', 'QuotaExceededError')
         return original.call(this, key, value)
       }
+      window.restoreSmokeStorage = () => { Storage.prototype.setItem = original }
       const input = document.querySelector('.task-cloze input[aria-label="prozent"]')
       input.value = '25%'
       input.dispatchEvent(new Event('input', { bubbles: true }))
-      document.querySelector('.path-actions .btn-primary').click()
+      document.querySelector('.path-response-actions .btn-primary').click()
     })()`, true)
     window.close()
     const deadline = Date.now() + 5000
@@ -302,13 +514,15 @@ app.whenReady().then(async () => {
     if (input.value !== '25%' || input.disabled || input.getAttribute('aria-invalid') !== 'true') throw new Error('Malformed blank consumed the check')
     input.value = '25'
     input.dispatchEvent(new Event('input', { bubbles: true }))
-    document.querySelector('.path-actions .btn-primary').click()
+    document.querySelector('.path-response-actions .btn-primary').click()
     for (let i = 0; i < 250; i++) {
       if (document.querySelector('.path-study h2')?.textContent === 'Lernpfad abgeschlossen') return
       await new Promise(resolve => setTimeout(resolve, 20))
     }
     throw new Error('Valid correction did not complete the path')
   })()`)
+  await window.webContents.executeJavaScript('window.restoreSmokeStorage()')
+  await checkLearningRounds(window, directory)
   assert(errors.length === 0, `Renderer errors: ${errors.join('; ')}`)
 
   process.stdout.write(`${JSON.stringify({ home, study, smart, evaluation, usage, downloads, errors })}\n`)

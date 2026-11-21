@@ -1,8 +1,9 @@
 import { beforeEach, expect, it } from 'vitest'
 import example from '../../../docs/learning-path.example.json'
 import { freshProgress, normalizePath, pathKey } from '../../../shared/learning-paths.mjs'
+import { gradeReview, startReview } from '../../domain/pathReview'
 import { advance, gradeLocal } from '../../domain/learningPath'
-import { clearDraftBackup, isCurrentBackup, readDraftBackup, writeDraftBackup, type DraftPatch } from './pathDraftBackup'
+import { clearDraftBackup, isCurrentBackup, readDraftBackup, reviewBackupKey, writeDraftBackup, type DraftPatch } from './pathDraftBackup'
 
 function openCheck() {
   const row = { content: normalizePath(example), progress: freshProgress() }
@@ -42,4 +43,20 @@ it('rejects a malformed backup without changing the committed answer', () => {
   writeDraftBackup(key, row, { prose: '', draft: { kind: 'fields', values: {} } })
   expect(readDraftBackup(key, row)).toBeUndefined()
   expect(row.progress.draft).toEqual({ kind: 'text', value: '' })
+})
+
+it('recovers an interrupted review edit independently of the current lesson and rejects it after grading', () => {
+  const { row, key } = openCheck()
+  row.progress = gradeLocal(row, { kind: 'text', value: '15' })
+  row.progress = advance(row)
+  row.progress = startReview(row, row.progress.reviews![0]!.dueDate)
+  const reviewKey = reviewBackupKey(key)
+  const lesson = { prose: '', draft: { kind: 'fields', values: { basis: '50' } } } as const
+  writeDraftBackup(key, row, lesson)
+  writeDraftBackup(reviewKey, row, patch('8'), undefined, true)
+  expect(readDraftBackup(reviewKey, row, true)?.patch).toEqual(patch('8'))
+  expect(readDraftBackup(key, row)?.patch).toEqual(lesson)
+  row.progress = gradeReview(row, patch('8').draft)
+  expect(readDraftBackup(reviewKey, row, true)).toBeUndefined()
+  expect(readDraftBackup(key, row)?.patch).toEqual(lesson)
 })

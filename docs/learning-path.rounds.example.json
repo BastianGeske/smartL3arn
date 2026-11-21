@@ -1,0 +1,135 @@
+{
+  "format": "smartL3arn.learningPath",
+  "schemaVersion": 1,
+  "id": "prozentuale-aenderung",
+  "version": 1,
+  "title": "Prozentuale Änderungen vergleichen",
+  "chapters": [
+    {
+      "id": "bezugswert",
+      "title": "Die richtige Bezugsgröße",
+      "objectives": [
+        {
+          "id": "aenderung",
+          "goal": "Eine prozentuale Änderung auf den Ausgangswert beziehen.",
+          "evidence": "Die Lernenden identifizieren in verschiedenen Darstellungen den Ausgangswert und geben die relative Änderung an.",
+          "source": "Beispielmaterial · Relative Änderung: (Endwert − Ausgangswert) / Ausgangswert. Bei einer Abnahme lässt sich der Betrag als positiver Rückgang angeben. Der Ausgangswert ist hier jeweils positiv.",
+          "explanation": "Eine Änderung wird mit dem Zustand zu Beginn des betrachteten Zeitraums verglichen. Teile die Differenz durch den Ausgangswert und multipliziere mit 100. Gib an, ob es sich um eine Zunahme oder einen Rückgang handelt.",
+          "example": "Ein Tank enthält zuerst 50 Liter, später 40 Liter. Der Rückgang beträgt 10 Liter. Bezogen auf 50 Liter sind das 10 / 50 × 100 = 20 %. Die 40 Liter sind der Endwert.",
+          "practice": {
+            "id": "p1",
+            "question": "Ein Monatsbeitrag steigt von 80 Euro auf 100 Euro. Der Ausgangswert beträgt {{basis}} Euro, der Anstieg {{prozent}} %.",
+            "task": { "kind": "cloze", "gaps": [
+              { "id": "basis", "kind": "number", "answer": "80" },
+              { "id": "prozent", "kind": "number", "answer": "25" }
+            ] },
+            "hint": "Bestimme erst den Beitrag vor der Änderung und dann die Differenz.",
+            "solution": "80 Euro sind der Ausgangswert. Die Differenz von 20 Euro entspricht 20 / 80 × 100 = 25 %.",
+            "feedback": "Prüfe, welcher Beitrag vor der Erhöhung galt und zu welchem Beitrag du die Differenz ins Verhältnis setzt."
+          },
+          "practiceExtras": [
+            {
+              "id": "p2",
+              "question": "Eine Strecke wird um 15 Meter auf 45 Meter verkürzt. Um wie viel Prozent wurde sie verkürzt?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "25" } },
+              "hint": "Rekonstruiere die ursprüngliche Länge.",
+              "solution": "Die alte Strecke war 45 + 15 = 60 Meter lang. Die Verkürzung beträgt 15 / 60 × 100 = 25 %.",
+              "feedback": "Vergleiche die 15 Meter mit der Länge vor der Verkürzung."
+            },
+            {
+              "id": "p3",
+              "question": "Eine Besucherzählung meldet Januar: 150 und Februar: 120. Um wie viel Prozent sank die Zahl von Januar auf Februar?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "20" } },
+              "hint": "Welcher Monat steht am Beginn des Vergleichs?",
+              "solution": "Ausgangswert ist Januar mit 150. Der Rückgang von 30 entspricht 30 / 150 × 100 = 20 %.",
+              "feedback": "Lies den angegebenen Vergleichszeitraum. Der frühere Wert ist die Bezugsgröße."
+            }
+          ],
+          "selfCheckSize": 5,
+          "checks": [
+            {
+              "id": "k1",
+              "question": "Nach einem Zuschlag von 18 Euro kostet ein Kursticket 90 Euro. Der Ausgangspreis betrug {{basis}} Euro, der relative Zuschlag {{prozent}} %.",
+              "task": { "kind": "cloze", "gaps": [
+                { "id": "basis", "kind": "number", "answer": "72" },
+                { "id": "prozent", "kind": "number", "answer": "25" }
+              ] },
+              "hint": "Ziehe den Zuschlag vom neuen Preis ab.",
+              "solution": "Vor dem Zuschlag kostete das Ticket 90 − 18 = 72 Euro. Der Zuschlag beträgt 18 / 72 × 100 = 25 %.",
+              "feedback": "Prüfe, ob 90 Euro den Zustand vor oder nach dem Zuschlag bezeichnen.",
+              "written": {
+                "question": "Nach einem Zuschlag von 18 Euro kostet ein Kursticket 90 Euro. Wie hoch war der Ausgangspreis und wie groß war der relative Zuschlag? Begründe die Bezugsgröße.",
+                "reference": "90 − 18 = 72 Euro vor der Änderung. Der Zuschlag wird auf diese 72 Euro bezogen: 18 / 72 × 100 = 25 %.",
+                "criteria": [
+                  { "id": "basis", "description": "Rekonstruiert und begründet den Ausgangspreis von 72 Euro." },
+                  { "id": "rate", "description": "Bezieht 18 Euro auf 72 Euro und erhält 25 %." }
+                ],
+                "paraphrase": "Vorher waren es 72 Euro, denn in 90 sind die 18 Euro bereits enthalten. 18 ist ein Viertel von 72, also 25 Prozent.",
+                "partial": "90 minus 18 ergibt den alten Preis von 72 Euro.",
+                "misconception": "18 von 90 sind 20 Prozent. Die Bezugsgröße ist der neue Preis."
+              }
+            },
+            {
+              "id": "k2",
+              "question": "Ein Archiv hatte 200 Akten. 30 werden ausgelagert. Um wie viel Prozent sinkt der Bestand?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "15" } },
+              "hint": "Vergleiche die abgegebenen Akten mit dem anfänglichen Gesamtbestand.",
+              "solution": "30 / 200 × 100 = 15 %. Die 200 Akten standen vor der Auslagerung im Archiv.",
+              "feedback": "Vergleiche die 30 Akten mit dem Bestand vor der Auslagerung."
+            },
+            {
+              "id": "k3",
+              "question": "Messreihe eines Betriebs: 2024 = 60 MWh, 2025 = 66 MWh. Um wie viel Prozent stieg der Verbrauch gegenüber 2024?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "10" } },
+              "hint": "Der Vergleich beginnt 2024.",
+              "solution": "Die Differenz beträgt 6 MWh. Bezogen auf 60 MWh sind es 6 / 60 × 100 = 10 %.",
+              "feedback": "Prüfe die Einheit deines Ergebnisses. Gesucht ist der Prozentwert der Änderung, nicht die Differenz in MWh."
+            },
+            {
+              "id": "k4",
+              "question": "Eine Probe wiegt 250 Gramm statt der ursprünglich gemessenen 400 Gramm. Wie groß ist der prozentuale Gewichtsverlust?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "37,5" } },
+              "hint": "Berechne zuerst den Verlust in Gramm.",
+              "solution": "150 Gramm sind verloren gegangen. Bezogen auf 400 Gramm sind das 150 / 400 × 100 = 37,5 %.",
+              "feedback": "Vergleiche die verlorene Masse mit der ursprünglichen Masse, nicht mit der verbliebenen."
+            },
+            {
+              "id": "k5",
+              "question": "Ein Depot ist nach einem Zuwachs von 12 Stück mit 92 Stück belegt. Wie hoch war der prozentuale Zuwachs?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "15" } },
+              "hint": "92 Stück sind der Endbestand.",
+              "solution": "Der Anfangsbestand war 92 − 12 = 80. Die 12 zusätzlichen Stücke ergeben 12 / 80 × 100 = 15 %.",
+              "feedback": "Rekonstruiere den Anfangsbestand, bevor du den Zuwachs berechnest."
+            },
+            {
+              "id": "k6",
+              "question": "Eine Fahrzeit sinkt von 32 auf 24 Minuten. Um wie viel Prozent verkürzt sie sich?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "25" } },
+              "hint": "8 Minuten sind der Unterschied. Welche Fahrzeit war die Bezugsgröße?",
+              "solution": "Die Verkürzung von 8 Minuten entspricht 8 / 32 × 100 = 25 %.",
+              "feedback": "Beziehe die gesparte Zeit auf die ursprüngliche Fahrzeit."
+            },
+            {
+              "id": "k7",
+              "question": "Ein Wasserstand liegt 21 cm über dem Vortageswert und beträgt jetzt 105 cm. Um wie viel Prozent ist er gestiegen?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "25" } },
+              "hint": "Bestimme den Vortageswert aus dem aktuellen Stand und dem Anstieg.",
+              "solution": "Am Vortag lag der Stand bei 84 cm. Der Anstieg von 21 cm entspricht 21 / 84 × 100 = 25 %.",
+              "feedback": "Prüfe, welcher Wasserstand bereits den Anstieg enthält."
+            }
+          ],
+          "reviewChecks": [
+            {
+              "id": "w1",
+              "question": "Eine Software protokolliert drei Bestände: Start 90, nach der Lieferung 120, nach der Entnahme 96. Um wie viel Prozent sank der Bestand allein während der Entnahme?",
+              "task": { "kind": "calculation", "answer": { "kind": "number", "value": "20" } },
+              "hint": "Wähle den Startwert der Entnahme, nicht den Startwert des ganzen Protokolls.",
+              "solution": "Vor der Entnahme waren es 120, danach 96. Die Differenz von 24 entspricht 24 / 120 × 100 = 20 %.",
+              "feedback": "Grenze erst die Entnahme als betrachteten Zeitraum ab."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

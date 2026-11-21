@@ -419,7 +419,8 @@ test('can route to a structured-output provider that does not support temperatur
 
 test('uses criterion evidence for learning paths and rejects duplicate or unrequested criteria', async () => {
   const criteria = [{id:'base',description:'Identify the starting value.'},{id:'relative',description:'Compute relative change.'}]
-  const input = {...evaluationInput, evaluationScope:'criteria', criteria}
+  const source = '    return value\n'
+  const input = {...evaluationInput, userAnswer: source, referenceAnswer: source, evaluationScope:'criteria', criteria}
   let result = criteria.map(c => ({id:c.id,status:'satisfied',reason:'The response demonstrates this.'}))
   let request
   const client = createOpenRouterClient({ fetchImpl: async (_url, options) => {
@@ -428,7 +429,10 @@ test('uses criterion evidence for learning paths and rejects duplicate or unrequ
   }})
   assert.deepEqual((await client.evaluate('test',input)).criteria,result)
   assert.deepEqual(request.response_format.json_schema.schema.required,['criteria'])
-  assert.deepEqual(JSON.parse(request.messages[1].content).criteria,criteria)
+  const context = JSON.parse(request.messages[1].content)
+  assert.deepEqual(context.criteria,criteria)
+  assert.equal(context.learner_answer, source)
+  assert.equal(context.reference_answer, source)
   result = [result[0],result[0]]
   await assert.rejects(client.evaluate('test',input),error => error.code === 'invalid-response')
   await assert.rejects(client.evaluate('test',{...input,criteria:[]}),error => error.code === 'invalid-input')

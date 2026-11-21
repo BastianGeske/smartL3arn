@@ -92,7 +92,9 @@ onUnmounted(() => document.removeEventListener('visibilitychange', resume))
 
 <template>
   <div class="app-shell">
-    <AppBar active="usage" />
+    <AppBar active="preferences" :title="t('nav.usage')">
+      <RouterLink class="btn btn-secondary btn-sm" to="/preferences">{{ t('usage.backSettings') }}</RouterLink>
+    </AppBar>
     <main class="workspace usage-workspace">
       <header class="page-heading">
         <div>

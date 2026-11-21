@@ -2,7 +2,7 @@
   "format": "smartL3arn.learningPath",
   "schemaVersion": 1,
   "id": "prozentrechnung",
-  "version": 1,
+  "version": 2,
   "title": "Prozentrechnung im Alltag",
   "chapters": [
     {
@@ -18,7 +18,7 @@
           "example": "Eine Kiste enthält 120 Äpfel. 15 % sind grün. 10 % entsprechen 12 Äpfeln und 5 % weiteren 6. Zusammen sind das 18 grüne Äpfel.",
           "practice": {
             "id": "a-uebung",
-            "question": "40 Personen sind im Chor. 15 % singen im Bass. Wie viele sind das?",
+            "question": "40 Personen sind im Chor. 10 % sind 4 Personen, 5 % sind 2 Personen. Wie viele singen im Bass, wenn ihr Anteil 15 % beträgt?",
             "task": {
               "kind": "calculation",
               "answer": {
@@ -58,6 +58,26 @@
               "hint": "10 % und 5 % der Strecke ergeben zusammen 15 %.",
               "solution": "180 × 0,15 = 27 km.",
               "feedback": "Gesucht ist die Teilstrecke in Kilometern. Multipliziere den Anteil mit der gesamten Strecke."
+            }
+          ],
+          "opening": {
+            "question": "Was bedeutet ein Prozent einer Menge?",
+            "answer": "Ein Prozent ist ein Hundertstel der Menge."
+          },
+          "reviewChecks": [
+            {
+              "id": "anteil-review",
+              "question": "Von 80 Litern Saft sollen 35 % abgefüllt werden. Es sind bereits 20 Liter in Flaschen. Wie viele Liter fehlen noch?",
+              "task": {
+                "kind": "calculation",
+                "answer": {
+                  "kind": "number",
+                  "value": "8"
+                }
+              },
+              "hint": "Berechne zuerst die gesamte Zielmenge.",
+              "solution": "35 % von 80 Litern sind 28 Liter. Es fehlen 28 − 20 = 8 Liter.",
+              "feedback": "Die 20 Liter zählen schon zur Zielmenge."
             }
           ]
         }
@@ -174,6 +194,34 @@
                 "partial": "Ich verwende 30 als Ausgangswert.",
                 "misconception": "Ich teile die Differenz durch 42, weil der Endwert die neue Gesamtmenge ist."
               }
+            }
+          ],
+          "opening": {
+            "question": "Ein Preis sinkt und steigt danach um denselben Eurobetrag. Sind die Prozentsätze gleich groß?",
+            "answer": "Die Beträge beziehen sich auf unterschiedliche Ausgangspreise. Der Anstieg startet beim niedrigeren Preis."
+          },
+          "reviewChecks": [
+            {
+              "id": "wechsel-review",
+              "question": "In einem Bericht stehen 250 Watt für heute und „50 Watt mehr als gestern“. Die Redaktion meldet einen Anstieg von 20 %. Prüfe die Meldung: Der gestrige Ausgangswert war {{basis}} Watt, der tatsächliche Anstieg beträgt {{prozent}} %.",
+              "task": {
+                "kind": "cloze",
+                "gaps": [
+                  {
+                    "id": "basis",
+                    "kind": "number",
+                    "answer": "200"
+                  },
+                  {
+                    "id": "prozent",
+                    "kind": "number",
+                    "answer": "25"
+                  }
+                ]
+              },
+              "hint": "Rekonstruiere zuerst den Wert vor der Änderung.",
+              "solution": "Gestern waren es 250 − 50 = 200 Watt. Daher beträgt der Anstieg 50 / 200 × 100 = 25 %. Die Meldung hat durch den heutigen Wert geteilt.",
+              "feedback": "Der Bericht nennt den heutigen Endwert. Ziehe den Zuwachs ab, bevor du die Prozentänderung berechnest."
             }
           ]
         }

@@ -1,7 +1,7 @@
 {
   "name": "smartl3arn",
-  "version": "1.0.10",
-  "nativeBuildNumber": 9,
+  "version": "1.0.18",
+  "nativeBuildNumber": 17,
   "description": "smartL3arn flashcard app with evidence-based learning techniques",
   "main": "main.js",
   "scripts": {

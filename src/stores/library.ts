@@ -1,4 +1,4 @@
-import { freshProgress, normalizePath, normalizePaths, pathKey, type SavedPath, type Progress } from '../../shared/learning-paths.mjs'
+import { freshProgress, normalizePath, normalizePaths, pathKey, practiceCases, type SavedPath, type Progress } from '../../shared/learning-paths.mjs'
 import { splitCards, type SplitDraft } from '../domain/splitMatching'
 import { useUiStore } from './ui'
 import { computed, ref } from 'vue'
@@ -8,7 +8,7 @@ import type { AppData, Card, Deck, TaskDefinition } from '../domain/types'
 import { cardContent } from '../domain/tasks'
 import { LibraryConflict } from '../services/storage/browserStorage'
 import { getStorageRepository } from '../services/storage'
-import { clearPathDraftBackup } from '../services/storage/pathDraftBackup'
+import { clearPathDraftBackup, practiceBackupKey, reviewBackupKey } from '../services/storage/pathDraftBackup'
 import { normalizeAppData } from '../../shared/data-validation.mjs'
 import { todayStr } from '../domain/dates'
 import { t } from '../i18n'
@@ -272,10 +272,18 @@ export const useLibraryStore = defineStore('library', () => {
 
   async function deletePath(key: string): Promise<void> {
     const paths = data.value.learningPaths || []
+    const removed = paths.find(row => pathKey(row.content) === key)
+    if (!removed) return
     const next = paths.filter(row => pathKey(row.content) !== key)
-    if (next.length === paths.length) return
     await write({ ...data.value, learningPaths: next })
     clearPathDraftBackup(key)
+    clearPathDraftBackup(reviewBackupKey(key))
+    for (const chapter of removed.content.chapters) {
+      for (const goal of chapter.objectives) {
+        if (!removed.progress.passed.includes(goal.id)) continue
+        for (const activity of [...practiceCases(goal), ...goal.checks]) clearPathDraftBackup(practiceBackupKey(key, activity.id))
+      }
+    }
     data.value.learningPaths = next
   }
 

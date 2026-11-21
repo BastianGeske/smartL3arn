@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ImportQualitySummary from '../components/ImportQualitySummary.vue'
+import { dueObjectives } from '../domain/pathReview'
 import { taskQuality } from '../domain/taskQuality'
 import AppBar from '../components/AppBar.vue'
 import AppIcon from '../components/AppIcon.vue'
@@ -30,6 +31,12 @@ const cooldowns = useDeckPracticeCooldowns(() => library.decks)
 const importedDeckIds = ref<string[]>([])
 const jsonInput = ref<HTMLInputElement>()
 const textInput = ref<HTMLInputElement>()
+
+const deckListHeading = ref<HTMLHeadingElement>()
+const hasReviewInProgress = computed(() => library.data.learningPaths?.some(row => row.progress.reviewSession))
+const pathDueCount = computed(() => (library.data.learningPaths ?? []).reduce(
+  (sum, row) => sum + dueObjectives(row, calendar.today).length, 0,
+))
 
 const totalDue = computed(() => library.decks.reduce(
   (sum, deck) => sum + deck.cards.filter((card) => isDue(card, calendar.today)).length,
@@ -133,13 +140,33 @@ async function exportAll(): Promise<void> {
             {{ totalDue > 0 ? t('library.ready', { count: totalDue }) : t('library.complete') }}
           </p>
         </div>
-        <div class="page-heading-actions">
-          <button class="btn btn-secondary" type="button" @click="router.push('/learn')"><AppIcon name="book-open" :size="17" />{{ t('path.learn') }}</button>
-          <button class="btn btn-primary" type="button" :disabled="!library.cardCount" @click="router.push('/smart')">
-            <AppIcon name="sparkles" :size="17" /><span>{{ t('library.startSmart') }}</span>
-          </button>
-        </div>
       </header>
+
+      <section class="study-modes" aria-labelledby="study-modes-title">
+        <h2 id="study-modes-title">{{ t('library.studyModes') }}</h2>
+        <div class="study-mode-grid">
+          <article class="study-mode-card">
+            <div class="study-mode-heading"><span class="study-mode-icon"><AppIcon name="book-open" /></span><h3>{{ t('library.pathsMode') }}</h3></div>
+            <p>{{ t('library.pathsModeDescription') }}</p>
+            <p v-if="hasReviewInProgress || pathDueCount" class="study-mode-status">
+              {{ hasReviewInProgress ? t('path.inReview') : t('path.dueCount', { count: pathDueCount }) }}
+            </p>
+            <RouterLink class="btn btn-secondary" to="/learn">{{ t('library.openPaths') }}</RouterLink>
+          </article>
+          <article class="study-mode-card">
+            <div class="study-mode-heading"><span class="study-mode-icon"><AppIcon name="sparkles" /></span><h3>{{ t('nav.smart') }}</h3></div>
+            <p>{{ t('library.smartModeDescription') }}</p>
+            <p v-if="!library.cardCount" class="study-mode-status">{{ t('library.modeNeedsCards') }}</p>
+            <RouterLink class="btn btn-secondary" to="/smart">{{ t('library.setUpSmart') }}</RouterLink>
+          </article>
+          <article class="study-mode-card">
+            <div class="study-mode-heading"><span class="study-mode-icon"><AppIcon name="layers-3" /></span><h3>{{ t('library.deckMode') }}</h3></div>
+            <p>{{ t('library.deckModeDescription') }}</p>
+            <p v-if="!library.cardCount" class="study-mode-status">{{ t('library.modeNeedsCards') }}</p>
+            <button class="btn btn-secondary" type="button" @click="deckListHeading?.focus()">{{ t('library.chooseDeck') }}</button>
+          </article>
+        </div>
+      </section>
 
       <div class="library-overview">
       <section class="summary-strip" :aria-label="t('library.summary')">
@@ -165,12 +192,20 @@ async function exportAll(): Promise<void> {
           </div>
         </div>
       </section>
-      <div class="library-transfer">
-          <AppMenu class="menu" trigger-class="btn btn-secondary btn-sm" :label="t('import.menu')" wide>
-              <template #trigger>
-              <AppIcon name="folder-open" :size="15" /><span>{{ t('import.menu') }}</span><AppIcon name="chevron-down" :size="14" />
-            </template>
+      </div>
 
+      <ImportQualitySummary v-if="importedDeckIds.length" :deck-ids="importedDeckIds" @dismiss="importedDeckIds = []" />
+      <section class="library-section" aria-labelledby="deck-list-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="deck-list-title" ref="deckListHeading" tabindex="-1">{{ t('library.yourDecks') }}</h2>
+            <span class="section-count">{{ formatNumber(library.decks.length) }}</span>
+          </div>
+          <div class="library-transfer">
+            <AppMenu class="menu" trigger-class="btn btn-secondary btn-sm" :label="t('import.menu')" wide>
+              <template #trigger>
+                <AppIcon name="folder-open" :size="15" /><span>{{ t('import.menu') }}</span><AppIcon name="chevron-down" :size="14" />
+              </template>
               <button class="menu-item" type="button" @click="jsonInput?.click()">
                 <AppIcon name="file-json" :size="16" /><span>{{ t('import.json') }}</span>
               </button>
@@ -183,21 +218,10 @@ async function exportAll(): Promise<void> {
                   <AppIcon name="archive" :size="16" /><span>{{ t('import.backup') }}</span>
                 </button>
               </template>
-
             </AppMenu>
-          <input ref="jsonInput" class="file-input" type="file" accept=".json" @change="handleJson">
-          <input ref="textInput" class="file-input" type="file" accept=".txt,.csv,.tsv" @change="handleText">
-      </div>
-      </div>
-
-      <ImportQualitySummary v-if="importedDeckIds.length" :deck-ids="importedDeckIds" @dismiss="importedDeckIds = []" />
-      <section class="library-section" aria-labelledby="deck-list-title">
-        <div class="section-heading">
-          <div>
-            <h2 id="deck-list-title">{{ t('library.yourDecks') }}</h2>
-            <span class="section-count">{{ formatNumber(library.decks.length) }}</span>
+            <input ref="jsonInput" class="file-input" type="file" accept=".json" @change="handleJson">
+            <input ref="textInput" class="file-input" type="file" accept=".txt,.csv,.tsv" @change="handleText">
           </div>
-
         </div>
 
         <div v-if="!library.decks.length" class="empty-state">

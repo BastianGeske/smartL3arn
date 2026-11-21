@@ -22,14 +22,15 @@ class OpenRouterError extends Error {
   }
 }
 
-function boundedString(value, field, allowEmpty = false) {
+function boundedString(value, field, allowEmpty = false, preserveWhitespace = false) {
   if (typeof value !== 'string') {
     throw new OpenRouterError('invalid-input', `${field} must be a string.`)
   }
-  const result = value.trim()
-  if (!allowEmpty && !result) {
+  const trimmed = value.trim()
+  if (!allowEmpty && !trimmed) {
     throw new OpenRouterError('invalid-input', `${field} is required.`)
   }
+  const result = preserveWhitespace ? value : trimmed
   if (result.length > MAX_FIELD_LENGTH) {
     throw new OpenRouterError('invalid-input', `${field} is too long.`)
   }
@@ -221,13 +222,13 @@ function createOpenRouterClient({
 
   async function evaluate(apiKey, input, onResponse = () => {}, diagnosticContext = {}) {
     const key = boundedString(apiKey, 'API key')
+    const scope = input?.evaluationScope ?? 'answer'
     const context = {
       deck: boundedString(input?.deckName, 'Deck name', true),
       question: boundedString(input?.question, 'Question'),
-      reference_answer: boundedString(input?.referenceAnswer, 'Reference answer'),
-      learner_answer: boundedString(input?.userAnswer, 'User answer'),
+      reference_answer: boundedString(input?.referenceAnswer, 'Reference answer', false, scope === 'criteria'),
+      learner_answer: boundedString(input?.userAnswer, 'User answer', false, scope === 'criteria'),
     }
-    const scope = input?.evaluationScope ?? 'answer'
     const rubric = scope === 'criteria' ? await import('../shared/rubric.mjs') : null
     if (rubric) {
       if (!rubric.validCriteria(input.criteria)) throw new OpenRouterError('invalid-input', 'Invalid criteria.')

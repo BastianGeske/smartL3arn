@@ -84,3 +84,20 @@ it('accounts for math delimiters in the editor limit and preserves oversized dra
   expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toHaveLength(3997)
   expect(wrapper.find('[role="alert"]').exists()).toBe(true)
 })
+
+it('rejects a visual edit beyond a strict limit and keeps the previous formula', async () => {
+  vi.stubGlobal('mathVirtualKeyboard', Object.assign(new EventTarget(), { visible: false, hide: vi.fn() }))
+  wrapper = mount(MathInput, { attachTo: document.body, props: { label: 'Formula', modelValue: 'x', maxlength: 5, enforceMaxlength: true } })
+  await flushPromises()
+  const input = wrapper.get('test-math-field')
+  const field = input.element as HTMLElement & { value: string }
+  field.value = 'x'.repeat(6)
+  await input.trigger('input')
+  expect(field.value).toBe('x')
+  expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  field.value = 'x^2'
+  await input.trigger('input')
+  expect(wrapper.emitted('update:modelValue')).toEqual([['x^2']])
+  expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+})

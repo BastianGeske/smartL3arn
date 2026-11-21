@@ -20,6 +20,7 @@ import TaskResponse from '../components/TaskResponse.vue'
 import WorkingSteps from '../components/WorkingSteps.vue'
 import MathContent from '../components/MathContent.vue'
 import { workingText } from '../domain/tasks'
+import { formatCountdown } from '../domain/study/timer'
 
 const { t } = useI18n()
 
@@ -40,7 +41,7 @@ const progress = computed(() => {
   return Math.round((session.index / session.queue.length) * 100)
 })
 const timerLabel = computed(() => (
-  smart.session?.durationMs && !smart.isDone ? formatMs(smart.remainingMs) : undefined
+  smart.session?.durationMs && !smart.isDone ? formatCountdown(smart.remainingMs) : undefined
 ))
 const feedbackBand = computed(() => (
   !smart.session?.evaluation
@@ -116,13 +117,6 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-function formatMs(milliseconds: number): string {
-  const totalSeconds = Math.ceil(Math.max(0, milliseconds) / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
-}
-
 function focusCurrentInput(): void {
   if (Capacitor.isNativePlatform() || window.matchMedia('(pointer: coarse)').matches) return
   if (settings.smartConfig.techniques.typeRecall) {
@@ -168,7 +162,7 @@ async function exit(): Promise<void> {
         {{ smart.session.breakDone ? t('smart.breakComplete') : t('smart.pause') }}
       </h1>
       <div class="smart-break-timer-wrap">
-        <span class="smart-break-timer">{{ formatMs(smart.breakRemainingMs) }}</span>
+        <span class="smart-break-timer">{{ formatCountdown(smart.breakRemainingMs) }}</span>
         <span class="smart-break-label">
           {{ smart.session.breakDone ? t('smart.nextReady') : t('smart.remaining') }}
         </span>

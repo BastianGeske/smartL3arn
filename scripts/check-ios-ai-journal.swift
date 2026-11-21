@@ -35,7 +35,14 @@ struct CheckAiJournal {
         var rubricInput = input
         rubricInput["evaluationScope"] = "criteria"
         rubricInput["criteria"] = [["id": "base", "description": "Identify the base"]]
-        expect(NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model") != nil, "rubric request accepted")
+        let source = "    return value\n"
+        rubricInput["userAnswer"] = source
+        rubricInput["referenceAnswer"] = source
+        let rubricRequest = NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model")!
+        let rubricMessages = rubricRequest["messages"] as! [[String: String]]
+        let context = try JSONSerialization.jsonObject(with: Data(rubricMessages[1]["content"]!.utf8)) as! [String: Any]
+        expect(context["learner_answer"] as? String == source, "rubric preserves learner code whitespace")
+        expect(context["reference_answer"] as? String == source, "rubric preserves reference code whitespace")
         rubricInput["criteria"] = [["id": "base", "description": "One"], ["id": "base", "description": "Two"]]
         expect(NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model") == nil, "duplicate criterion rejected")
         let evidence = ["criteria": [["id": "base", "status": "missing", "reason": "The starting value is missing."]]]

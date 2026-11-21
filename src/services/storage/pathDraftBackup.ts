@@ -1,4 +1,4 @@
-import { normalizePathDraft, type Progress, type SavedPath } from '../../../shared/learning-paths.mjs'
+import { normalizePathDraft, normalizePracticeDraft, normalizeReviewDraft, type Progress, type SavedPath } from '../../../shared/learning-paths.mjs'
 import { attemptKey } from '../../domain/learningPath'
 
 export type DraftPatch = Required<Pick<Progress, 'prose' | 'draft'>>
@@ -18,12 +18,29 @@ export interface DraftBackup {
   bases: string[]
 }
 
-export function writeDraftBackup(path: string, row: SavedPath, patch: DraftPatch, pending?: DraftPatch): DraftBackup {
-  const bases = [fingerprint(row.progress)]
+export const reviewBackupKey = (path: string) => path + ':review'
+export const practiceBackupKey = (path: string, id: string) => path + ':practice:' + id
+
+type DraftScope = false | true | { activityId: string }
+
+function draftSource(row: SavedPath, scope: DraftScope) {
+  if (typeof scope === 'object') {
+    const saved = row.progress.practiceDrafts?.find(entry => entry.activityId === scope.activityId)
+    return { attempt: scope.activityId, saved: { prose: '', draft: saved?.draft } }
+  }
+  if (!scope) return { attempt: attemptKey(row), saved: row.progress }
+  const session = row.progress.reviewSession!
+  const due = row.progress.reviews?.find(r => r.objectiveId === session.queue[0])?.dueDate
+  return { attempt: JSON.stringify([session.activityId, session.retry, due]), saved: { prose: '', draft: session.draft } }
+}
+
+export function writeDraftBackup(path: string, row: SavedPath, patch: DraftPatch, pending?: DraftPatch, scope: DraftScope = false): DraftBackup {
+  const source = draftSource(row, scope)
+  const bases = [fingerprint(source.saved)]
   if (pending) bases.push(fingerprint(pending))
   const id = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16).padStart(8, '0')).join('')
   const previous = localStorage.getItem(storageKey(path))
-  localStorage.setItem(editKey(path, id), JSON.stringify({ attempt: attemptKey(row), bases, patch }))
+  localStorage.setItem(editKey(path, id), JSON.stringify({ attempt: source.attempt, bases, patch }))
   try { localStorage.setItem(storageKey(path), id) }
   catch (error) { clearDraftBackup(path, id); throw error }
   if (previous) clearDraftBackup(path, previous)
@@ -57,11 +74,11 @@ export function matchesDraft(left: Pick<Progress, 'draft' | 'prose'>, right: Dra
   return fingerprint(left) === fingerprint(right)
 }
 
-export function matchesBackupBase(row: SavedPath, backup: DraftBackup): boolean {
-  return backup.bases.includes(fingerprint(row.progress))
+export function matchesBackupBase(row: SavedPath, backup: DraftBackup, scope: DraftScope = false): boolean {
+  return backup.bases.includes(fingerprint(draftSource(row, scope).saved))
 }
 
-export function readDraftBackup(path: string, row: SavedPath): (DraftBackup & { patch: DraftPatch }) | undefined {
+export function readDraftBackup(path: string, row: SavedPath, scope: DraftScope = false): (DraftBackup & { patch: DraftPatch }) | undefined {
   let id: string | null
   let raw: string | null
   try {
@@ -72,10 +89,14 @@ export function readDraftBackup(path: string, row: SavedPath): (DraftBackup & { 
   if (raw === null || !isCurrentBackup(path, id)) return
   try {
     const { attempt, bases, patch } = JSON.parse(raw)
-    if (attempt === attemptKey(row) && Array.isArray(bases)
+    const source = draftSource(row, scope)
+    if (attempt === source.attempt && Array.isArray(bases)
       && bases.length >= 1 && bases.length <= 2 && bases.every(base => typeof base === 'string')) {
-      const backup = { id, bases, patch: normalizePathDraft(row, patch) }
-      if (matchesBackupBase(row, backup) && !matchesDraft(row.progress, backup.patch)) return backup
+      const validated = typeof scope === 'object'
+        ? { prose: '', draft: normalizePracticeDraft(row, scope.activityId, patch.draft) }
+        : scope ? { prose: '', draft: normalizeReviewDraft(row, patch.draft) } : normalizePathDraft(row, patch)
+      const backup = { id, bases, patch: validated }
+      if (matchesBackupBase(row, backup, scope) && !matchesDraft(source.saved, backup.patch)) return backup
     }
   } catch { /* Ignore malformed or obsolete recovery data. */ }
   clearDraftBackup(path, id)

@@ -6,7 +6,7 @@ import ThemeButton from './ThemeButton.vue'
 
 const { t } = useI18n()
 
-defineProps<{ active: 'library' | 'smart' | 'usage' | 'preferences'; title?: string }>()
+defineProps<{ active: 'library' | 'smart' | 'preferences'; title?: string }>()
 const router = useRouter()
 </script>
 
@@ -26,11 +26,7 @@ const router = useRouter()
           <AppIcon name="sparkles" :size="17" />
           <span>{{ t('nav.smart') }}</span>
         </RouterLink>
-        <RouterLink class="app-nav-item" :class="{ 'is-active': active === 'usage' }" to="/usage">
-          <AppIcon name="gauge" :size="17" />
-          <span>{{ t('nav.usage') }}</span>
-        </RouterLink>
-        <RouterLink class="app-nav-item" :class="{ 'is-active': active === 'preferences' }" to="/preferences">
+        <RouterLink class="app-nav-item" :class="{ 'is-active': active === 'preferences' }" :aria-current="active === 'preferences' ? ($route.path === '/preferences' ? 'page' : 'location') : undefined" to="/preferences">
           <AppIcon name="settings-2" :size="17" />
           <span>{{ t('nav.preferences') }}</span>
         </RouterLink>
@@ -38,5 +34,5 @@ const router = useRouter()
       <div class="app-bar-actions"><span>{{ t('common.appearance') }}</span><ThemeButton /></div>
     </div>
   </aside>
-  <header class="workspace-toolbar"><strong>{{ title || (active === 'library' ? t('nav.library') : active === 'smart' ? t('nav.smart') : active === 'usage' ? t('nav.usage') : t('nav.preferences')) }}</strong><div class="toolbar-actions"><slot /></div></header>
+  <header class="workspace-toolbar"><strong>{{ title || (active === 'library' ? t('nav.library') : active === 'smart' ? t('nav.smart') : t('nav.preferences')) }}</strong><div class="toolbar-actions"><slot /></div></header>
 </template>

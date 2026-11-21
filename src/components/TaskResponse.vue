@@ -7,7 +7,7 @@ import { shuffled, fieldValue } from '../domain/tasks'
 import MathContent from './MathContent.vue'
 import MathInput from './MathInput.vue'
 import NumberInput from './NumberInput.vue'
-const props = withDefaults(defineProps<{ task?: TaskDefinition; front: string; modelValue: StudyResponse; disabled?: boolean; inputId?: string; constructOrder?: boolean; invalidNumericGaps?: string[] }>(), { disabled: false })
+const props = withDefaults(defineProps<{ task?: TaskDefinition; front: string; modelValue: StudyResponse; disabled?: boolean; inputId?: string; constructOrder?: boolean; invalidNumericGaps?: string[]; formatBold?: boolean }>(), { disabled: false })
 const emit = defineEmits<{ 'update:modelValue': [response: StudyResponse]; submit: [] }>()
 const { t } = useI18n()
 const uid = useId()
@@ -95,7 +95,7 @@ function keydown(event: KeyboardEvent) {
             :error="invalidNumericGaps?.includes(segment.slice(2, -2)) ? t('task.invalidNumber') : undefined" @update:model-value="field(segment.slice(2, -2), $event)" />
           <input v-else class="input gap-input" :aria-label="segment.slice(2, -2)" :value="modelValue.kind === 'fields' ? fieldValue(modelValue.values, segment.slice(2, -2)) : ''" :disabled="disabled" maxlength="4000" @input="field(segment.slice(2, -2), ($event.target as HTMLInputElement).value)" />
         </template>
-        <MathContent v-else :text="segment" />
+        <MathContent v-else :text="segment" :format-bold="formatBold" />
       </template>
     </div>
     <div v-else-if="task.kind === 'matching'" class="task-matching">

@@ -51,6 +51,14 @@ function changeLanguage(event: Event): void {
           </div>
         </div>
       </section>
+      <section class="config-section preference-section" aria-labelledby="usage-heading">
+        <div class="preference-icon"><AppIcon name="gauge" :size="22" /></div>
+        <div class="preference-content">
+          <h2 id="usage-heading">{{ t('preferences.usage') }}</h2>
+          <p>{{ t('preferences.usageDescription') }}</p>
+          <RouterLink class="btn btn-secondary" to="/usage">{{ t('nav.usage') }}</RouterLink>
+        </div>
+      </section>
       <p class="preferences-storage-note"><AppIcon name="check-circle-2" :size="15" />{{ t('preferences.storageNote') }}</p>
     </main>
   </div>

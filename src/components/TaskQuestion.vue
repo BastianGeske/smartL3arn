@@ -4,7 +4,7 @@ import type { Card } from '../domain/types'
 import { shuffled } from '../domain/tasks'
 import MathContent from './MathContent.vue'
 import { useI18n } from '../i18n'
-const props = defineProps<{ card: Pick<Card, 'front' | 'task'>; interactive?: boolean }>()
+const props = defineProps<{ card: Pick<Card, 'front' | 'task'>; interactive?: boolean; formatBold?: boolean }>()
 const { t } = useI18n()
 const items = computed(() => {
   const task = props.card.task
@@ -16,7 +16,7 @@ const matching = computed(() => props.card.task?.kind === 'matching' ? { left: p
 </script>
 <template>
   <div class="task-question">
-    <MathContent :text="card.task?.kind === 'cloze' ? card.front.replace(/\{\{[\w-]+\}\}/g, '___') : card.front" />
+    <MathContent :text="card.task?.kind === 'cloze' ? card.front.replace(/\{\{[\w-]+\}\}/g, '___') : card.front" :format-bold="formatBold" />
     <template v-if="!interactive">
       <ul v-if="items.length" class="task-readonly-items"><li v-for="(item, i) in items" :key="i"><MathContent :text="item" /></li></ul>
       <div v-if="matching" class="task-matching-readonly">

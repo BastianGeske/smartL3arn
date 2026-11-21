@@ -5,11 +5,12 @@ import 'mathlive/fonts.css'
 import MathContent from './MathContent.vue'
 import { MATH_SOURCE_LIMIT } from '../domain/tasks'
 import { useI18n } from '../i18n'
-const props = withDefaults(defineProps<{ modelValue: string; label: string; disabled?: boolean; maxlength?: number }>(), { disabled: false, maxlength: MATH_SOURCE_LIMIT })
+const props = withDefaults(defineProps<{ modelValue: string; label: string; describedBy?: string; disabled?: boolean; maxlength?: number; enforceMaxlength?: boolean }>(), { disabled: false, maxlength: MATH_SOURCE_LIMIT })
 const emit = defineEmits<{ 'update:modelValue': [value: string]; submit: [] }>()
 const { t, locale } = useI18n()
 const mode = ref<'visual' | 'latex'>('visual')
 const keyboardLimited = ref(false)
+const editTooLong = ref(false)
 const container = ref<HTMLElement>()
 let field: MathfieldElement | undefined
 let alive = true
@@ -31,8 +32,18 @@ onMounted(async () => {
     field.value = props.modelValue
     field.readOnly = props.disabled
     field.setAttribute('aria-label', props.label)
+    if (props.describedBy) field.setAttribute('aria-describedby', props.describedBy)
     field.mathVirtualKeyboardPolicy = 'auto'
-    field.addEventListener('input', () => { if (!props.disabled && mode.value === 'visual') emit('update:modelValue', field!.value) })
+    field.addEventListener('input', () => {
+      if (!field || props.disabled || mode.value !== 'visual') return
+      const value = field.value
+      editTooLong.value = props.enforceMaxlength && value.length > props.maxlength
+      if (editTooLong.value) {
+        field.value = props.modelValue
+        return
+      }
+      emit('update:modelValue', value)
+    })
     field.addEventListener('keydown', shortcut)
     container.value.appendChild(field)
     field.menuItems = []
@@ -83,9 +94,14 @@ onMounted(async () => {
 watch(() => props.modelValue, value => { if (field && field.value !== value && mode.value === 'visual') field.value = value })
 watch(() => props.disabled, value => { if (field) field.readOnly = value; if (value) window.mathVirtualKeyboard?.hide() })
 watch(() => props.label, label => field?.setAttribute('aria-label', label))
+watch(() => props.describedBy, id => {
+  if (id) field?.setAttribute('aria-describedby', id)
+  else field?.removeAttribute('aria-describedby')
+})
 watch(locale, language => { if (window.mathVirtualKeyboard) window.mathVirtualKeyboard.alphabeticLayout = language === 'de' ? 'qwertz' : 'qwerty' })
 watch(mode, value => {
   keyboardLimited.value = false
+  editTooLong.value = false
   window.mathVirtualKeyboard?.hide()
   if (value === 'visual' && field) field.value = props.modelValue
 })
@@ -106,7 +122,8 @@ onBeforeUnmount(() => {
     <div v-show="mode === 'visual'" ref="container" class="mathfield-container" />
     <button v-if="mode === 'visual'" class="btn btn-quiet btn-sm" type="button" :disabled="disabled" @click="showKeyboard">{{ t('task.mathKeyboard') }}</button>
     <p v-if="keyboardLimited && mode === 'visual'" class="field-hint" role="status">{{ t('task.keyboardLimited') }}</p>
-    <textarea v-if="mode === 'latex'" class="textarea latex-input" :aria-label="label" :value="modelValue" :disabled="disabled" :maxlength="maxlength" rows="2" @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)" @keydown="shortcut" />
+    <p v-if="editTooLong" class="form-error" role="alert">{{ t('task.formulaEditTooLong', { limit: maxlength }) }}</p>
+    <textarea v-if="mode === 'latex'" class="textarea latex-input" :aria-label="label" :aria-describedby="describedBy" :value="modelValue" :disabled="disabled" :maxlength="maxlength" rows="2" @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)" @keydown="shortcut" />
     <p v-if="modelValue.length > maxlength" class="form-error" role="alert">{{ t('task.aiFormulaTooLong') }}</p>
     <div v-if="mode === 'latex' && modelValue" class="math-input-preview"><MathContent :text="modelValue" formula /></div>
   </div>

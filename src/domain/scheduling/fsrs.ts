@@ -69,7 +69,9 @@ export function fsrsNextStabilityForget(
     * Math.exp((1 - retrievability) * FSRS_W[14])
 }
 
-export function scheduleCard(card: Card, rating: Rating, today = todayStr()): Card {
+type SchedulingInput = Pick<Card, 'lastReview' | 'difficulty' | 'stability'> & Partial<Pick<Card, 'repetitions' | 'easeFactor'>>
+
+export function scheduleCard<T extends SchedulingInput>(card: T, rating: Rating, today = todayStr()) {
   const grade = rating + 1
   const daysSince = card.lastReview
     ? Math.max(0, daysBetweenIsoDates(card.lastReview, today))

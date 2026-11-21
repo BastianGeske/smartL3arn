@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import ApiUsageView from './ApiUsageView.vue'
+import PreferencesView from './PreferencesView.vue'
+import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { setLanguage } from '../i18n'
-import { createPinia, setActivePinia } from 'pinia'
+import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { useUiStore } from '../stores/ui'
 
 const ai = vi.hoisted(() => ({ getApiUsage: vi.fn(), getAiStatus: vi.fn(), getAiDiagnostics: vi.fn() }))
 const saveExport = vi.hoisted(() => vi.fn())
-vi.mock('../services/ai', () => ({ getAiBridge: () => ai }))
-vi.mock('../services/native', () => ({ saveExport }))
+const bridge = vi.hoisted(() => ({ available: true }))
+vi.mock('../services/ai', () => ({ getAiBridge: () => bridge.available ? ai : undefined }))
+vi.mock('../services/native', () => ({ saveExport, syncStatusBar: vi.fn().mockResolvedValue(undefined) }))
 
 const report = { model: 'configured/model', persistenceError: false, unreadableEntries: 0, groups: [{
   day: '2026-10-04', model: 'actual/model', requests: 3, successes: 1, failures: 2,
@@ -18,6 +21,7 @@ const report = { model: 'configured/model', persistenceError: false, unreadableE
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.clearAllMocks()
+  bridge.available = true
   setLanguage('en')
   ai.getApiUsage.mockResolvedValue(report)
   ai.getAiStatus.mockResolvedValue({ available: true, configured: true, credentialSource: 'bundled' })
@@ -87,4 +91,30 @@ describe('API usage through the shared native/desktop bridge', () => {
     expect(view.text()).toContain('actual/model')
     view.unmount()
   })
+})
+
+it('keeps the direct usage route under Settings and handles platforms without usage tracking', async () => {
+  bridge.available = false
+  const pinia = createPinia()
+  const router = createRouter({ history: createMemoryHistory(), routes: [
+    { path: '/usage', component: ApiUsageView },
+    { path: '/preferences', component: PreferencesView },
+    { path: '/', component: { template: '<main />' } },
+    { path: '/smart', component: { template: '<main />' } },
+  ] })
+  await router.push('/usage')
+  const view = mount(RouterView, { global: { plugins: [pinia, router] } })
+  await flushPromises()
+  expect(view.find('.app-nav a[href="/usage"]').exists()).toBe(false)
+  expect(view.get('.app-nav .is-active').text()).toBe('Settings')
+  expect(view.get('.usage-notice').text()).toContain('usage tracking is unavailable')
+
+  await view.get('.workspace-toolbar a[href="/preferences"]').trigger('click')
+  await flushPromises()
+  expect(view.get('.preferences-workspace a[href="/usage"]').text()).toBe('API usage')
+  await view.get('.preferences-workspace a[href="/usage"]').trigger('click')
+  await flushPromises()
+  expect(router.currentRoute.value.path).toBe('/usage')
+  view.unmount()
+  disposePinia(pinia)
 })
