@@ -1,3 +1,5 @@
+import { contactedToday, recordAttempt, recordContact } from './pathEvidence'
+import { localPathResult } from './pathFeedback'
 import type { Objective, ObjectiveReview, Progress, SavedPath } from '../../shared/learning-paths.mjs'
 import { parseNumeric } from '../../shared/tasks.mjs'
 import { daysBetweenIsoDates, todayStr } from './dates'
@@ -35,7 +37,7 @@ export function revisitCompleted(row: SavedPath, objectiveId: string, checkId?: 
   const progress = row.progress
   if (!progress.passed.includes(objectiveId)) return progress
   const session = progress.reviewSession
-  let next = progress
+  let next = recordContact(progress, objectiveId, checkId ? 'practice' : 'lesson', today)
   if (session?.queue[0] === objectiveId && session.outcome === 'open' && !session.assisted) {
     next = { ...next, reviewSession: { ...session, assisted: true } }
   }
@@ -57,13 +59,15 @@ function openCase(row: SavedPath, queue: string[], retry: boolean, today: string
     { objectiveId: goal.id, dueDate: today, seen: [] }
   // Keep reserved cases for delayed attempts when correcting a miss in the same session.
   const pool = retry ? goal.checks.filter(a => a.id !== progress.reviewSession?.activityId) : cases(goal)
-  // An unseen held-out case comes first. Rotate exhausted pools in order of last exposure.
-  const activity = pool.sort((a, b) => record.seen.indexOf(a.id) - record.seen.indexOf(b.id))[0]!
+  // Target unresolved skill groups first, then prefer unseen cases and rotate by last exposure.
+  const gaps = new Set(progress.gaps?.filter(g => g.objectiveId === goal.id).map(g => g.group))
+  const activity = pool.sort((a, b) => Number(gaps.has(b.skillGroup ?? b.id)) - Number(gaps.has(a.skillGroup ?? a.id))
+    || record.seen.indexOf(a.id) - record.seen.indexOf(b.id))[0]!
   const caseType = record.seen.includes(activity.id) ? 'repeat' :
     record.exposureKnown || goal.reviewChecks?.some(a => a.id === activity.id) ? 'new' : 'lesson'
   const seen = [...record.seen.filter(id => id !== activity.id), activity.id]
   return { ...progress, reviews: replaceRecord(progress, { ...record, seen }), reviewSession: {
-    queue, activityId: activity.id, caseType, assisted: false, retry, outcome: 'open',
+    queue, activityId: activity.id, caseType, assisted: contactedToday(progress, goal.id, today), retry, outcome: 'open',
     draft: activity.task.kind === 'ordering' ? { kind: 'order', ids: [] } : initialResponse(activity.task)
   } }
 }
@@ -72,6 +76,7 @@ export function startReview(row: SavedPath, today = todayStr()) {
   if (row.progress.reviewSession) return row.progress
   const chapterOf = new Map(row.content.chapters.flatMap(chapter =>
     chapter.objectives.map(goal => [goal.id, chapter.id] as const)))
+  const contrastOf = new Map(row.content.chapters.flatMap(c => c.objectives.map(g => [g.id, g.contrastGroup] as const)))
   const remaining = dueByDate(row, today)
   const queue: string[] = []
   const selectedChapters = new Set<string | undefined>()
@@ -80,7 +85,9 @@ export function startReview(row: SavedPath, today = todayStr()) {
     const previousChapter = chapterOf.get(queue.at(-1) ?? '')
     const newChapter = remaining.findIndex(({ id, due }) => due === earliest && !selectedChapters.has(chapterOf.get(id)))
     const differentChapter = remaining.findIndex(({ id, due }) => due === earliest && chapterOf.get(id) !== previousChapter)
-    const [selected] = remaining.splice(newChapter >= 0 ? newChapter : Math.max(0, differentChapter), 1)
+    const contrast = contrastOf.get(queue.at(-1) ?? '')
+    const related = contrast ? remaining.findIndex(({ id, due }) => due === earliest && contrastOf.get(id) === contrast) : -1
+    const [selected] = remaining.splice(related >= 0 ? related : newChapter >= 0 ? newChapter : Math.max(0, differentChapter), 1)
     queue.push(selected!.id)
     selectedChapters.add(chapterOf.get(selected!.id))
   }
@@ -111,14 +118,20 @@ export function gradeReview(row: SavedPath, value: StudyResponse, reveal = false
   const p = row.progress
   if (!session || session.outcome !== 'open' || !activity || !goal || (!reveal && reviewAnswerError(activity.task, value))) return p
   const correct = !reveal && evaluateResponse(activity, value)?.verdict === 'correct'
-  const assisted = reveal || session.assisted
-  const updated: Progress = { ...p, reviewSession: { ...session, draft: value, assisted, outcome: correct ? 'correct' : 'incorrect',
+  const assisted = reveal || session.assisted || contactedToday(p, goal.id, today)
+  const record = p.reviews!.find(r => r.objectiveId === goal.id)!
+  const eligible = goal.requiredEvidence !== 'code' && correct && !assisted && !!record.learnedOn && record.learnedOn < today
+    && (!record.lastReview || record.lastReview < today)
+  const attempt = recordAttempt(p, goal, activity, localPathResult(activity, value, assisted, reveal), 'review', today, eligible && !session.retry)
+  const updated: Progress = { ...recordContact(attempt, goal.id, reveal ? 'solution' : 'feedback', today), reviewSession: { ...session, draft: value, assisted, outcome: correct ? 'correct' : 'incorrect',
     ...(reveal && { revealed: true as const }) } }
   if (session.retry) return updated
-  const record = p.reviews!.find(r => r.objectiveId === goal.id)!
   const previous = record.lastReview ?? record.learnedOn
-  const { dueDate, lastReview, stability, difficulty, repetitions } = scheduleCard(record, correct && !assisted ? 2 : 0, today)
-  updated.reviews = replaceRecord(p, { ...record, dueDate, lastReview, stability, difficulty, repetitions,
+  const { dueDate, lastReview, stability, difficulty, repetitions } = scheduleCard(record, eligible ? 2 : 0, today)
+  updated.reviews = replaceRecord(p, { ...record, dueDate, lastReview,
+    stability: assisted && record.stability ? Math.min(record.stability, stability) : stability, difficulty, repetitions,
+    ...(!record.learnedOn && { learnedOn: today }),
+    ...(eligible ? { retention: 'confirmed' as const, confirmedOn: today } : !correct || assisted ? { retention: 'reinforce' as const } : {}),
     ...(previous && { gapDays: Math.max(0, daysBetweenIsoDates(previous, today)) }),
     lastCase: session.caseType, lastResult: assisted ? 'assisted' : correct ? 'independent' : 'missed' })
   return updated

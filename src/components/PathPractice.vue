@@ -5,6 +5,7 @@ import { pathKey, type Activity, type Objective, type SavedPath } from '../../sh
 import { usePathDraftWrite } from '../composables/usePathDraftWrite'
 import { reviewAnswerError } from '../domain/pathReview'
 import { initialResponse } from '../domain/tasks'
+import { recordContact, recordAttempt } from '../domain/pathEvidence'
 import { localPathResult } from '../domain/pathFeedback'
 import type { StudyResponse } from '../domain/types'
 import { useI18n } from '../i18n'
@@ -14,6 +15,7 @@ import {
   type DraftBackup, type DraftPatch,
 } from '../services/storage/pathDraftBackup'
 import PathFeedback from './PathFeedback.vue'
+import MathContent from './MathContent.vue'
 import TaskQuestion from './TaskQuestion.vue'
 import TaskResponse from './TaskResponse.vue'
 
@@ -74,10 +76,26 @@ async function check() {
   try {
     if (!await saveBeforeLeaving()) return
     error.value = ''
-    result.value = localPathResult(props.activity, answer.value)
+    const checked = localPathResult(props.activity, answer.value)
+    await library.updatePath(path, row => recordContact(recordAttempt(row.progress, props.objective, props.activity, checked, 'practice'), props.objective.id, 'practice'))
+    result.value = checked
     await nextTick()
     resultView.value?.focus()
   } finally { busy.value = false }
+}
+async function consultLesson() {
+  try { await library.updatePath(path, row => recordContact(row.progress, props.objective.id, 'lesson')) }
+  catch (reason) { report(reason) }
+}
+async function reveal() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await flush()
+    await library.updatePath(path, row => recordContact(row.progress, props.objective.id, 'solution'))
+    result.value = localPathResult(props.activity, answer.value, true, true)
+  } catch (reason) { report(reason) }
+  finally { busy.value = false }
 }
 async function reset() {
   if (busy.value) return
@@ -102,13 +120,19 @@ async function reset() {
       <p class="page-kicker">{{ t('path.voluntaryPractice') }}</p>
       <h2 ref="heading" tabindex="-1">{{ objective.goal }}</h2>
     </header>
+    <details class="path-example" @toggle="($event.target as HTMLDetailsElement).open && consultLesson()">
+      <summary>{{ t('path.reread') }}</summary>
+      <MathContent :text="objective.explanation" format-bold />
+      <h3>{{ t('path.worked') }}</h3><MathContent :text="objective.example" format-bold />
+    </details>
     <TaskQuestion v-if="activity.task.kind !== 'cloze'" :card="{ front: activity.question, task: activity.task }" interactive format-bold />
     <TaskResponse :key="inputVersion" :front="activity.question" :task="activity.task" :model-value="answer"
       :construct-order="constructOrder" :disabled="busy" format-bold @update:model-value="edit" @submit="check" />
-    <PathFeedback v-if="result" ref="resultView" :activity="activity" :result="result" />
+    <PathFeedback v-if="result" ref="resultView" :activity="activity" :result="result" :show-solution="result.verdict === 'correct' || result.verdict === 'revealed'" />
     <p v-if="error" class="path-notice" role="status">{{ error }}</p>
     <div class="path-actions">
       <button class="btn btn-primary" :disabled="busy" @click="check">{{ t('path.submit') }}</button>
+      <button v-if="result && result.verdict !== 'correct' && result.verdict !== 'revealed'" class="btn btn-secondary" :disabled="busy" @click="reveal">{{ t('path.solution') }}</button>
       <button class="btn btn-secondary" :disabled="busy" @click="emit('back')">{{ t('path.backToPath') }}</button>
       <button class="btn btn-quiet" :disabled="busy" @click="reset">{{ t('path.resetAnswer') }}</button>
     </div>

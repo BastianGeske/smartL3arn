@@ -437,3 +437,20 @@ test('uses criterion evidence for learning paths and rejects duplicate or unrequ
   await assert.rejects(client.evaluate('test',input),error => error.code === 'invalid-response')
   await assert.rejects(client.evaluate('test',{...input,criteria:[]}),error => error.code === 'invalid-input')
 })
+
+test('sends explicit code metadata, preserves source and requires evidence beyond comments or sample results', async () => {
+  let sent
+  const client = createOpenRouterClient({ model: 'test/model', fetchImpl: async (_url, init) => {
+    sent = JSON.parse(init.body)
+    return jsonResponse({ choices: [{ message: { content: JSON.stringify({ criteria: [{ id: 'syntax', status: 'missing', reason: 'Invalid syntax.' }] }) } }] })
+  } })
+  const source = '  def f(x)\n    return X\n'
+  await client.evaluate('test-key', { ...evaluationInput, evaluationScope: 'criteria', answerFormat: 'code',
+    codeLanguage: 'Python', userAnswer: source, criteria: [{ id: 'syntax', description: 'Valid syntax.' }] })
+  const context = JSON.parse(sent.messages[1].content)
+  assert.equal(context.learner_answer, source)
+  assert.equal(context.answer_format, 'code')
+  assert.equal(context.code_language, 'Python')
+  assert.match(sent.messages[0].content, /hardcoded sample/)
+  assert.match(sent.messages[0].content, /never claim runtime tests passed/)
+})

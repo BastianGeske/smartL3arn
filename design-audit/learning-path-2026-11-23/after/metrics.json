@@ -1,0 +1,1669 @@
+{
+  "metrics": [
+    {
+      "filename": "01-desktop-lesson.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": 0,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Quelle und Lernnachweis"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Übung beginnen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "02-desktop-practice.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Eine prozentuale Änderung auf den Ausgangswert beziehen.</h2>",
+      "focusTop": 264.5625,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "03-desktop-incorrect.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Teilweise richtig</h3>",
+      "focusTop": 385,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort bearbeiten",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "04-desktop-correct.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Richtig gelöst.</h3>",
+      "focusTop": 385,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": true
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lösung ansehen"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Nächste Übung",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "05-desktop-explanation.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Erklärung</h3>",
+      "focusTop": 387.40625,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "2Üben",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur Aufgabe zurück",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "06-desktop-self-check.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Eine prozentuale Änderung auf den Ausgangswert beziehen.</h2>",
+      "focusTop": 57.5625,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "In eigenen Worten mit KI beantworten",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "07-desktop-self-check-feedback.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Noch nicht richtig</h3>",
+      "focusTop": 526.59375,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Die richtige Bezugsgröße"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Eine prozentuale Änderung auf den Ausgangswert beziehen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": true
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Nächste Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "08-desktop-review.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Erinnern und anwenden</h2>",
+      "focusTop": 215.78125,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Wiederholung pausieren",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "09-desktop-review-explanation.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Erklärung</h3>",
+      "focusTop": 292.703125,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Wiederholung pausieren",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur Aufgabe zurück",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "10-desktop-code-local.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": -184,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Den Anteil berechnen"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Gerade Zahlen in einer Liste mit Python zählen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Wenn der Grundwert wechselt"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Bei einer Änderung den passenden Grundwert wählen und die prozentuale Änderung berechnen. Noch nicht begonnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Code schreiben und mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (6)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "11-desktop-code.png",
+      "width": 1280,
+      "height": 900,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": -207,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Den Anteil berechnen"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Gerade Zahlen in einer Liste mit Python zählen. In Bearbeitung",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Wenn der Grundwert wechselt"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Bei einer Änderung den passenden Grundwert wählen und die prozentuale Änderung berechnen. Noch nicht begonnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Code schreiben und mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Bewertungsvariante mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "KI-Codeprüfung starten",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (6)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "12-phone-lesson.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": 0,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Quelle und Lernnachweis"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Übung beginnen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "13-phone-practice.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Eine prozentuale Änderung auf den Ausgangswert beziehen.</h2>",
+      "focusTop": 138.765625,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "14-phone-incorrect.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Teilweise richtig</h3>",
+      "focusTop": 428.046875,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort bearbeiten",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "15-phone-correct.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Richtig gelöst.</h3>",
+      "focusTop": 428.046875,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": true
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": true
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lösung ansehen"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Nächste Übung",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "16-phone-explanation.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Erklärung</h3>",
+      "focusTop": 226.859375,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "2Üben",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur Aufgabe zurück",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "17-phone-self-check.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Eine prozentuale Änderung auf den Ausgangswert beziehen.</h2>",
+      "focusTop": 16.765625,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "In eigenen Worten mit KI beantworten",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "18-phone-self-check-feedback.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Noch nicht richtig</h3>",
+      "focusTop": 478.046875,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "basis",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · basis",
+          "disabled": true
+        },
+        {
+          "tag": "INPUT",
+          "label": "prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · prozent",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Nächste Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (1)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "19-phone-review.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h2 tabindex=\"-1\">Erinnern und anwenden</h2>",
+      "focusTop": 250.78125,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Wiederholung pausieren",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "20-phone-review-explanation.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<h3 tabindex=\"-1\">Erklärung</h3>",
+      "focusTop": 254.71875,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Wiederholung pausieren",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur Aufgabe zurück",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "21-phone-code-local.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": -388,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Code schreiben und mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "INPUT",
+          "label": "Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Vorzeichen ändern · Ergebnis",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Antwort prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (6)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "filename": "22-phone-code.png",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "focus": "<body>\n    <div id=\"app\" data-v-app=\"\"><div class=\"app-shell\"><aside class=\"app-bar\"><div class=\"app-bar-inner\"><button class=\"brand-button\" type=\"button\" aria-label=\"Bibliothek öffnen\"><img src=\"file:///Users/bastiangeske/Desktop/Cargoboard/Projekte",
+      "focusTop": -388,
+      "controls": [
+        {
+          "tag": "BUTTON",
+          "label": "Bibliothek öffnen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zum dunklen Design wechseln",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerntimer",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Themen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Zur lokalen Aufgabe",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Code schreiben und mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Bewertungsvariante mit KI prüfen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "KI-Codeprüfung starten",
+          "disabled": true
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Hinweis anzeigen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Erklärung nachlesen",
+          "disabled": false
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lösung ansehen",
+          "disabled": false
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Lernpfad verwalten"
+        },
+        {
+          "tag": "SUMMARY",
+          "label": "Strukturprüfung des Lernpfads (6)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Lerninhalt exportieren",
+          "disabled": false
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -9,6 +9,7 @@ import { readJsonSupplement } from '../services/importer'
 import { missingSource, pathKey, type SavedPath } from '../../shared/learning-paths.mjs'
 import { useCalendarStore } from '../stores/calendar'
 import { dueObjectives } from '../domain/pathReview'
+import { pathQuality } from '../domain/pathQuality'
 import { position } from '../domain/learningPath'
 import prompt from '../../docs/learning-path-prompt.md?raw'
 
@@ -88,6 +89,8 @@ async function copyPrompt() {
               :aria-label="t('path.count', { done: row.progress.passed.length, total })" />
             <p v-if="reviewing || due" class="path-panel-status">{{ reviewing ? t('path.inReview') : t('path.dueCount', { count: due }) }}</p>
           </div>
+          <details><summary>{{ t('path.quality.title') }}</summary><p>{{ t('path.quality.note') }}</p>
+            <ul><li v-for="issue in pathQuality(row.content)" :key="issue.objectiveId + issue.key">{{ issue.goal }}: {{ t(issue.key) }}</li></ul></details>
           <div class="path-panel-actions">
             <button class="btn btn-primary" type="button" @click="openPath(key, reviewing || due > 0)">
               {{ reviewing ? t('path.resumeReview') : due ? t('path.reviewDue', { count: Math.min(due, 3) }) : row.progress.passed.length < total ? t('path.resume') : t('path.openCompleted') }}

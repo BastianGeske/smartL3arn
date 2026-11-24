@@ -3710,3 +3710,20 @@ pre.path-code-answer, label.path-code-answer { white-space: pre-wrap; overflow-w
 @media (max-width: 420px) {
   .path-steps li { gap: .25rem; padding-inline: .3rem; }
 }
+
+/* A lesson remains reachable after feedback without discarding the current answer. */
+.path-step-link {
+  display: inline-flex; align-items: center; gap: .375rem; min-height: 2.75rem;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+  text-decoration: underline; text-underline-offset: .2em;
+}
+.path-step-link:hover { color: var(--primary); }
+.path-step-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
+.path-steps:has(.path-step-link) li { padding-block: .1rem; }
+.path-review-lesson { justify-self: start; }
+.path-quality { margin-block: .75rem; }
+.path-task-panel > .path-help { justify-content: flex-start; }
+.path-task-panel > .path-help > .btn { min-height: 2.75rem; }
+.path-study .path-explanation h3 { scroll-margin-top: 5rem; }
+/* Keep focused headings clear of the fixed mobile header. */
+.path-study-workspace [tabindex="-1"] { scroll-margin-top: 5rem; }

@@ -1,0 +1,102 @@
+{
+  "date": "2026-11-23",
+  "scope": "Learning Path: explanation, guided practice, self-check, delayed review and code input",
+  "environment": "Isolated Electron profile with bundled synthetic examples; no personal learning data or live AI requests.",
+  "captureTool": "Electron BrowserWindow capturePage; approved fallback because CUA browser host was unavailable.",
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "name": "Einstieg und Erklärung",
+      "before": "before/01-desktop-lesson.png",
+      "after": "after/01-desktop-lesson.png",
+      "health": "verbessert",
+      "finding": "Strukturprüfung stand vor dem Lerninhalt; jetzt unter Lernpfad verwalten."
+    },
+    {
+      "step": 2,
+      "name": "Üben und falsche Antwort",
+      "before": "before/12-phone-incorrect.png",
+      "after": "after/14-phone-incorrect.png",
+      "health": "teilweise verbessert",
+      "finding": "Antwort bearbeiten benennt die Aktion genauer; Rückmeldungsblöcke bleiben mobil lang."
+    },
+    {
+      "step": 3,
+      "name": "Richtige Übungsantwort",
+      "before": "before/13-phone-correct.png",
+      "after": "after/15-phone-correct.png",
+      "health": "behoben",
+      "finding": "Erklärung nachlesen verschwand nach einer richtigen Antwort; jetzt dauerhaft erreichbar, auch über den ersten Lernschritt."
+    },
+    {
+      "step": 4,
+      "name": "Zur Erklärung und zurück",
+      "after": "after/16-phone-explanation.png",
+      "health": "funktioniert",
+      "finding": "Erklärung öffnet ohne Zurücksetzen von Antwort, Ergebnis oder Runde. Rückkehr und Fokus werden durch Regressionstests geprüft."
+    },
+    {
+      "step": 5,
+      "name": "Selbstkontrolle nach Abgabe",
+      "before": "before/15-phone-self-check-feedback.png",
+      "after": "after/18-phone-self-check-feedback.png",
+      "health": "behoben",
+      "finding": "Erklärungszugang nach abgegebener Antwort fehlte. Er ist jetzt vor und nach der Abgabe verfügbar."
+    },
+    {
+      "step": 6,
+      "name": "Spätere Wiederholung",
+      "before": "before/16-phone-review.png",
+      "after": "after/19-phone-review.png",
+      "health": "behoben",
+      "finding": "Erklärung war vor einer Antwort unerreichbar. Jetzt direkt aufrufbar. Nachlesen zeigt keinen unangeforderten Aufgabenhinweis."
+    },
+    {
+      "step": 7,
+      "name": "Codeantwort",
+      "before": "before/18-phone-code.png",
+      "after": "after/22-phone-code.png",
+      "health": "weiterer Verbesserungsbedarf",
+      "finding": "Viele Hinweise und lange Formatbezeichnungen verdrängen den Editor. Die Vorbereitung mit Gegenproben und die eigentliche Codebewertung sollten visuell klarer aufeinander folgen."
+    }
+  ],
+  "strengths": [
+    "Keine horizontale Überbreite in den aufgezeichneten Zuständen.",
+    "Gut erkennbare Überschriften, eigene Antwort und markierte Teilergebnisse.",
+    "Aufgabenentwürfe und Lernfortschritt bleiben beim Nachlesen erhalten."
+  ],
+  "accessibility": {
+    "improved": [
+      "Erklärungsnavigation über echte Buttons.",
+      "44px Mindesthöhe für Lernschritt-Links und Hilfe-Buttons.",
+      "Zusätzlicher Scrollabstand für fokussierte Überschriften unter der mobilen Kopfzeile."
+    ],
+    "limits": [
+      "Kein Screenreader-Test.",
+      "Keine Messung vollständiger WCAG-Konformität oder aller Farbkontraste.",
+      "Mobilansicht wurde im Desktop-Renderer geprüft, ohne reale Bildschirmtastatur."
+    ]
+  },
+  "recommendations": [
+    "Code-Modus in Vorbereitung, Eingabe und Prüfung gliedern; Tastaturtipps in eine aufklappbare Hilfe verschieben.",
+    "Rückmeldungen mobil kompakter darstellen; überflüssige Wiederholungen der eigenen Eingabe reduzieren, bevor eine fixierte Aktionsleiste erwogen wird."
+  ],
+  "verification": {
+    "electronSharedTests": 73,
+    "frontendDomainTests": 587,
+    "productionBuild": "passed",
+    "beforeScreens": 18,
+    "afterScreens": 22,
+    "consoleErrors": 0
+  }
+}

@@ -25,6 +25,9 @@ function number(v, field, min = 0) {
   expect(Number.isSafeInteger(v) && v >= min && v <= 1000000000, field)
   return v
 }
+function validDay(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toJSON()?.slice(0, 10) === value
+}
 function choice(v, field, values) {
   expect(values.includes(v), field)
   return v
@@ -45,6 +48,8 @@ function written(v) {
     expect(typeof v.practiceOnly === 'boolean', 'written.practiceOnly')
     result.practiceOnly = v.practiceOnly
   }
+  if (v.language !== undefined) result.language = string(v.language, 'written.language', 80)
+  expect(v.language === undefined || v.input === 'code', 'code language')
   if (v.input !== undefined) result.input = choice(v.input, 'written.input', ['text', 'code', 'formula'])
   for (const key of ['paraphrase', 'partial', 'misconception']) result[key] = string(v[key], key, 1000)
   expect(new Set([result.paraphrase, result.partial, result.misconception]).size === 3, 'written.examples')
@@ -58,6 +63,7 @@ function activity(v, seen, check) {
   expect(!check || task.kind !== 'true_false', 'independent check')
   const result = { id: id(v.id, seen, 'activity.id'), question, task, hint: string(v.hint, 'hint'),
     solution: string(v.solution, 'solution'), feedback: string(v.feedback, 'feedback') }
+  if (v.skillGroup !== undefined) result.skillGroup = string(v.skillGroup, 'skillGroup', 80)
   if (v.written !== undefined) {
     expect(check, 'written check')
     result.written = written(v.written)
@@ -85,6 +91,10 @@ export function normalizePath(v) {
       const selfCheckSize = o.selfCheckSize === undefined ? undefined : number(o.selfCheckSize, 'selfCheckSize', 3)
       expect(Boolean(practiceExtras) === (selfCheckSize !== undefined), 'practiceExtras and selfCheckSize')
       expect(selfCheckSize === undefined || selfCheckSize <= 6 && checks.length >= selfCheckSize + 2, 'selfCheckSize / reserve checks')
+      if (o.requiredEvidence !== undefined) {
+        expect(o.requiredEvidence === 'code', 'requiredEvidence')
+        expect(checks.every(a => a.written?.input === 'code' && a.written.language), 'code evidence checks')
+      }
       const reviewChecks = o.reviewChecks === undefined ? undefined : list(o.reviewChecks, 'reviewChecks', 1, 3).map(a => {
         expect(a && a.written === undefined, 'reviewChecks.local')
         return activity(a, seen, true)
@@ -96,7 +106,9 @@ export function normalizePath(v) {
       expect(new Set(questions).size === questions.length, 'distinct practice and check variants')
       return { id: objectiveId, goal: string(o.goal, 'goal', 400), evidence: string(o.evidence, 'evidence'),
         source: string(o.source, 'source'), explanation: string(o.explanation, 'explanation', 8000),
-        example: string(o.example, 'example', 8000), practice, checks, ...(opening && { opening }), ...(reviewChecks && { reviewChecks }),
+        example: string(o.example, 'example', 8000), practice, checks,
+        ...(o.requiredEvidence && { requiredEvidence: o.requiredEvidence }),
+        ...(o.contrastGroup !== undefined && { contrastGroup: string(o.contrastGroup, 'contrastGroup', 80) }), ...(opening && { opening }), ...(reviewChecks && { reviewChecks }),
         ...(practiceExtras && { practiceExtras, selfCheckSize }) }
     })
   }))
@@ -212,6 +224,8 @@ function reviewProgress(v, goals, passed) {
         expect(typeof r.exposureKnown === 'boolean', 'reviews.exposureKnown')
         row.exposureKnown = r.exposureKnown
       }
+      if (r.retention !== undefined) row.retention = choice(r.retention, 'retention', ['confirmed', 'reinforce'])
+      if (r.confirmedOn !== undefined) row.confirmedOn = date(r.confirmedOn, 'confirmedOn')
       if (r.learnedOn !== undefined) row.learnedOn = date(r.learnedOn, 'reviews.learnedOn')
       if (r.lastReview !== undefined) {
         row.lastReview = date(r.lastReview, 'reviews.lastReview')
@@ -237,6 +251,10 @@ function reviewProgress(v, goals, passed) {
     result.reviewSession = { queue, activityId: activity.id, draft: draft(session.draft, activity.task, true),
       assisted: session.assisted, retry: session.retry, outcome: choice(session.outcome, 'reviewSession.outcome', ['open','correct','incorrect']),
       caseType: choice(session.caseType, 'reviewSession.caseType', caseTypes) }
+    if (session.hintRevealed !== undefined) {
+      expect(typeof session.hintRevealed === 'boolean' && (!session.hintRevealed || session.assisted), 'reviewSession.hintRevealed')
+      result.reviewSession.hintRevealed = session.hintRevealed
+    }
     if (session.revealed !== undefined) {
       expect(session.revealed === true && session.assisted && session.outcome === 'incorrect', 'reviewSession.revealed')
       result.reviewSession.revealed = true
@@ -345,6 +363,38 @@ function progress(v, content) {
   const result = { ...studyStep(v, current), ...reviewProgress(v, goals, passed),
     passed: goals.filter(g => passed.includes(g.id)).map(g => g.id),
     attempt: number(v.attempt, 'attempt'), transferred: [...transferred], practiceOnly: [...practiceOnly]
+  }
+  if (v.contacts !== undefined) {
+    const seen = new Set()
+    result.contacts = list(v.contacts, 'contacts', 0, goals.length).map(c => {
+      expect(goalById.has(c?.objectiveId) && !seen.has(c.objectiveId), 'contact objective')
+      seen.add(c.objectiveId)
+      expect(Number.isSafeInteger(c.at) && c.at >= 0 && validDay(c.day), 'contact time')
+      return { objectiveId: c.objectiveId, at: c.at, day: c.day, kind: choice(c.kind, 'contact kind', ['lesson','solution','practice','feedback']) }
+    })
+  }
+  if (v.attempts !== undefined) result.attempts = list(v.attempts, 'attempts', 0, 100000).map(a => {
+    const goal = goalById.get(a?.objectiveId)
+    const activity = goal && [...practiceCases(goal), ...goal.checks, ...(goal.reviewChecks ?? [])].find(c => c.id === a.result?.activityId)
+    expect(activity && Number.isSafeInteger(a.at) && a.at >= 0 && validDay(a.day), 'attempt')
+    return { objectiveId: goal.id, at: a.at, day: a.day, phase: choice(a.phase, 'attempt phase', ['practice','check','review']),
+      attempt: number(a.attempt, 'attempt number'), result: answerResult(a.result, activity, true) }
+  })
+  if (v.roundHistory !== undefined) result.roundHistory = list(v.roundHistory, 'roundHistory', 0, 10000).map(h => {
+    expect(goalById.has(h?.objectiveId), 'history objective')
+    const round = selfCheckRound(h.round, goalById.get(h.objectiveId))
+    expect(round.answers.length === round.queue.length, 'history complete round')
+    return { objectiveId: h.objectiveId, round }
+  })
+  if (v.gaps !== undefined) result.gaps = list(v.gaps, 'gaps', 0, goals.length * 8).map(g => {
+    const goal = goalById.get(g?.objectiveId)
+    expect(goal && [...goal.checks, ...(goal.reviewChecks ?? [])].some(a => (a.skillGroup ?? a.id) === g.group), 'gap group')
+    return { objectiveId: goal.id, group: g.group }
+  })
+  if (v.codeValidations !== undefined) {
+    members(v.codeValidations.map(c => c?.activityId), [...writtenIds], 'code validation ids')
+    result.codeValidations = v.codeValidations.map(c => ({ activityId: c.activityId,
+      model: string(c.model, 'validation model', 400), fingerprint: string(c.fingerprint, 'validation fingerprint', 30000) }))
   }
   if (v.activeObjectiveId !== undefined) result.activeObjectiveId = current.id
   if (v.pausedObjectives !== undefined) {

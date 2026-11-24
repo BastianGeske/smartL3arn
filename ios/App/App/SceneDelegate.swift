@@ -189,6 +189,8 @@ class NativeAiPlugin: CAPPlugin, CAPBridgedPlugin {
         if criteria {
             input["evaluationScope"] = "criteria"
             input["criteria"] = call.getArray("criteria")
+            input["answerFormat"] = call.getString("answerFormat")
+            input["codeLanguage"] = call.getString("codeLanguage")
         }
         let ids = (input["criteria"] as? [[String: String]])?.compactMap { $0["id"] }
         guard let body = NativeAiEvaluationRequest.body(input: input, model: configuredModel),

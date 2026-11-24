@@ -120,25 +120,124 @@
       "type": "object",
       "additionalProperties": false,
       "dependencies": {
-        "practiceExtras": ["selfCheckSize"],
-        "selfCheckSize": ["practiceExtras"]
+        "practiceExtras": [
+          "selfCheckSize"
+        ],
+        "selfCheckSize": [
+          "practiceExtras"
+        ]
       },
       "allOf": [
         {
-          "if": { "required": ["selfCheckSize"], "properties": { "selfCheckSize": { "const": 3 } } },
-          "then": { "properties": { "checks": { "type": "array", "minItems": 5 } } }
+          "if": {
+            "required": [
+              "selfCheckSize"
+            ],
+            "properties": {
+              "selfCheckSize": {
+                "const": 3
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "type": "array",
+                "minItems": 5
+              }
+            }
+          }
         },
         {
-          "if": { "required": ["selfCheckSize"], "properties": { "selfCheckSize": { "const": 4 } } },
-          "then": { "properties": { "checks": { "type": "array", "minItems": 6 } } }
+          "if": {
+            "required": [
+              "selfCheckSize"
+            ],
+            "properties": {
+              "selfCheckSize": {
+                "const": 4
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "type": "array",
+                "minItems": 6
+              }
+            }
+          }
         },
         {
-          "if": { "required": ["selfCheckSize"], "properties": { "selfCheckSize": { "const": 5 } } },
-          "then": { "properties": { "checks": { "type": "array", "minItems": 7 } } }
+          "if": {
+            "required": [
+              "selfCheckSize"
+            ],
+            "properties": {
+              "selfCheckSize": {
+                "const": 5
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "type": "array",
+                "minItems": 7
+              }
+            }
+          }
         },
         {
-          "if": { "required": ["selfCheckSize"], "properties": { "selfCheckSize": { "const": 6 } } },
-          "then": { "properties": { "checks": { "type": "array", "minItems": 8 } } }
+          "if": {
+            "required": [
+              "selfCheckSize"
+            ],
+            "properties": {
+              "selfCheckSize": {
+                "const": 6
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "type": "array",
+                "minItems": 8
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "requiredEvidence"
+            ]
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "items": {
+                  "required": [
+                    "written"
+                  ],
+                  "properties": {
+                    "written": {
+                      "required": [
+                        "language",
+                        "input"
+                      ],
+                      "properties": {
+                        "input": {
+                          "const": "code"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       ],
       "required": [
@@ -228,6 +327,12 @@
               "minLength": 1,
               "maxLength": 4000,
               "pattern": "\\S"
+            },
+            "skillGroup": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "\\S"
             }
           }
         },
@@ -235,7 +340,9 @@
           "type": "array",
           "minItems": 2,
           "maxItems": 5,
-          "items": { "$ref": "#/definitions/objective/properties/practice" }
+          "items": {
+            "$ref": "#/definitions/objective/properties/practice"
+          }
         },
         "selfCheckSize": {
           "type": "integer",
@@ -304,6 +411,12 @@
               },
               "written": {
                 "$ref": "#/definitions/written"
+              },
+              "skillGroup": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
               }
             }
           }
@@ -342,6 +455,15 @@
               }
             ]
           }
+        },
+        "requiredEvidence": {
+          "const": "code"
+        },
+        "contrastGroup": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "\\S"
         }
       }
     },
@@ -867,8 +989,33 @@
         },
         "practiceOnly": {
           "type": "boolean"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "\\S"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "language"
+            ]
+          },
+          "then": {
+            "required": [
+              "input"
+            ],
+            "properties": {
+              "input": {
+                "const": "code"
+              }
+            }
+          }
+        }
+      ]
     },
     "needsSource": {
       "type": "object",

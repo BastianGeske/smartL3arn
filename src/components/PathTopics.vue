@@ -96,11 +96,12 @@ defineExpose({ close })
                 <AppIcon :name="progress.passed.includes(goal.id) ? 'check-circle-2' : 'book-open'" :size="16" />
                 <span>
                   {{ goal.goal }}
-                  <small>{{ t(progress.passed.includes(goal.id) ? 'path.passed'
+                  <small>{{ t(progress.passed.includes(goal.id) ? 'path.retention.initial'
                     : active === goal.id || progress.pausedObjectives?.some(entry => entry.objectiveId === goal.id) ? 'path.inProgress' : 'path.notStarted') }}</small>
                 </span>
               </button>
               <template v-for="record in [reviews.get(goal.id)]" :key="goal.id">
+                <p v-if="record?.retention">{{ t(`path.retention.${record.retention}`) }}</p>
                 <p v-if="record?.lastReview && record.lastResult && record.lastCase">
                   {{ formatDateLabel(record.lastReview) }} · {{ t(`path.result.${record.lastResult}`) }}
                   <span v-if="record.gapDays !== undefined">{{ t('path.afterDays', { count: record.gapDays }) }}</span>

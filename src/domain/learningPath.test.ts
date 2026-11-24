@@ -1,3 +1,4 @@
+import { codeFingerprint } from './pathCode'
 import { describe, expect, it } from 'vitest'
 import example from '../../docs/learning-path.example.json'
 import { freshProgress, normalizePath, normalizePaths, type SavedPath } from '../../shared/learning-paths.mjs'
@@ -176,6 +177,7 @@ describe('criterion-based free text', () => {
     row.progress.prose = input === 'code' ? wrong.replace(/\n/g, '\r\n') : wrong
     expect(gradeWritten(row, attemptKey(row), row.progress.prose, all)).toMatchObject({ outcome: 'retry', practiceOnly: ['w-check1'] })
     row.progress.prose = correct
-    expect(gradeWritten(row, attemptKey(row), correct, all).passed).toContain('wechsel')
+    row.progress.codeValidations = [{ activityId: 'w-check1', model: 'test/model', fingerprint: codeFingerprint(written) }]
+    expect(gradeWritten(row, attemptKey(row), correct, all, 'test/model').passed).toContain('wechsel')
   })
 })

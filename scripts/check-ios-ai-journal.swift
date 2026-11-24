@@ -38,9 +38,14 @@ struct CheckAiJournal {
         let source = "    return value\n"
         rubricInput["userAnswer"] = source
         rubricInput["referenceAnswer"] = source
+        rubricInput["answerFormat"] = "code"
+        rubricInput["codeLanguage"] = "Python"
         let rubricRequest = NativeAiEvaluationRequest.body(input: rubricInput, model: "trusted/model")!
         let rubricMessages = rubricRequest["messages"] as! [[String: String]]
         let context = try JSONSerialization.jsonObject(with: Data(rubricMessages[1]["content"]!.utf8)) as! [String: Any]
+        expect(context["answer_format"] as? String == "code", "native code format forwarded")
+        expect(context["code_language"] as? String == "Python", "native code language forwarded")
+        expect(rubricMessages[0]["content"]!.contains("never claim runtime tests passed"), "native evaluator does not claim execution")
         expect(context["learner_answer"] as? String == source, "rubric preserves learner code whitespace")
         expect(context["reference_answer"] as? String == source, "rubric preserves reference code whitespace")
         rubricInput["criteria"] = [["id": "base", "description": "One"], ["id": "base", "description": "Two"]]

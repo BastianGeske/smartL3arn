@@ -232,6 +232,14 @@ function createOpenRouterClient({
     const rubric = scope === 'criteria' ? await import('../shared/rubric.mjs') : null
     if (rubric) {
       if (!rubric.validCriteria(input.criteria)) throw new OpenRouterError('invalid-input', 'Invalid criteria.')
+      if (input.answerFormat !== undefined) {
+        if (!['text', 'code', 'formula'].includes(input.answerFormat)) throw new OpenRouterError('invalid-input', 'Invalid answer format.')
+        context.answer_format = input.answerFormat
+      }
+      if (input.codeLanguage !== undefined) {
+        context.code_language = boundedString(input.codeLanguage, 'Code language')
+        if (context.code_language.length > 80) throw new OpenRouterError('invalid-input', 'Code language too long.')
+      }
       context.criteria = input.criteria.map(({ id, description }) => ({ id, description }))
     }
     if (!['answer', 'working', 'answer_and_working', 'criteria'].includes(scope)) throw new OpenRouterError('invalid-input', 'Invalid evaluation scope.')

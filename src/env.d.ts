@@ -12,6 +12,8 @@ interface AiEvaluationInput {
   deckName: string
   question: string
   language?: 'en' | 'de'
+  answerFormat?: 'text' | 'code' | 'formula'
+  codeLanguage?: string
   referenceAnswer: string
   userAnswer: string
   evaluationScope?: 'answer' | 'working' | 'answer_and_working'

@@ -1,3 +1,5 @@
+import { recordAttempt, recordContact } from './pathEvidence'
+import { codeValidated } from './pathCode'
 import { criterionResults } from '../../shared/rubric.mjs'
 import { todayStr, addDaysToIsoDate } from './dates'
 import { t } from '../i18n'
@@ -62,7 +64,7 @@ export function switchObjective(row: SavedPath, objectiveId: string): Progress {
 function begin(progress: Progress, phase: Progress['phase'], activity?: Activity, variant = 0): Progress {
   const construct = phase === 'check' && activity?.task.kind === 'ordering'
   const trackCheck = phase === 'check' && activity && (progress.phase === 'practice' || progress.seenChecks)
-  const seenChecks = trackCheck ? [...(progress.seenChecks ?? []).filter(id => id !== activity.id), activity.id] : undefined
+  const seenChecks = trackCheck ? [...(progress.seenChecks ?? []).filter(id => id !== activity.id), activity.id] : progress.seenChecks
   return moveToStep(progress, { ...freshStep(), phase, variant, ...(seenChecks && { seenChecks }),
     ...(progress.practiceAnswers && { practiceAnswers: progress.practiceAnswers }),
     ...(construct ? { orderingInput: 'construct', draft: { kind: 'order', ids: [] } }
@@ -89,10 +91,18 @@ function startRound(p: Progress, goal: Objective) {
     .slice(0, goal.selfCheckSize!)
   return openRoundItem(p, goal, { queue, repeated: queue.filter(id => seen.includes(id)), answers: [] })
 }
+
+export function relearnObjective(row: SavedPath): Progress {
+  const p = row.progress, round = p.selfCheck
+  if (!position(row).goal || p.phase !== 'check' || p.outcome !== 'retry' || !round
+    || round.answers.length !== round.queue.length || selfCheckScore(round) >= selfCheckRequired(round.queue.length)) return p
+  return moveToStep(p, { ...freshStep(), ...(p.seenChecks && { seenChecks: [...p.seenChecks] }) })
+}
+
 export function advance(row: SavedPath): Progress {
   const { goal } = position(row), p = row.progress
   if (!goal) return p
-  if (p.phase === 'lesson') return begin(p, 'practice', goal.practice)
+  if (p.phase === 'lesson') return begin(recordContact(p, goal.id, 'lesson'), 'practice', goal.practice)
   if (p.phase === 'practice' && p.outcome === 'next') {
     const completed = goal.practiceExtras && p.result ? { ...p, practiceAnswers: [...(p.practiceAnswers ?? []), p.result] } : p
     const nextPractice = practiceCases(goal)[p.variant + 1]
@@ -109,9 +119,11 @@ export function advance(row: SavedPath): Progress {
 }
 
 export function assist(row: SavedPath, help: Exclude<Progress['help'], 'none'>): Progress {
-  const { activity, goal } = position(row), p = row.progress
+  const { activity, goal } = position(row)
+  let p = row.progress
   if (!activity || p.outcome !== 'open') return p
   if (help === 'solution' && p.phase === 'practice' && goal?.practiceExtras && !p.result) return p
+  p = recordContact(p, goal!.id, help === 'lesson' ? 'lesson' : help === 'solution' ? 'solution' : 'practice')
   if (help === 'solution' && (p.selfCheck || p.result)) {
     const revealed: PathAnswerResult = { activityId: activity.id, verdict: 'revealed', assisted: true,
       ...(p.mode === 'written' ? { prose: p.prose } : { response: p.result?.response ?? (p.phase === 'check' ? p.draft : undefined) }) }
@@ -139,10 +151,15 @@ function passObjective(row: SavedPath, evidence: Omit<NonNullable<Progress['last
   return { ...next, lastPass: { objectiveId, ...evidence } }
 }
 function graded(row: SavedPath, result: PathAnswerResult, feedback: string): Progress {
-  const p = row.progress
+  const { goal, activity } = position(row)
+  const p = recordAttempt(row.progress, goal!, activity!, result, row.progress.phase === 'practice' ? 'practice' : 'check')
+  row = { ...row, progress: p }
   const correct = result.verdict === 'correct'
   if (p.selfCheck) {
     const round = { ...p.selfCheck, answers: [...p.selfCheck.answers, result] }
+    if (round.answers.length === round.queue.length) {
+      p.roundHistory = [...(p.roundHistory ?? []), { objectiveId: goal!.id, round }]
+    }
     if (round.answers.length === round.queue.length && selfCheckScore(round) >= selfCheckRequired(round.queue.length)) {
       return passObjective(row, { feedback: '' }, round)
     }
@@ -156,7 +173,7 @@ function graded(row: SavedPath, result: PathAnswerResult, feedback: string): Pro
 export function gradeLocal(row: SavedPath, answer: StudyResponse): Progress {
   const { activity } = position(row), p = row.progress
   if (!activity || p.mode !== 'local' || p.outcome !== 'open' || !completeOrderingCheck(row, answer)) return p
-  const result = localPathResult(activity, answer, p.help !== 'none')
+  const result = localPathResult(activity, answer, p.help !== 'none' || position(row).goal?.requiredEvidence === 'code' && p.phase === 'check')
   return graded({ ...row, progress: { ...p, draft: answer } }, result, result.verdict === 'correct' ? activity.solution : activity.feedback)
 }
 
@@ -214,7 +231,7 @@ function canonicalFormula(source: string): string {
   return depth ? literal() : JSON.stringify(normalized)
 }
 
-export function gradeWritten(row: SavedPath, expectedAttempt: string, submitted: string, results: unknown): Progress {
+export function gradeWritten(row: SavedPath, expectedAttempt: string, submitted: string, results: unknown, model = ''): Progress {
   const p = row.progress, written = position(row).activity?.written
   if (!written || p.mode !== 'written' || p.outcome !== 'open' || p.prose !== submitted || attemptKey(row) !== expectedAttempt) return p
   const checked = criterionResults(results, written.criteria)
@@ -232,11 +249,23 @@ export function gradeWritten(row: SavedPath, expectedAttempt: string, submitted:
   }
   const comparison = canonical(submitted)
   const knownWrong = [written.partial, written.misconception].some(s => canonical(s) === comparison)
+  if (written.input === 'code' && correct && knownWrong) {
+    const updated = { ...p, practiceOnly: [...new Set([...p.practiceOnly, activityId])] }
+    return graded({ ...row, progress: updated }, { activityId, prose: submitted, assisted: true, verdict: 'incorrect', criteria: checked }, t('path.unreliable'))
+  }
+  if (written.input === 'code' && (written.practiceOnly || p.practiceOnly.includes(activityId))) {
+    const updated = { ...p, practiceOnly: [...new Set([...p.practiceOnly, activityId])] }
+    return graded({ ...row, progress: updated }, { activityId, prose: submitted, criteria: checked, assisted: true,
+      verdict: correct ? 'correct' : checked.some(r => r.status === 'satisfied') ? 'partial' : 'incorrect' }, feedback)
+  }
   if (written.practiceOnly || p.practiceOnly.includes(activityId) || (correct && knownWrong)) {
     if (p.selfCheck) return { ...p, mode: 'local', attempt: p.attempt + 1, feedback: t('path.unreliable'),
       practiceOnly: [...new Set([...p.practiceOnly, activityId])] }
     return { ...p, outcome: 'retry', feedback: t('path.unreliable'),
       practiceOnly: [...new Set([...p.practiceOnly, activityId])] }
+  }
+  if (written.input === 'code' && !codeValidated(p, activityId, written, model)) {
+    return { ...p, feedback: t('path.code.validationRequired') }
   }
   return graded(row, { activityId, prose: submitted, criteria: checked, assisted: p.help !== 'none',
     verdict: correct ? 'correct' : checked.some(r => r.status === 'satisfied') ? 'partial' : 'incorrect' }, feedback)

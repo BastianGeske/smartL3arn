@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { codeEdit } from '../domain/codeEditor'
+import { codeFingerprint, codeValidated, validateCodeRubric } from '../domain/pathCode'
+import { recordContact, correctionCases } from '../domain/pathEvidence'
+import { pathQuality } from '../domain/pathQuality'
 import AppIcon from '../components/AppIcon.vue'
 import PathFocusTimer from '../components/PathFocusTimer.vue'
 import PathPractice from '../components/PathPractice.vue'
@@ -20,7 +24,7 @@ import { useI18n } from '../i18n'
 import { useLibraryStore } from '../stores/library'
 import { pathKey, practiceCases, selfCheckRequired, type Activity, type Progress, type SavedPath } from '../../shared/learning-paths.mjs'
 import { parseNumeric } from '../../shared/tasks.mjs'
-import { advance, assist, attemptKey, completeOrderingCheck, gradeLocal, gradeWritten, position, switchObjective } from '../domain/learningPath'
+import { advance, assist, attemptKey, completeOrderingCheck, gradeLocal, gradeWritten, position, relearnObjective, switchObjective } from '../domain/learningPath'
 import { AI_TEXT_LIMIT, fieldValue, responseError } from '../domain/tasks'
 import type { StudyResponse } from '../domain/types'
 import { getAiBridge } from '../services/ai'
@@ -107,6 +111,10 @@ const invalidNumericGaps = ref<string[]>([])
 const localResponse = ref<HTMLElement>()
 const actionNotice = ref('')
 const aiReadiness = ref<'checking' | 'ready' | 'unavailable'>('unavailable')
+const aiModel = ref('')
+const validationBusy = ref(false)
+const codePracticeOnly = computed(() => !!pos.value?.activity && (!!pos.value.activity.written?.practiceOnly || !!p.value?.practiceOnly.includes(pos.value.activity.id)))
+const validCode = computed(() => !!p.value && !!pos.value?.activity?.written && codeValidated(p.value, pos.value.activity.id, pos.value.activity.written, aiModel.value))
 const writtenReady = computed(() => aiReadiness.value === 'ready')
 const roundWrittenRestricted = computed(() => !!round.value && !!pos.value?.activity &&
   (pos.value.activity.written?.practiceOnly || p.value?.practiceOnly.includes(pos.value.activity.id)))
@@ -233,13 +241,14 @@ watch(questionKey, async () => { await nextTick(); heading.value?.focus() })
 watch(questionKey, async (_, _previous, onCleanup) => {
   const ai = getAiBridge()
   aiReadiness.value = 'unavailable'
+  aiModel.value = ''
   if (!pos.value?.activity?.written || !ai?.evaluateCriteria) return
   let active = true
   onCleanup(() => { active = false })
   aiReadiness.value = 'checking'
   try {
     const status = await ai.getAiStatus()
-    if (active) aiReadiness.value = status.available && status.configured ? 'ready' : 'unavailable'
+    if (active) { aiReadiness.value = status.available && status.configured ? 'ready' : 'unavailable'; aiModel.value = status.model ?? '' }
   } catch {
     if (active) aiReadiness.value = 'unavailable'
   }
@@ -282,7 +291,7 @@ onBeforeUnmount(() => {
 })
 
 async function change(action: (current: SavedPath) => Progress): Promise<boolean> {
-  if (saving.value || !row.value) return false
+  if (saving.value || validationBusy.value || !row.value) return false
   const path = key.value, expected = token.value
   notice.value = ''
   saving.value = true
@@ -349,7 +358,9 @@ async function backToPath() {
   heading.value?.focus()
 }
 async function revisitExplanation() {
-  if (!await useHelp('lesson')) return
+  cancelWritten()
+  if (!await change(current => current.progress.outcome === 'open' ? assist(current, 'lesson')
+    : recordContact(current.progress, position(current).goal!.id, 'lesson'))) return
   explanationOpen.value = true
   await nextTick()
   explanationHeading.value?.focus()
@@ -427,14 +438,23 @@ async function writtenCheck() {
     await flushDraft()
     if (request !== serial) return
     if (!evaluate) throw new Error()
+    const status = await getAiBridge()!.getAiStatus()
+    if (request !== serial) return
+    aiModel.value = status.model ?? ''
+    if (written.input === 'code' && !codePracticeOnly.value && !codeValidated(row.value!.progress, pos.value!.activity!.id, written, aiModel.value)) {
+      notice.value = t('path.code.validationRequired'); return
+    }
     const result = await evaluate({ deckName: active.content.title, question: written.question, language: locale.value,
-      referenceAnswer: written.reference, userAnswer: submitted, criteria: written.criteria.map(({id, description}) => ({id, description})) })
+      referenceAnswer: written.reference, userAnswer: submitted, answerFormat: written.input ?? 'text', codeLanguage: written.language, criteria: written.criteria.map(({id, description}) => ({id, description})) })
     if (request !== serial) return
     if (!result.ok || !result.result) throw new Error()
+    if (written.input === 'code' && (await getAiBridge()!.getAiStatus()).model !== aiModel.value) {
+      if (request === serial) { aiModel.value = ''; notice.value = t('path.code.validationRequired') }; return
+    }
     const criteria = result.result.criteria
     await library.updatePath(path, current => {
       if (request !== serial) return current.progress
-      const next = gradeWritten(current, expected, submitted, criteria)
+      const next = gradeWritten(current, expected, submitted, criteria, aiModel.value)
       if (next === current.progress) throw new Error()
       return next
     })
@@ -457,6 +477,68 @@ async function transfer() {
   try { await library.transferCards(key.value, chosen.value, target.value); chosen.value = []; actionNotice.value = t('path.transferred') }
   catch (e) { actionNotice.value = e instanceof Error ? e.message : t('path.saveFailed') } finally { saving.value = false }
 }
+
+async function contactResult(objectiveId: string) {
+  await library.updatePath(key.value, row => recordContact(row.progress, objectiveId, 'solution')).catch(report)
+}
+async function correctPassed() {
+  if (!passGoal.value || !row.value) return
+  const goal = passGoal.value
+  const activity = correctionCases(goal, row.value.progress)[0]
+  if (!activity || !await change(current => revisitCompleted(current, goal.id, activity.id))) return
+  visitedId.value = goal.id
+  repeatActivity.value = activity
+}
+let escapeCodeTab = false
+function codeKeydown(event: KeyboardEvent) {
+  if (writtenInput.value !== 'code' || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return
+  if (event.key === 'Escape') { escapeCodeTab = true; return }
+  if (event.key === 'Tab' && escapeCodeTab) { escapeCodeTab = false; return }
+  escapeCodeTab = false
+  if (event.key !== 'Tab' && event.key !== 'Enter') return
+  event.preventDefault()
+  const field = event.currentTarget as HTMLTextAreaElement
+  const edit = codeEdit(field.value, field.selectionStart, field.selectionEnd, event.key, event.shiftKey)
+  if (edit.value.length > AI_TEXT_LIMIT) { codePasteRejected.value = true; return }
+  setProse(edit.value)
+  void nextTick(() => field.setSelectionRange(edit.start, edit.end))
+}
+async function validateCode() {
+  const current = row.value, activity = pos.value?.activity, bridge = getAiBridge()
+  if (!current || !activity?.written || !bridge?.evaluateCriteria || validationBusy.value || saving.value || waiting.value) return
+  validationBusy.value = true
+  const serial = ++request, expected = token.value, path = key.value
+  const active = () => serial === request && expected === token.value && path === key.value
+  try {
+    await flushDraft()
+    const status = await bridge.getAiStatus()
+    if (!active()) return
+    aiModel.value = status.model ?? ''
+    if (!status.available || !status.configured || !aiModel.value) throw new Error(t('path.aiUnavailable'))
+    const model = aiModel.value
+    const valid = await validateCodeRubric(bridge.evaluateCriteria, activity.written, current.content.title, locale.value, active)
+    const latest = await bridge.getAiStatus()
+    if (!active() || latest.model !== model) return
+    await library.updatePath(path, row => {
+      if (!active()) return row.progress
+      const codeValidations = (row.progress.codeValidations ?? []).filter(v => v.activityId !== activity.id)
+      return valid ? { ...row.progress, codeValidations: [...codeValidations, { activityId: activity.id, model, fingerprint: codeFingerprint(activity.written!) }] }
+        : { ...row.progress, codeValidations, practiceOnly: [...new Set([...row.progress.practiceOnly, activity.id])] }
+    })
+    notice.value = t(valid ? 'path.code.validated' : 'path.unreliable')
+  } catch (error) { if (active()) report(error) }
+  finally { validationBusy.value = false }
+}
+watch([key, () => pos.value?.goal?.id, () => p.value?.phase, revealed, showPass, reviewing], async () => {
+  await nextTick()
+  const current = row.value, goal = pos.value?.goal
+  if (!current || !goal || current.progress.phase !== 'lesson' || reviewing.value || completedTopic.value || showPass.value
+    || goal.opening && !revealed.value) return
+  const path = key.value
+  await library.updatePath(path, row => position(row).goal?.id === goal.id && row.progress.phase === 'lesson'
+    ? recordContact(row.progress, goal.id, 'lesson') : row.progress).catch(report)
+}, { immediate: true })
+
 </script>
 <template>
   <div class="app-shell">
@@ -495,7 +577,7 @@ async function transfer() {
               <div class="path-example"><h3>{{ t('path.worked') }}</h3><MathContent :text="completedTopic.example" format-bold /></div>
               <details v-if="visitedRound" class="path-completed-round">
                 <summary>{{ t('path.round.reviewResult') }}</summary>
-                <PathRoundSummary :goal="completedTopic" :round="visitedRound" />
+                <PathRoundSummary @solution="contactResult(completedTopic.id)" :goal="completedTopic" :round="visitedRound" />
               </details>
               <details class="path-practice-options">
                 <summary>{{ t('path.practiseAgain') }}</summary>
@@ -514,19 +596,31 @@ async function transfer() {
               <button class="btn btn-secondary" @click="backToPath">{{ t('path.backToPath') }}</button>
             </section>
             <section v-else-if="finishedRound && (passGoal || pos.goal)" class="path-study path-round-result" :class="{ 'path-pass': !!passGoal }">
-              <PathRoundSummary ref="roundSummaryView" :goal="(passGoal || pos.goal)!" :round="finishedRound" />
+              <PathRoundSummary @solution="contactResult((passGoal || pos.goal)!.id)" ref="roundSummaryView" :goal="(passGoal || pos.goal)!" :round="finishedRound" />
+              <details class="path-example" @toggle="($event.target as HTMLDetailsElement).open && contactResult((passGoal || pos.goal)!.id)">
+                <summary>{{ t('path.reread') }}</summary>
+                <MathContent :text="(passGoal || pos.goal)!.explanation" format-bold />
+                <h3>{{ t('path.worked') }}</h3><MathContent :text="(passGoal || pos.goal)!.example" format-bold />
+              </details>
               <p v-if="notice" class="path-notice" role="status">{{ notice }}</p>
+              <div v-if="passGoal && correctionCases(passGoal, p).length" class="path-example">
+                <p>{{ t('path.correction') }}</p>
+                <button class="btn btn-secondary" @click="correctPassed">{{ t('path.correctGap') }}</button>
+              </div>
               <div v-if="passGoal && pos.goal" class="path-next-objective"><span>{{ t('path.nextObjective') }}</span><strong>{{ pos.goal.goal }}</strong></div>
               <div class="path-actions">
                 <button v-if="passGoal" class="btn btn-primary" :disabled="saving" @click="continueFromResult">
                   {{ t(pos.goal ? 'path.continueObjective' : 'path.round.finish') }}
                 </button>
-                <button v-else class="btn btn-primary" :disabled="saving" @click="change(advance)">{{ t('path.round.retry') }}</button>
+                <template v-else>
+                  <button class="btn btn-primary" :disabled="saving" @click="change(relearnObjective)">{{ t('path.round.relearn') }}</button>
+                  <button class="btn btn-secondary" :disabled="saving" @click="change(advance)">{{ t('path.round.retry') }}</button>
+                </template>
               </div>
             </section>
             <section v-else-if="showPass && pos.goal" class="path-study path-pass" aria-labelledby="path-pass-heading">
               <div class="path-result-title"><AppIcon name="check-circle-2" /><h2 id="path-pass-heading" ref="heading" tabindex="-1">{{ t('path.passed') }}</h2></div>
-              <PathFeedback v-if="passAnswer && passActivity" :activity="passActivity" :result="passAnswer" />
+              <PathFeedback @solution="passGoal && contactResult(passGoal.id)" v-if="passAnswer && passActivity" :activity="passActivity" :result="passAnswer" />
               <MathContent v-else :text="passFeedback" format-bold />
               <p v-if="notice" class="path-notice" role="status">{{ notice }}</p>
               <div class="path-next-objective"><span>{{ t('path.nextObjective') }}</span><strong>{{ pos.goal.goal }}</strong></div>
@@ -539,9 +633,13 @@ async function transfer() {
               </header>
               <ol class="path-steps" :aria-label="t('path.studySteps')">
                 <li v-for="(phase, index) in (['lesson','practice','check'] as const)" :key="phase"
-                  :aria-current="p.phase === phase ? 'step' : undefined"
+                  :aria-current="(explanationOpen ? 'lesson' : p.phase) === phase ? 'step' : undefined"
                   :class="{ 'is-done': p.phase === 'check' && phase !== 'check' || p.phase === 'practice' && phase === 'lesson' }">
-                  <span>{{ index + 1 }}</span>{{ t(`path.step.${phase}`) }}
+                  <button v-if="phase === 'lesson' && p.phase !== 'lesson' && !explanationOpen" class="path-step-link" type="button"
+                    :aria-label="t('path.reread')" :disabled="saving || validationBusy" @click="revisitExplanation"><span>{{ index + 1 }}</span>{{ t('path.step.lesson') }}</button>
+                  <button v-else-if="explanationOpen && phase === p.phase" class="path-step-link" type="button" @click="backToTask">
+                    <span>{{ index + 1 }}</span>{{ t(`path.step.${phase}`) }}</button>
+                  <template v-else><span>{{ index + 1 }}</span>{{ t(`path.step.${phase}`) }}</template>
                 </li>
               </ol>
               <div v-if="p.phase === 'practice' && practiceSet || round" class="path-round-progress">
@@ -579,6 +677,7 @@ async function transfer() {
                   <button class="btn btn-primary" @click="backToTask">{{ t('path.backToTask') }}</button>
                 </section>
                 <div v-show="!explanationOpen" ref="taskPanel" class="path-task-panel" @focusin="rememberAnswerFocus">
+                  <p v-if="pos.goal.requiredEvidence === 'code'" role="status">{{ t('path.code.required') }}</p>
                   <p v-if="independent && p.outcome === 'open'">{{ t(round ? 'path.round.independent' : 'path.independent') }}</p>
                   <p v-if="p.phase === 'check' && p.help !== 'none' && !activeAnswer" role="status">{{ t(round ? 'path.round.assisted' : 'path.assisted') }}</p>
                   <div v-if="p.outcome === 'open' && (writtenReady && !roundWrittenRestricted || p.mode === 'written')" class="path-format" role="group" :aria-label="t('path.answerFormat')">
@@ -616,10 +715,17 @@ async function transfer() {
                         <textarea id="written-answer" v-model="prose" class="textarea" :class="{ 'path-code-answer': writtenInput === 'code' }"
                           :maxlength="AI_TEXT_LIMIT" :rows="writtenInput === 'code' ? 7 : 4"
                           :spellcheck="writtenInput === 'code' ? false : undefined" :autocapitalize="writtenInput === 'code' ? 'off' : undefined"
-                          :disabled="waiting || saving || p.outcome !== 'open'" @paste="checkCodePaste" @input="codePasteRejected = false; scheduleDraft()" />
+                          :disabled="waiting || saving || p.outcome !== 'open'" @keydown="codeKeydown" @paste="checkCodePaste" @input="codePasteRejected = false; scheduleDraft()" />
                         <p v-if="codePasteRejected" role="alert" class="form-error">{{ t('path.codePasteTooLong', { limit: AI_TEXT_LIMIT }) }}</p>
                       </template>
-                      <small>{{ t('path.aiConsent') }}</small>
+                      <template v-if="writtenInput === 'code'">
+                        <p>{{ t('path.code.description') }} {{ pos.activity.written.language || t('path.code.unspecified') }}</p>
+                        <p>{{ t('path.code.keyboard') }}</p>
+                        <p v-if="!validCode && !codePracticeOnly">{{ t('path.code.validationConsent') }}</p>
+                        <button v-if="!validCode && !codePracticeOnly" class="btn btn-secondary" :disabled="saving || waiting || validationBusy" @click="validateCode">{{ t(validationBusy ? 'path.waiting' : 'path.code.validate') }}</button>
+                        <p v-else-if="validCode" role="status">{{ t('path.code.validated') }}</p>
+                      </template>
+                      <small>{{ t(writtenInput === 'code' ? 'path.aiConsentCode' : 'path.aiConsent') }}</small>
                       <p v-if="pos.activity.written.practiceOnly || p.practiceOnly.includes(pos.activity.id)">{{ t('path.unreliable') }}</p>
                     </template>
                     <p v-else role="status">{{ t(aiReadiness === 'checking' ? 'path.aiChecking' : 'path.aiUnavailable') }}</p>
@@ -628,23 +734,23 @@ async function transfer() {
                     <PathAnswerContent v-if="p.help === 'solution'" v-bind="solution" format-bold />
                     <MathContent v-else :text="pos.activity.hint" format-bold />
                   </div>
-                  <PathFeedback v-if="activeAnswer" ref="answerFeedback" :activity="pos.activity" :result="activeAnswer"
+                  <PathFeedback @solution="contactResult(pos.goal.id)" v-if="activeAnswer" ref="answerFeedback" :activity="pos.activity" :result="activeAnswer"
                     :detailed="!round || activeAnswer.verdict === 'revealed'"
-                    :show-solution="!practiceSet || p.phase !== 'practice' || p.outcome === 'next'" />
+                    :show-solution="p.phase !== 'practice' || p.outcome === 'next'" />
                   <div v-else-if="p.feedback" ref="resultBox" class="path-feedback" role="status" tabindex="-1"><MathContent :text="p.feedback" format-bold /></div>
                   <p v-if="notice" class="path-notice" role="status">{{ notice }}</p>
                   <div v-if="p.outcome === 'open'" class="path-response-actions">
-                    <button v-if="p.mode === 'local' || writtenReady" class="btn btn-primary" :disabled="saving || waiting || (p.mode === 'written' && !prose.trim())" @click="p.mode === 'local' ? localCheck() : writtenCheck()">{{ waiting ? t('path.waiting') : t('path.submit') }}</button>
+                    <button v-if="p.mode === 'local' || writtenReady" class="btn btn-primary" :disabled="saving || waiting || validationBusy || (p.mode === 'written' && (!prose.trim() || writtenInput === 'code' && !validCode && !codePracticeOnly))" @click="p.mode === 'local' ? localCheck() : writtenCheck()">{{ waiting ? t('path.waiting') : t(writtenInput === 'code' && p.mode === 'written' ? 'path.code.submit' : 'path.submit') }}</button>
+                  </div>
                     <div class="path-actions path-help" role="group" :aria-label="t('path.help')">
-                      <button v-if="p.phase === 'practice' && activeAnswer" class="btn btn-secondary btn-sm" :disabled="saving"
+                      <button v-if="p.outcome === 'open' && p.phase === 'practice' && activeAnswer" class="btn btn-secondary btn-sm" :disabled="saving"
                         @click="backToTask">{{ t('path.feedback.revise') }}</button>
-                      <button class="btn btn-quiet btn-sm" :disabled="saving" @click="useHelp('hint')">{{ t('path.hint') }}</button>
-                      <button class="btn btn-secondary btn-sm" :disabled="saving" :aria-describedby="p.phase === 'check' ? 'path-explanation-notice' : undefined"
+                      <button v-if="p.outcome === 'open'" class="btn btn-quiet btn-sm" :disabled="saving" @click="useHelp('hint')">{{ t('path.hint') }}</button>
+                      <button class="btn btn-secondary btn-sm" :disabled="saving" :aria-describedby="p.phase === 'check' && p.outcome === 'open' ? 'path-explanation-notice' : undefined"
                         @click="revisitExplanation">{{ t('path.reread') }}</button>
-                      <button v-if="p.phase !== 'practice' || !practiceSet || activeAnswer" class="btn btn-quiet btn-sm"
+                      <button v-if="p.outcome === 'open' && (p.phase !== 'practice' || !practiceSet || activeAnswer)" class="btn btn-quiet btn-sm"
                         :disabled="saving" @click="useHelp('solution')">{{ t('path.solution') }}</button>
                     </div>
-                  </div>
                   <p v-if="p.phase === 'check' && p.outcome === 'open'" id="path-explanation-notice" class="path-notice">
                     {{ t(round ? 'path.round.help' : 'path.helpBeforeCheck') }}
                   </p>
@@ -665,13 +771,15 @@ async function transfer() {
             </section>
             <section v-else class="path-study path-pass">
               <div class="path-result-title"><AppIcon name="check-circle-2" /><h2 ref="heading" tabindex="-1">{{ t('path.complete') }}</h2></div>
-              <PathFeedback v-if="passAnswer && passActivity" :activity="passActivity" :result="passAnswer" />
+              <PathFeedback @solution="passGoal && contactResult(passGoal.id)" v-if="passAnswer && passActivity" :activity="passActivity" :result="passAnswer" />
               <div v-else-if="passFeedback" class="path-feedback"><strong>{{ t('path.passed') }}</strong><MathContent :text="passFeedback" format-bold /></div>
               <RouterLink class="btn btn-secondary" to="/learn">{{ t('path.paths') }}</RouterLink>
             </section>
           </div>
           <details class="path-outline path-tools"><summary>{{ t('path.actions') }}</summary>
             <p v-if="actionNotice" class="path-notice" role="status">{{ actionNotice }}</p>
+            <details class="path-quality"><summary>{{ t('path.quality.title') }} ({{ pathQuality(row.content).length }})</summary><p>{{ t('path.quality.note') }}</p>
+              <ul><li v-for="issue in pathQuality(row.content)" :key="issue.objectiveId + issue.key">{{ issue.goal }}: {{ t(issue.key) }}</li></ul></details>
             <button class="btn btn-secondary btn-sm" @click="share">{{ t('path.share') }}</button>
             <details v-if="availableCards.length" class="path-transfer">
               <summary>{{ t('path.transfer') }} ({{ availableCards.length }})</summary>

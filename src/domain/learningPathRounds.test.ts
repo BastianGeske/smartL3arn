@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import example from '../../docs/learning-path.rounds.example.json'
 import legacy from '../../docs/learning-path.example.json'
 import { freshProgress, normalizePath, normalizePaths, type Objective, type SavedPath } from '../../shared/learning-paths.mjs'
-import { advance, assist, attemptKey, gradeLocal, gradeWritten, position, switchObjective } from './learningPath'
+import { advance, assist, attemptKey, gradeLocal, gradeWritten, position, relearnObjective, switchObjective } from './learningPath'
 import { startReview } from './pathReview'
 import type { StudyResponse } from './types'
 
@@ -90,6 +90,37 @@ describe('learning path rounds', () => {
     expect(row.progress.selfCheck).toEqual({ queue: ['k4', 'k5', 'k1'], repeated: ['k1'], answers: [] })
   })
 
+  it('returns to instruction after a failed round without erasing exposure or other objectives', () => {
+    const row = openRound(3)
+    row.content.chapters.push(normalizePath(legacy).chapters[0]!)
+    row.progress = switchObjective(row, 'anteil')
+    row.progress = advance(row)
+    row.progress = gradeLocal(row, { kind: 'text', value: '6' })
+    row.progress = advance(row)
+    row.progress = gradeLocal(row, { kind: 'text', value: '15' })
+    expect(position(row).goal?.id).toBe('aenderung')
+    expect(relearnObjective(row)).toBe(row.progress)
+    for (let i = 0; i < 3; i++) {
+      row.progress = gradeLocal(row, i === 0 ? { kind: 'fields', values: { basis: '90', prozent: '20' } } : correct(row))
+      if (i < 2) row.progress = advance(row)
+    }
+    const previous = row.progress
+    row.progress = relearnObjective(row)
+    expect(row.progress).toMatchObject({ phase: 'lesson', outcome: 'open', seenChecks: ['k1', 'k2', 'k3'],
+      passed: ['anteil'], reviews: previous.reviews, attempt: previous.attempt + 1 })
+    expect(row.progress.selfCheck).toBeUndefined()
+    expect(row.progress.practiceAnswers).toBeUndefined()
+    row.progress = normalizePaths([row])[0]!.progress
+    row.progress = advance(row)
+    while (row.progress.phase === 'practice') {
+      row.progress = gradeLocal(row, correct(row))
+      row.progress = advance(row)
+      row.progress = normalizePaths([row])[0]!.progress
+    }
+    expect(row.progress.selfCheck).toEqual({ queue: ['k4', 'k5', 'k1'], repeated: ['k1'], answers: [] })
+    expect(startReview(row, '2100-01-01').reviewSession?.queue).toEqual(['anteil'])
+  })
+
   it('passes with four of five, preserving feedback and reserving the delayed case', () => {
     const row = openRound()
     row.progress = { ...row.progress, mode: 'written', prose: 'Der Ausgangspreis war vor dem Zuschlag 72 Euro.' }
@@ -106,7 +137,7 @@ describe('learning path rounds', () => {
     expect(recovered.progress.completedChecks?.[0]?.round.answers).toHaveLength(5)
     const [review] = recovered.progress.reviews!
     expect(review?.seen).toEqual(['k1', 'k2', 'k3', 'k4', 'k5'])
-    expect(startReview(recovered, review!.dueDate).reviewSession?.activityId).toBe('w1')
+    expect(startReview(recovered, review!.dueDate).reviewSession?.activityId).toBe('k7')
   })
 
   it('uses the same local case after an ambiguous provider result', () => {

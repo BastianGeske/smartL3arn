@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAiBridge } from './ai'
 
-const native = vi.hoisted(() => ({ evaluateAnswer: vi.fn(), getAiStatus: vi.fn(), testOpenRouterConnection: vi.fn(),
+const native = vi.hoisted(() => ({ evaluateCriteria: vi.fn(), evaluateAnswer: vi.fn(), getAiStatus: vi.fn(), testOpenRouterConnection: vi.fn(),
   saveOpenRouterKey: vi.fn(), removeOpenRouterKey: vi.fn(), getApiUsage: vi.fn(), getAiDiagnostics: vi.fn() }))
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: () => 'ios' }, registerPlugin: () => native,
@@ -75,4 +75,16 @@ describe('iOS AI bridge', () => {
     expect(await getAiBridge()!.evaluateAnswer({ ...input, evaluationScope: 'working', referenceWorking: '', userWorking: 'x'.repeat(4001) })).toEqual({ ok: false, reason: 'invalid-input' })
     expect(native.evaluateAnswer).not.toHaveBeenCalled()
   })
+})
+
+it('forwards code evidence metadata through the native criteria bridge without changing the source', async () => {
+  const criteria = [{ id: 'syntax', description: 'Valid Python.' }]
+  const source = '  return value\n'
+  native.evaluateCriteria.mockResolvedValue({ ok: true, body: { choices: [{ message: { content: JSON.stringify({
+    criteria: [{ id: 'syntax', status: 'satisfied', reason: 'Valid.' }],
+  }) } }] } })
+  const request = { ...input, userAnswer: source, referenceAnswer: source, criteria,
+    answerFormat: 'code' as const, codeLanguage: 'Python' }
+  expect((await getAiBridge()!.evaluateCriteria!(request)).ok).toBe(true)
+  expect(native.evaluateCriteria).toHaveBeenCalledWith(request)
 })

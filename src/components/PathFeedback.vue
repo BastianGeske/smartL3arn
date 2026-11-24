@@ -9,6 +9,7 @@ import PathAnswerContent from './PathAnswerContent.vue'
 
 const props = withDefaults(defineProps<{ activity: Activity; result: PathAnswerResult; detailed?: boolean; showSolution?: boolean }>(),
   { detailed: true, showSolution: true })
+const emit = defineEmits<{ solution: [] }>()
 const { t } = useI18n()
 const heading = ref<HTMLElement>()
 defineExpose({ focus: () => heading.value?.focus() })
@@ -18,7 +19,8 @@ const titles: Record<PathAnswerResult['verdict'], TranslationKey> = {
 const written = computed(() => props.result.prose !== undefined ? props.activity.written : undefined)
 const answer = computed(() => props.result.prose ?? responseText(props.result.response ?? null, props.activity.task))
 const parts = computed(() => props.detailed && props.result.response && props.result.verdict !== 'revealed'
-  ? evaluateResponse(props.activity, props.result.response)?.parts : undefined)
+  ? evaluateResponse(props.activity, props.result.response)?.parts?.filter(part =>
+    props.showSolution || !['single_choice', 'multiple_choice'].includes(props.activity.task.kind) || part.actual === '✓') : undefined)
 const inlineAnswers = computed(() => !!parts.value?.length && ['cloze', 'matching', 'ordering'].includes(props.activity.task.kind))
 function partLabel(label: string) {
   if (props.activity.task.kind === 'ordering') return t('path.feedback.position', { number: label })
@@ -60,9 +62,10 @@ function partLabel(label: string) {
       </ul>
       <div v-if="!written && (result.verdict === 'partial' || result.verdict === 'incorrect')" class="path-feedback-answer">
         <strong>{{ t('path.feedback.nextStep') }}</strong>
-        <MathContent :text="activity.feedback" format-bold />
+        <MathContent v-if="showSolution" :text="activity.feedback" format-bold />
+        <p v-else>{{ t('path.feedback.retryHint') }}</p>
       </div>
-      <details v-if="showSolution" class="path-example path-feedback-solution" :open="result.verdict === 'revealed' || undefined">
+      <details @toggle="($event.target as HTMLDetailsElement).open && emit('solution')" v-if="showSolution" class="path-example path-feedback-solution" :open="result.verdict === 'revealed' || undefined">
         <summary>{{ t('path.solution') }}</summary>
         <PathAnswerContent :text="written?.reference ?? activity.solution" :format="written?.input" format-bold />
         <ol v-if="!written && activity.task.kind === 'calculation' && activity.task.solutionSteps?.length">

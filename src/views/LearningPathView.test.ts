@@ -1,3 +1,4 @@
+import { codeFingerprint } from '../domain/pathCode'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, disposePinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router'
@@ -8,7 +9,7 @@ import { freshProgress, normalizePath, normalizePaths, pathKey, type WrittenChec
 import { useLibraryStore } from '../stores/library'
 import { useUiStore } from '../stores/ui'
 import { advance, gradeLocal } from '../domain/learningPath'
-import type { TaskDefinition } from '../domain/types'
+import type { StudyResponse, TaskDefinition } from '../domain/types'
 import { setLanguage } from '../i18n'
 import { BrowserStorage } from '../services/storage/browserStorage'
 import { practiceBackupKey, readDraftBackup, reviewBackupKey } from '../services/storage/pathDraftBackup'
@@ -71,7 +72,7 @@ async function reopenPath() {
     disposePinia(previous.pinia)
   }
 }
-const configured = { available: true, configured: true, credentialSource: null }
+const configured = { available: true, configured: true, credentialSource: null, model: 'test/model' }
 function mockAi(evaluateCriteria = vi.fn(), getAiStatus = vi.fn().mockResolvedValue(configured)) {
   vi.spyOn(ai, 'getAiBridge').mockReturnValue({ evaluateCriteria, getAiStatus } as unknown as ReturnType<typeof ai.getAiBridge>)
   return { evaluateCriteria, getAiStatus }
@@ -80,6 +81,10 @@ async function prepareSecondCheck(input?: WrittenCheck['input'], overrides: Part
   const content = normalizePath(example)
   Object.assign(content.chapters[1]!.objectives[0]!.checks[0]!.written!, { input, ...overrides })
   const key = await ctx.library.installPath(content)
+  if (input === 'code') {
+    const activity = content.chapters[1]!.objectives[0]!.checks[0]!
+    await ctx.library.updatePath(key, row => ({ ...row.progress, codeValidations: [{ activityId: activity.id, model: 'test/model', fingerprint: codeFingerprint(activity.written!) }] }))
+  }
   await ctx.library.updatePath(key,advance)
   await ctx.library.updatePath(key,r=>gradeLocal(r,{kind:'text',value:'6'}))
   await ctx.library.updatePath(key,advance)
@@ -123,7 +128,7 @@ it('gives actionable practice feedback and keeps self-check details until the sa
   expect(wrapper.get('.path-feedback-list [data-correct="true"]').text()).toContain('Basis')
   expect(wrapper.get('.path-feedback-list [data-correct="false"]').text()).toContain('Prozent')
   expect(wrapper.get('.path-answer-feedback').text()).toContain('Nächster Denkschritt')
-  await click('Noch einmal versuchen')
+  await click('Antwort bearbeiten')
   expect(document.activeElement).toBe(share.element)
   expect(share.element.value).toBe('20')
   await click('Lösung ansehen')
@@ -173,6 +178,46 @@ it('gives actionable practice feedback and keeps self-check details until the sa
     expect(saved().passed).toEqual(['aenderung'])
     await chooseTopic('aenderung')
     expect(wrapper.get('.path-completed-round .path-round-score').text()).toBe('4 von 5 selbstständig richtig')
+  } finally { await closeOldView() }
+})
+
+it('revisits instruction after a failed self-check and retains seen cases after reloading', async () => {
+  const content = normalizePath(roundsExample)
+  content.chapters[0]!.objectives[0]!.selfCheckSize = 3
+  const key = await ctx.library.installPath(content)
+  async function finishPractice() {
+    const responses: StudyResponse[] = [{ kind: 'fields', values: { basis: '80', prozent: '25' } },
+      { kind: 'text', value: '25' }, { kind: 'text', value: '20' }]
+    for (const answer of responses) {
+      await ctx.library.updatePath(key, row => gradeLocal(row, answer))
+      await ctx.library.updatePath(key, advance)
+    }
+  }
+  await ctx.library.updatePath(key, advance)
+  await finishPractice()
+  for (let i = 0; i < 3; i++) {
+    await ctx.library.updatePath(key, row => gradeLocal(row, i === 0
+      ? { kind: 'fields', values: { basis: '90', prozent: '20' } }
+      : { kind: 'text', value: i === 1 ? '15' : '10' }))
+    if (i < 2) await ctx.library.updatePath(key, advance)
+  }
+  await ctx.open('/learn/' + key)
+  expect(wrapper.get('.path-round-summary h2').text()).toBe('Selbstkontrolle noch nicht bestanden')
+  await click('Erklärung und Übungen wiederholen')
+  await vi.waitFor(() => expect(saved().phase).toBe('lesson'))
+  expect(wrapper.get('.path-active-study .path-example').text()).toContain('50 Liter')
+  expect(saved().seenChecks).toEqual(['k1', 'k2', 'k3'])
+  expect(saved().passed).toEqual([])
+  expect(saved().reviews).toBeUndefined()
+  const closeOldView = await reopenPath()
+  try {
+    await click('Übung beginnen')
+    await vi.waitFor(() => expect(saved().phase).toBe('practice'))
+    expect(wrapper.get('.path-round-progress').text()).toContain('Aufgabe 1 von 3')
+    expect(saved().seenChecks).toEqual(['k1', 'k2', 'k3'])
+    await finishPractice()
+    expect(saved().selfCheck?.queue).toEqual(['k4', 'k5', 'k6'])
+    expect(saved().selfCheck?.repeated).toEqual([])
   } finally { await closeOldView() }
 })
 
@@ -551,7 +596,7 @@ it.each([
   const key = await prepareSecondCheck(input, { reference })
   await ctx.library.updatePath(key, ({ progress }) => ({ ...progress, mode: 'written', prose: 'attempt' }))
   await ctx.open('/learn/' + key)
-  await click(via === 'help' ? 'Lösung ansehen' : 'Antwort prüfen')
+  await click(via === 'help' ? 'Lösung ansehen' : input === 'code' ? 'KI-Codeprüfung starten' : 'Antwort prüfen')
   await vi.waitFor(() => expect(saved().outcome).toBe('retry'))
   if (via === 'retry') await wrapper.get('details.path-example summary').trigger('click')
   const selector = input === 'code' ? 'pre' : '.math-display annotation'
@@ -614,7 +659,7 @@ it('recovers code with its indentation and submits the exact source for grading'
   const closePrevious = await reopenPath()
   try {
     expect(wrapper.get('textarea').element.value).toBe(code)
-    await click('Antwort prüfen')
+    await click('KI-Codeprüfung starten')
     await vi.waitFor(() => expect(saved().passed).toEqual(['anteil', 'wechsel']))
     expect(evaluateCriteria).toHaveBeenCalledWith(expect.objectContaining({ question, userAnswer: code }))
   } finally { await closePrevious() }
@@ -818,7 +863,7 @@ it('restores an in-path review, grades offline, and returns to the saved lesson'
   await vi.waitFor(() => expect(saved().reviewSession).toBeUndefined())
   expect(saved().phase).toBe('practice')
   expect(saved().passed).toEqual(['anteil'])
-  expect(wrapper.get('.path-outline').text()).toContain('Selbstständig richtig beantwortet')
+  expect(wrapper.get('.path-topic-index').text()).toContain('Selbstständig richtig beantwortet')
 })
 
 async function openClozeDraft(mode: 'review' | 'practice') {
@@ -875,7 +920,7 @@ it.each(['review', 'practice'] as const)('backs up each %s edit, coalesces write
   await click('Antwort prüfen')
   await vi.waitFor(() => expect(wrapper.get('.path-feedback').text()).toContain('Richtig'))
   expect(draft()).toEqual({ kind: 'fields', values: { basis: base, prozent: ratio } })
-  expect(save).toHaveBeenCalledTimes(mode === 'review' ? 3 : 2)
+  expect(save).toHaveBeenCalledTimes(3)
 })
 
 it.each(['review', 'practice'] as const)('blocks leaving %s after a failed write and retries the newest edit', async mode => {
@@ -1095,4 +1140,148 @@ it('keeps voluntary practice drafts separate from each other and from the saved 
     expect(saved().passed).toEqual(original.passed)
     expect(saved().draft).toEqual(original.draft)
   } finally { await closeOld() }
+})
+
+it('explicitly validates three code probes before submitting code, and invalidates them on a model change', async () => {
+  let model = 'test/model'
+  const getAiStatus = vi.fn(async () => ({ ...configured, model }))
+  const key = await prepareSecondCheck('code', { language: 'Python' })
+  const activity = ctx.library.data.learningPaths![0]!.content.chapters[1]!.objectives[0]!.checks[0]!
+  const written = activity.written!
+  const evaluateCriteria = vi.fn(async (input: { userAnswer: string }) => ({ ok: true, result: {
+    criteria: written.criteria.map(c => ({ id: c.id,
+      status: input.userAnswer === written.partial || input.userAnswer === written.misconception ? 'missing' : 'satisfied', reason: 'Probe result.' })),
+  } }))
+  mockAi(evaluateCriteria, getAiStatus)
+  await ctx.library.updatePath(key, row => ({ ...row.progress, codeValidations: [] }))
+  await ctx.open('/learn/' + key)
+  await click('Code schreiben und mit KI prüfen')
+  await vi.waitFor(() => expect(saved().mode).toBe('written'))
+  await vi.waitFor(() => expect(wrapper.find('textarea').exists()).toBe(true))
+  await wrapper.get('textarea').setValue('def f(x):\n  return x')
+  expect(evaluateCriteria).not.toHaveBeenCalled()
+  expect(wrapper.findAll('button').find(b => b.text() === 'KI-Codeprüfung starten')!.attributes('disabled')).toBeDefined()
+  await click('Bewertungsvariante mit KI prüfen')
+  await vi.waitFor(() => expect(saved().codeValidations).toHaveLength(1))
+  expect(evaluateCriteria).toHaveBeenCalledTimes(3)
+  expect(evaluateCriteria).toHaveBeenCalledWith(expect.objectContaining({ answerFormat: 'code', codeLanguage: 'Python' }))
+  model = 'other/model'
+  await click('KI-Codeprüfung starten')
+  expect(evaluateCriteria).toHaveBeenCalledTimes(3)
+  expect(saved().passed).toEqual(['anteil'])
+  expect(wrapper.text()).toContain('Prüfe zuerst die Bewertungsvariante')
+})
+
+it('retains a code draft and allows only practice feedback after invalid probes', async () => {
+  const evaluateCriteria = vi.fn().mockResolvedValue({ ok: true, result: {
+    criteria: ['bezug', 'rechnung'].map(id => ({ id, status: 'satisfied', reason: 'Everything accepted.' })),
+  } })
+  mockAi(evaluateCriteria)
+  const key = await prepareSecondCheck('code')
+  await ctx.library.updatePath(key, row => ({ ...row.progress, codeValidations: [] }))
+  await ctx.open('/learn/' + key)
+  await click('Code schreiben und mit KI prüfen')
+  await vi.waitFor(() => expect(saved().mode).toBe('written'))
+  await vi.waitFor(() => expect(wrapper.find('textarea').exists()).toBe(true))
+  await wrapper.get('textarea').setValue('return 42')
+  await click('Bewertungsvariante mit KI prüfen')
+  await vi.waitFor(() => expect(saved().practiceOnly).toContain('w-check1'))
+  expect(saved().prose).toBe('return 42')
+  await click('KI-Codeprüfung starten')
+  await vi.waitFor(() => expect(saved().outcome).toBe('retry'))
+  expect(saved().passed).toEqual(['anteil'])
+  expect(saved().result).toMatchObject({ assisted: true })
+})
+
+it('indents code, preserves new-line indentation and provides a keyboard exit', async () => {
+  mockAi()
+  const key = await prepareSecondCheck('code')
+  await ctx.open('/learn/' + key)
+  await click('Code schreiben und mit KI prüfen')
+  await vi.waitFor(() => expect(saved().mode).toBe('written'))
+  await vi.waitFor(() => expect(wrapper.find('textarea').exists()).toBe(true))
+  const editor = wrapper.get<HTMLTextAreaElement>('textarea')
+  await editor.setValue('  x')
+  editor.element.setSelectionRange(3, 3)
+  await editor.trigger('keydown', { key: 'Enter' })
+  expect(editor.element.value).toBe('  x\n  ')
+  await editor.trigger('keydown', { key: 'Tab' })
+  expect(editor.element.value).toBe('  x\n    ')
+  await editor.trigger('keydown', { key: 'Escape' })
+  const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+  editor.element.dispatchEvent(event)
+  expect(event.defaultPrevented).toBe(false)
+})
+
+it('keeps the explanation available after a correct practice answer without resetting its result', async () => {
+  const key = await ctx.library.installPath(roundsExample)
+  await ctx.library.updatePath(key, advance)
+  await ctx.open('/learn/' + key)
+  await wrapper.get('input[aria-label="basis"]').setValue('80')
+  await wrapper.get('input[aria-label="prozent"]').setValue('25')
+  await click('Antwort prüfen')
+  await vi.waitFor(() => expect(saved().outcome).toBe('next'))
+  const result = JSON.parse(JSON.stringify(saved().result))
+  await click('Erklärung nachlesen')
+  await vi.waitFor(() => expect(wrapper.find('.path-explanation').exists()).toBe(true))
+  expect(wrapper.get('.path-explanation').text()).toContain('50 Liter')
+  expect(document.activeElement).toBe(wrapper.get('.path-explanation h3').element)
+  expect(saved().result).toEqual(result)
+  expect(saved()).toMatchObject({ phase: 'practice', variant: 0, outcome: 'next' })
+  await click('Zur Aufgabe zurück')
+  await click('Nächste Übung')
+  await vi.waitFor(() => expect(saved().variant).toBe(1))
+})
+
+it('lets the learner consult the lesson after a submitted self-check answer and continue the same round', async () => {
+  const key = await ctx.library.installPath(roundsExample)
+  await ctx.library.updatePath(key, advance)
+  for (const response of [{ kind: 'fields' as const, values: { basis: '80', prozent: '25' } },
+    { kind: 'text' as const, value: '25' }, { kind: 'text' as const, value: '20' }]) {
+    await ctx.library.updatePath(key, row => gradeLocal(row, response))
+    await ctx.library.updatePath(key, advance)
+  }
+  await ctx.open('/learn/' + key)
+  await wrapper.get('input[aria-label="basis"]').setValue('90')
+  await wrapper.get('input[aria-label="prozent"]').setValue('20')
+  await click('Antwort prüfen')
+  await vi.waitFor(() => expect(saved().selfCheck?.answers).toHaveLength(1))
+  const round = JSON.parse(JSON.stringify(saved().selfCheck))
+  await click('Erklärung nachlesen')
+  await vi.waitFor(() => expect(wrapper.find('.path-explanation').exists()).toBe(true))
+  expect(saved().selfCheck).toEqual(round)
+  await click('Zur Aufgabe zurück')
+  await click('Nächste Aufgabe')
+  await vi.waitFor(() => expect(saved().variant).toBe(1))
+  expect(saved().selfCheck?.answers).toEqual(round!.answers)
+})
+
+it('opens the explanation from the first learning step with the current answer preserved', async () => {
+  const key = await ctx.library.installPath(example)
+  await ctx.library.updatePath(key, advance)
+  await ctx.open('/learn/' + key)
+  await wrapper.get('.task-number-input input').setValue('7')
+  await wrapper.get('.path-step-link').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('.path-explanation').exists()).toBe(true))
+  await click('Zur Aufgabe zurück')
+  expect(wrapper.get<HTMLInputElement>('.task-number-input input').element.value).toBe('7')
+})
+
+it('offers rereading before a delayed review without automatically revealing a hint', async () => {
+  const key = await prepareSecondCheck()
+  await ctx.open('/learn/' + key + '?review=1')
+  // First objective is normally due tomorrow; this audit deliberately makes it due now.
+  await ctx.library.updatePath(key, row => ({ ...row.progress, reviews: row.progress.reviews?.map(r => ({ ...r, dueDate: '2000-01-01' })) }))
+  await ctx.router.replace('/learn/' + key)
+  await ctx.router.replace('/learn/' + key + '?review=1')
+  await vi.waitFor(() => expect(wrapper.find('.path-review').exists()).toBe(true))
+  await click('Erklärung nachlesen')
+  await vi.waitFor(() => expect(wrapper.find('.path-review .path-explanation').exists()).toBe(true))
+  expect(wrapper.get('.path-review .path-explanation').text()).toContain('Gelöstes Beispiel')
+  expect(saved().reviewSession?.assisted).toBe(true)
+  await click('Zur Aufgabe zurück')
+  expect(wrapper.find('.path-review .path-opening').exists()).toBe(false)
+  await click('Hinweis anzeigen')
+  await vi.waitFor(() => expect(saved().reviewSession?.hintRevealed).toBe(true))
+  expect(wrapper.get('.path-review .path-opening').text()).toContain('Diese Wiederholung zählt als mit Hilfe bearbeitet.')
 })

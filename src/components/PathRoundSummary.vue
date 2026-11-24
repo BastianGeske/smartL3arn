@@ -7,6 +7,7 @@ import MathContent from './MathContent.vue'
 import PathFeedback from './PathFeedback.vue'
 
 const props = defineProps<{ goal: Objective; round: SelfCheckRound }>()
+const emit = defineEmits<{ solution: [] }>()
 const { t } = useI18n()
 const score = computed(() => selfCheckScore(props.round))
 const size = computed(() => props.round.queue.length)
@@ -34,10 +35,11 @@ defineExpose({ focus: () => heading.value?.focus() })
             <AppIcon :name="result.verdict === 'correct' && !result.assisted ? 'check-circle-2' : 'alert-circle'" :size="18" />
             <span>{{ t('path.round.taskLabel', { number: index + 1 }) }}</span>
             <span>{{ t(result.assisted ? 'path.result.assisted' : result.verdict === 'correct' ? 'path.correct' : result.verdict === 'partial' ? 'path.feedback.partial' : 'path.feedback.incorrect') }}</span>
+            <span v-if="round.repeated.includes(activity.id)">{{ t('path.round.repeated') }}</span>
           </summary>
           <MathContent :text="(result.prose !== undefined ? activity.written?.question ?? activity.question : activity.question).replace(/\{\{[\w-]+\}\}/g, '___')"
             :format-bold="result.prose === undefined || activity.written?.input !== 'code'" />
-          <PathFeedback :activity="activity" :result="result" />
+          <PathFeedback @solution="emit('solution')" :activity="activity" :result="result" />
         </details>
       </li>
     </ol>

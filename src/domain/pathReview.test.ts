@@ -28,7 +28,8 @@ it('schedules tomorrow, grades one independent delayed answer and keeps the less
   expect(gradeReview(row, { kind: 'text', value: '0' })).toBe(row.progress)
   row.progress = nextReview(row)
   expect(row.progress.reviewSession).toBeUndefined()
-  expect(row.progress).toEqual({ ...lesson, reviews: row.progress.reviews })
+  expect(row.progress).toMatchObject({ phase: lesson.phase, variant: lesson.variant, draft: lesson.draft, prose: lesson.prose })
+  expect(row.progress.reviews![0]!.retention).toBe('confirmed')
   expect(normalizePaths([row])).toEqual([row])
 })
 
@@ -46,7 +47,7 @@ it.each(['miss', 'hint', 'reveal'])('preserves the first result after a %s and a
   expect(row.progress.reviews![0]).toMatchObject({ ...records![0], seen: row.progress.reviews![0]!.seen })
   row.progress = nextReview(row)
   row.progress = startReview(row, '2026-10-26')
-  expect(row.progress.reviewSession).toMatchObject({ caseType: 'repeat', activityId: 'a-check1' })
+  expect(row.progress.reviewSession).toMatchObject({ caseType: 'repeat', activityId: 'anteil-review' })
 })
 
 it('mixes at most three overdue objectives, including legacy paths without review content or history', () => {

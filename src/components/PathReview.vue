@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { pathKey, type Progress, type SavedPath } from '../../shared/learning-paths.mjs'
 import { usePathDraftWrite } from '../composables/usePathDraftWrite'
+import { recordContact } from '../domain/pathEvidence'
 import { gradeReview, nextReview, reviewAnswerError, reviewPosition } from '../domain/pathReview'
 import { localPathResult } from '../domain/pathFeedback'
 import type { StudyResponse } from '../domain/types'
@@ -22,13 +23,16 @@ const pos = computed(() => reviewPosition(props.row))
 const session = computed(() => pos.value.session!)
 const activity = computed(() => pos.value.activity!)
 const answer = ref<StudyResponse>(session.value.draft)
-const busy = ref(false), message = ref('')
+const busy = ref(false), message = ref(''), explanationOpen = ref(false)
+const explanationHeading = ref<HTMLElement>(), taskArea = ref<HTMLElement>()
+let previousAnswerControl: HTMLElement | undefined
 const heading = ref<HTMLHeadingElement>(), result = ref<InstanceType<typeof PathFeedback>>()
 const feedback = computed(() => session.value?.outcome !== 'open' && activity.value
   ? localPathResult(activity.value, session.value.draft, session.value.assisted, session.value.revealed) : undefined)
 onMounted(() => heading.value?.focus())
 const token = computed(() => JSON.stringify([pathKey(props.row.content), session.value?.queue, session.value?.activityId, session.value?.retry]))
 watch(token, async () => {
+  explanationOpen.value = false
   if (session.value) answer.value = session.value.draft
   message.value = ''
   await nextTick()
@@ -90,13 +94,38 @@ async function change(action: (row: SavedPath) => Progress) {
   finally { busy.value = false }
 }
 function submit(reveal = false) {
+  if (explanationOpen.value) return
   const value = answer.value
   const error = !reveal && reviewAnswerError(activity.value.task, value)
   if (error) { message.value = t(error); return }
   return change(row => gradeReview(row, value, reveal))
 }
 function hint() {
-  return change(({progress}) => ({ ...progress, reviewSession: { ...progress.reviewSession!, assisted: true } }))
+  return change(({progress}) => ({ ...recordContact(progress, session.value.queue[0]!, 'practice'), reviewSession: { ...progress.reviewSession!, assisted: true, hintRevealed: true } }))
+}
+async function consultLesson() {
+  if (busy.value) return
+  const before = document.activeElement
+  if (before instanceof HTMLElement && taskArea.value?.contains(before) && before.matches('input,select,textarea')) previousAnswerControl = before
+  busy.value = true
+  message.value = ''
+  try {
+    await flush()
+    await update(({ progress }) => ({ ...recordContact(progress, session.value.queue[0]!, 'lesson'),
+      reviewSession: { ...progress.reviewSession!, assisted: progress.reviewSession!.outcome === 'open' || progress.reviewSession!.assisted } }))
+    explanationOpen.value = true
+    await nextTick()
+    explanationHeading.value?.focus()
+  } catch (error) { report(error) }
+  finally { busy.value = false }
+}
+async function backToAnswer() {
+  explanationOpen.value = false
+  await nextTick()
+  if (session.value.outcome !== 'open') { result.value?.focus(); return }
+  const control = previousAnswerControl?.isConnected && !previousAnswerControl.matches(':disabled') ? previousAnswerControl
+    : taskArea.value?.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')
+  ;(control ?? heading.value)?.focus()
 }
 </script>
 <template>
@@ -109,18 +138,29 @@ function hint() {
       </div>
       <button class="btn btn-quiet btn-sm" :disabled="busy" @click="pause">{{ t('path.pauseReview') }}</button>
     </header>
+    <button v-if="!explanationOpen" class="btn btn-secondary btn-sm path-review-lesson" :disabled="busy" @click="consultLesson">{{ t('path.reread') }}</button>
+    <section v-if="explanationOpen && pos.goal" class="path-explanation">
+      <h3 ref="explanationHeading" tabindex="-1">{{ t('path.lesson') }}</h3>
+      <MathContent :text="pos.goal.explanation" format-bold />
+      <div class="path-example"><h3>{{ t('path.worked') }}</h3><MathContent :text="pos.goal.example" format-bold /></div>
+      <p v-if="session.outcome === 'open'">{{ t('path.reviewAssisted') }}</p>
+      <button class="btn btn-primary" @click="backToAnswer">{{ t('path.backToTask') }}</button>
+    </section>
+    <div v-show="!explanationOpen" ref="taskArea" class="path-task-panel">
+    <p v-if="session.assisted">{{ t('path.retention.exposure') }}</p>
+    <p v-if="pos.goal?.requiredEvidence === 'code'">{{ t('path.code.required') }}</p>
     <TaskQuestion v-if="activity.task.kind !== 'cloze'" :card="{front:activity.question, task:activity.task}" interactive format-bold />
     <TaskResponse :key="token" :front="activity.question" :task="activity.task" :model-value="answer" construct-order
       :disabled="busy || session.outcome !== 'open'" format-bold @update:model-value="edit" @submit="submit()" />
     <template v-if="session.outcome === 'open'">
-      <div v-if="session.assisted" class="path-opening">
+      <div v-if="session.hintRevealed" class="path-opening">
         <strong>{{ t('path.reviewAssisted') }}</strong>
         <MathContent :text="activity.hint" format-bold />
       </div>
       <div class="path-response-actions">
         <button class="btn btn-primary" :disabled="busy" @click="submit()">{{ t('path.submit') }}</button>
         <div class="path-actions path-help" role="group" :aria-label="t('path.help')">
-          <button class="btn btn-quiet btn-sm" :disabled="busy || session.assisted" @click="hint">{{ t('path.hint') }}</button>
+          <button class="btn btn-quiet btn-sm" :disabled="busy || session.hintRevealed" @click="hint">{{ t('path.hint') }}</button>
           <button class="btn btn-quiet btn-sm" :disabled="busy" @click="submit(true)">{{ t('path.solution') }}</button>
         </div>
       </div>
@@ -128,15 +168,13 @@ function hint() {
     <template v-else>
       <p>{{ pos.goal?.goal }} · {{ t(`path.case.${session.caseType}`) }}</p>
       <PathFeedback v-if="feedback" ref="result" :activity="activity" :result="feedback" />
-      <details v-if="pos.goal && (session.assisted || session.outcome === 'incorrect')" :key="token" class="path-example"><summary>{{ t('path.reread') }}</summary>
-        <MathContent :text="pos.goal.explanation" format-bold /><MathContent :text="pos.goal.example" format-bold />
-      </details>
       <div class="path-actions">
         <button class="btn btn-primary" :disabled="busy" @click="change(row => nextReview(row))">{{ t(session.queue.length > 1 ? 'path.nextReview' : 'path.finishReview') }}</button>
         <button v-if="!session.retry && (session.assisted || session.outcome === 'incorrect')" class="btn btn-secondary" :disabled="busy"
           @click="change(row => nextReview(row, true))">{{ t('path.reviewPractice') }}</button>
       </div>
     </template>
+    </div>
     <p v-if="message" role="alert">{{ message }}</p>
   </section>
 </template>
